@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "format": "openscad-format -i './*.scad' -o .",
+    "render:bottom-layer": "openscad -D'view=\"bottom-layer\"' -o render/bottom-layer.stl keyboard.scad",
+    "render:middle-layer": "openscad -D'view=\"middle-layer\"' -o render/middle-layer.stl keyboard.scad",
+    "render:top-layer": "openscad -D'view=\"top-layer\"' -o render/top-layer.stl keyboard.scad",
+    "render": "yarn render:bottom-layer && yarn render:middle-layer && yarn render:top-layer"
+  },
+  "dependencies": {
+    "openscad-format": "^1.0.0"
+  }
+}
