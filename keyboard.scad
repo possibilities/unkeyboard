@@ -22,9 +22,9 @@ module main(view) {
       topLayerSwitches(topLayerHeightMm, switchesBezelMm, numberOfRows,
                        numberOfColumns, keyDistanceMm);
     }
-    !translate([ 0, 0, 1 * demoExplodeMm ]) {
-      middleLayerSwitches(middleLayerHeightMm, switchesBezelMm, numberOfRows,
-                          numberOfColumns, keyDistanceMm);
+    translate([ 0, 0, 1 * demoExplodeMm ]) {
+      !middleLayerSwitches(middleLayerHeightMm, switchesBezelMm, numberOfRows,
+                           numberOfColumns, keyDistanceMm);
     }
     translate([ 0, 0, 0 * demoExplodeMm ]) {
       bottomLayerSwitches(bottomLayerHeightMm, switchesBezelMm, numberOfRows,
@@ -35,7 +35,7 @@ module main(view) {
       topLayerSwitches(topLayerHeightMm, switchesBezelMm, numberOfRows,
                        numberOfColumns, keyDistanceMm);
     }
-    !translate([ 0, 0, bottomLayerHeightMm ]) {
+    translate([ 0, 0, bottomLayerHeightMm ]) {
       middleLayerSwitches(middleLayerHeightMm, switchesBezelMm, numberOfRows,
                           numberOfColumns, keyDistanceMm);
     }
@@ -55,6 +55,6 @@ module main(view) {
   }
 }
 
-view = "assembled";
+view = "exploded";
 
 main(view);

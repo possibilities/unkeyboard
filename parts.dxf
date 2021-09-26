@@ -33,7 +33,7 @@ $EXTMAX
  10
 22.525
  20
-19.05
+16.405
  30
 0
   9
@@ -91,7 +91,7 @@ STANDARD
   9
 $CLAYER
   8
-center-layer-switch-holes
+center-layer-socket
   9
 $CELTYPE
   6
@@ -1121,9 +1121,9 @@ AcDbViewportTableRecord
  21
 1
  12
-38.77792348815323
+24.82349157568151
  22
-23.95387726544658
+20.60328158679058
  13
 0
  23
@@ -1149,7 +1149,7 @@ AcDbViewportTableRecord
  37
 0
  40
-79.40089993964764
+54.01868785780388
  41
 1.63301282051282
  42
@@ -2241,7 +2241,7 @@ AcDbLayerTableRecord
   2
 0
  70
-    5
+    4
  62
     7
   6
@@ -2307,78 +2307,6 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-center-layer-wiring-horizontal-connector
- 70
-    0
- 62
-   56
-420
-8421376
-  6
-CONTINUOUS
-370
-    0
-390
-F
-  0
-LAYER
-  5
-4D
-330
-2
-100
-AcDbSymbolTableRecord
-100
-AcDbLayerTableRecord
-  2
-center-layer-wiring-non-diode-connector
- 70
-    0
- 62
-   56
-420
-8421376
-  6
-CONTINUOUS
-370
-    0
-390
-F
-  0
-LAYER
-  5
-4E
-330
-2
-100
-AcDbSymbolTableRecord
-100
-AcDbLayerTableRecord
-  2
-center-layer-wiring-upper-rows
- 70
-    0
- 62
-   56
-420
-8421376
-  6
-CONTINUOUS
-370
-    0
-390
-F
-  0
-LAYER
-  5
-4F
-330
-2
-100
-AcDbSymbolTableRecord
-100
-AcDbLayerTableRecord
-  2
 debug-key-spacing
  70
     0
@@ -2393,7 +2321,7 @@ F
   0
 LAYER
   5
-50
+4D
 330
 2
 100
@@ -2415,7 +2343,7 @@ F
   0
 LAYER
   5
-51
+4E
 330
 2
 100
@@ -2451,7 +2379,7 @@ AcDbSymbolTable
   0
 STYLE
   5
-52
+4F
 330
 2
 100
@@ -2535,7 +2463,7 @@ ACAD
   0
 APPID
   5
-53
+50
 330
 9
 100
@@ -2567,7 +2495,7 @@ AcDbDimStyleTable
   0
 DIMSTYLE
 105
-54
+51
 330
 A
 100
@@ -2751,7 +2679,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-55
+52
 330
 1
 100
@@ -2853,9 +2781,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-56
+53
 330
-55
+52
 100
 AcDbEntity
   8
@@ -2877,7 +2805,7 @@ key
   0
 CIRCLE
   5
-58
+55
 100
 AcDbEntity
   8
@@ -2899,7 +2827,7 @@ AcDbCircle
   0
 CIRCLE
   5
-59
+56
 100
 AcDbEntity
   8
@@ -2921,7 +2849,7 @@ AcDbCircle
   0
 CIRCLE
   5
-5A
+57
 100
 AcDbEntity
   8
@@ -2943,7 +2871,7 @@ AcDbCircle
   0
 LINE
   5
-5B
+58
 100
 AcDbEntity
   8
@@ -2967,7 +2895,7 @@ AcDbLine
   0
 LINE
   5
-5C
+59
 100
 AcDbEntity
   8
@@ -2991,7 +2919,7 @@ AcDbLine
   0
 ARC
   5
-5D
+5A
 100
 AcDbEntity
   8
@@ -3019,7 +2947,7 @@ AcDbArc
   0
 LINE
   5
-5E
+5B
 100
 AcDbEntity
   8
@@ -3043,7 +2971,7 @@ AcDbLine
   0
 ARC
   5
-5F
+5C
 100
 AcDbEntity
   8
@@ -3071,7 +2999,7 @@ AcDbArc
   0
 LINE
   5
-60
+5D
 100
 AcDbEntity
   8
@@ -3095,7 +3023,7 @@ AcDbLine
   0
 ARC
   5
-61
+5E
 100
 AcDbEntity
   8
@@ -3123,7 +3051,7 @@ AcDbArc
   0
 LINE
   5
-62
+5F
 100
 AcDbEntity
   8
@@ -3147,7 +3075,7 @@ AcDbLine
   0
 LINE
   5
-63
+60
 100
 AcDbEntity
   8
@@ -3171,7 +3099,7 @@ AcDbLine
   0
 ARC
   5
-64
+61
 100
 AcDbEntity
   8
@@ -3199,7 +3127,7 @@ AcDbArc
   0
 LINE
   5
-65
+62
 100
 AcDbEntity
   8
@@ -3223,7 +3151,7 @@ AcDbLine
   0
 LINE
   5
-66
+63
 100
 AcDbEntity
   8
@@ -3247,7 +3175,7 @@ AcDbLine
   0
 LINE
   5
-67
+64
 100
 AcDbEntity
   8
@@ -3271,7 +3199,7 @@ AcDbLine
   0
 LINE
   5
-68
+65
 100
 AcDbEntity
   8
@@ -3295,7 +3223,7 @@ AcDbLine
   0
 LINE
   5
-69
+66
 100
 AcDbEntity
   8
@@ -3319,7 +3247,7 @@ AcDbLine
   0
 LINE
   5
-6A
+67
 100
 AcDbEntity
   8
@@ -3340,6 +3268,78 @@ AcDbLine
 8.439999999999998
  21
 1.789999999999999
+  0
+LINE
+  5
+68
+100
+AcDbEntity
+  8
+center-layer-socket
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbLine
+ 10
+6.439999999999996
+ 20
+1.789999999999999
+ 11
+6.939999999999997
+ 21
+1.789999999999999
+  0
+LINE
+  5
+69
+100
+AcDbEntity
+  8
+center-layer-socket
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbLine
+ 10
+8.439999999999998
+ 20
+1.789999999999999
+ 11
+8.439999999999998
+ 21
+-2.210000000000001
+  0
+LINE
+  5
+6A
+100
+AcDbEntity
+  8
+center-layer-socket
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbLine
+ 10
+6.439999999999996
+ 20
+1.789999999999999
+ 11
+6.439999999999996
+ 21
+-2.210000000000001
   0
 LINE
   5
@@ -3357,13 +3357,13 @@ ByLayer
 100
 AcDbLine
  10
-6.439999999999996
+7.939999999999997
  20
-1.789999999999999
+-2.210000000000001
  11
-6.939999999999997
+8.439999999999998
  21
-1.789999999999999
+-2.210000000000001
   0
 LINE
   5
@@ -3381,78 +3381,6 @@ ByLayer
 100
 AcDbLine
  10
-8.439999999999998
- 20
-1.789999999999999
- 11
-8.439999999999998
- 21
--2.210000000000001
-  0
-LINE
-  5
-6D
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-6.439999999999996
- 20
-1.789999999999999
- 11
-6.439999999999996
- 21
--2.210000000000001
-  0
-LINE
-  5
-6E
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-7.939999999999997
- 20
--2.210000000000001
- 11
-8.439999999999998
- 21
--2.210000000000001
-  0
-LINE
-  5
-6F
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
 6.439999999999996
  20
 -2.210000000000001
@@ -3463,7 +3391,7 @@ AcDbLine
   0
 LINE
   5
-70
+6D
 100
 AcDbEntity
   8
@@ -3487,7 +3415,7 @@ AcDbLine
   0
 LINE
   5
-71
+6E
 100
 AcDbEntity
   8
@@ -3511,7 +3439,7 @@ AcDbLine
   0
 LINE
   5
-72
+6F
 100
 AcDbEntity
   8
@@ -3535,7 +3463,7 @@ AcDbLine
   0
 LINE
   5
-73
+70
 100
 AcDbEntity
   8
@@ -3559,7 +3487,7 @@ AcDbLine
   0
 LINE
   5
-74
+71
 100
 AcDbEntity
   8
@@ -3583,7 +3511,7 @@ AcDbLine
   0
 LINE
   5
-75
+72
 100
 AcDbEntity
   8
@@ -3607,9 +3535,9 @@ AcDbLine
   0
 ENDBLK
   5
-57
+54
 330
-55
+52
 100
 AcDbEntity
   8
@@ -3625,7 +3553,7 @@ ENTITIES
   0
 LWPOLYLINE
   5
-76
+73
 100
 AcDbEntity
   8
@@ -3663,7 +3591,7 @@ AcDbPolyline
   0
 CIRCLE
   5
-77
+74
 100
 AcDbEntity
   8
@@ -3685,7 +3613,7 @@ AcDbCircle
   0
 CIRCLE
   5
-78
+75
 100
 AcDbEntity
   8
@@ -3707,7 +3635,7 @@ AcDbCircle
   0
 CIRCLE
   5
-79
+76
 100
 AcDbEntity
   8
@@ -3727,33 +3655,9 @@ AcDbCircle
  40
 1.5
   0
-LINE
-  5
-7A
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-14.46500000000001
- 20
-15.65499999999999
- 11
-17.465
- 21
-15.65499999999999
-  0
 ARC
   5
-7B
+77
 100
 AcDbEntity
   8
@@ -3781,7 +3685,7 @@ AcDbArc
   0
 LINE
   5
-7C
+78
 100
 AcDbEntity
   8
@@ -3805,7 +3709,7 @@ AcDbLine
   0
 ARC
   5
-7D
+79
 100
 AcDbEntity
   8
@@ -3833,7 +3737,7 @@ AcDbArc
   0
 LINE
   5
-7E
+7A
 100
 AcDbEntity
   8
@@ -3857,7 +3761,7 @@ AcDbLine
   0
 ARC
   5
-7F
+7B
 100
 AcDbEntity
   8
@@ -3885,7 +3789,7 @@ AcDbArc
   0
 LINE
   5
-80
+7C
 100
 AcDbEntity
   8
@@ -3909,7 +3813,7 @@ AcDbLine
   0
 LINE
   5
-81
+7D
 100
 AcDbEntity
   8
@@ -3933,7 +3837,7 @@ AcDbLine
   0
 ARC
   5
-82
+7E
 100
 AcDbEntity
   8
@@ -3961,7 +3865,7 @@ AcDbArc
   0
 LINE
   5
-83
+7F
 100
 AcDbEntity
   8
@@ -3985,7 +3889,7 @@ AcDbLine
   0
 LINE
   5
-84
+80
 100
 AcDbEntity
   8
@@ -4009,7 +3913,7 @@ AcDbLine
   0
 LINE
   5
-85
+81
 100
 AcDbEntity
   8
@@ -4033,7 +3937,7 @@ AcDbLine
   0
 LINE
   5
-86
+82
 100
 AcDbEntity
   8
@@ -4055,225 +3959,9 @@ AcDbLine
  21
 13.55499999999999
   0
-LINE
-  5
-87
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-17.465
- 20
-11.31499999999999
- 11
-17.965
- 21
-11.315
-  0
-LINE
-  5
-88
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-15.965
- 20
-11.315
- 11
-16.465
- 21
-11.31499999999999
-  0
-LINE
-  5
-89
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-17.965
- 20
-11.315
- 11
-17.965
- 21
-7.314999999999989
-  0
-LINE
-  5
-8A
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-15.965
- 20
-11.315
- 11
-15.965
- 21
-7.315
-  0
-LINE
-  5
-8B
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-17.46499999999999
- 20
-7.314999999999992
- 11
-17.965
- 21
-7.314999999999989
-  0
-LINE
-  5
-8C
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-15.965
- 20
-7.315
- 11
-16.465
- 21
-7.314999999999996
-  0
-LINE
-  5
-8D
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-16.465
- 20
-13.55499999999999
- 11
-16.465
- 21
-11.31499999999999
-  0
-LINE
-  5
-8E
-100
-AcDbEntity
-  8
-top-layer-switch-cutout
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-16.475
- 20
-2.57499999999998
- 11
-2.575000000000005
- 21
-2.574999999999998
-  0
-LINE
-  5
-8F
-100
-AcDbEntity
-  8
-top-layer-switch-cutout
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-2.575000000000005
- 20
-2.574999999999998
- 11
-2.574999999999994
- 21
-16.47499999999999
-  0
 LWPOLYLINE
   5
-90
+83
 100
 AcDbEntity
   8
@@ -4311,7 +3999,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-91
+84
 100
 AcDbEntity
   8
@@ -4349,7 +4037,7 @@ AcDbPolyline
   0
 LINE
   5
-92
+85
 100
 AcDbEntity
   8
@@ -4371,9 +4059,263 @@ AcDbLine
  21
 14.905
   0
+LWPOLYLINE
+  5
+86
+100
+AcDbEntity
+  8
+debug-key-spacing
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbPolyline
+ 90
+    4
+ 70
+    1
+ 43
+0
+ 10
+0
+ 20
+0
+ 10
+19.05
+ 20
+0
+ 10
+19.05
+ 20
+19.05
+ 10
+0
+ 20
+19.05
+  0
+LWPOLYLINE
+  5
+87
+100
+AcDbEntity
+  8
+debug-key-spacing
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbPolyline
+ 90
+    4
+ 70
+    1
+ 43
+0
+ 10
+19.05
+ 20
+19.05
+ 10
+19.05
+ 20
+19.05
+ 10
+19.05
+ 20
+19.05
+ 10
+19.05
+ 20
+19.05
+  0
+LWPOLYLINE
+  5
+88
+100
+AcDbEntity
+  8
+debug-key-spacing
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbPolyline
+ 90
+    4
+ 70
+    1
+ 43
+0
+ 10
+0
+ 20
+0
+ 10
+9.525
+ 20
+0
+ 10
+9.525
+ 20
+9.525
+ 10
+0
+ 20
+9.525
+  0
 LINE
   5
-93
+89
+100
+AcDbEntity
+  8
+center-layer-switch-holes
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbLine
+ 10
+9.525
+ 20
+9.525
+ 11
+4.444671029868272
+ 21
+9.525
+  0
+LINE
+  5
+8A
+100
+AcDbEntity
+  8
+center-layer-switch-holes
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbLine
+ 10
+9.525
+ 20
+9.525
+ 11
+14.60874369111743
+ 21
+9.525
+  0
+CIRCLE
+  5
+8B
+100
+AcDbEntity
+  8
+center-layer-switch-holes
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbCircle
+ 10
+4.444671029868272
+ 20
+9.525
+ 40
+0.8572799288879243
+  0
+CIRCLE
+  5
+8C
+100
+AcDbEntity
+  8
+center-layer-switch-holes
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbCircle
+ 10
+14.60874369111743
+ 20
+9.525
+ 40
+0.8531886971772938
+  0
+LINE
+  5
+8D
+100
+AcDbEntity
+  8
+center-layer-socket
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbLine
+ 10
+16.465
+ 20
+13.55499999999999
+ 11
+16.465
+ 21
+15.65499999999999
+  0
+LINE
+  5
+8E
+100
+AcDbEntity
+  8
+center-layer-socket
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbLine
+ 10
+14.46500000000001
+ 20
+15.65499999999999
+ 11
+16.465
+ 21
+15.65499999999999
+  0
+LINE
+  5
+8F
 100
 AcDbEntity
   8
@@ -4391,349 +4333,13 @@ AcDbLine
  20
 13.115
  11
--0.1850000000000147
+1.313929915437997
  21
-13.11500000000001
+13.115
   0
 LINE
   5
-94
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-17.465
- 20
-15.65499999999999
- 11
-17.465
- 21
-11.31499999999999
-  0
-LINE
-  5
-95
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-17.46499999999999
- 20
-7.314999999999992
- 11
-17.465
- 21
-2.525
-  0
-LINE
-  5
-96
-100
-AcDbEntity
-  8
-center-layer-wiring-upper-rows
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-1.315
- 20
-3.530272832698441
- 11
--0.1850000000000147
- 21
-3.530272832698441
-  0
-LINE
-  5
-97
-100
-AcDbEntity
-  8
-center-layer-wiring-upper-rows
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
--0.1850000000000005
- 20
--7.455
- 11
-1.315000000000014
- 21
--7.455
-  0
-LINE
-  5
-98
-100
-AcDbEntity
-  8
-center-layer-wiring-upper-rows
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
--0.1850000000000147
- 20
-3.530272832698441
- 11
--0.1850000000000147
- 21
--7.455
-  0
-LINE
-  5
-99
-100
-AcDbEntity
-  8
-center-layer-wiring-upper-rows
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-1.315
- 20
--7.455
- 11
-1.315
- 21
-3.530272832698441
-  0
-LINE
-  5
-9A
-100
-AcDbEntity
-  8
-center-layer-wiring-horizontal-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-16.46499999999999
- 20
-2.524999999999999
- 11
-16.46499999999999
- 21
-4.525
-  0
-LINE
-  5
-9B
-100
-AcDbEntity
-  8
-center-layer-wiring-non-diode-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
--0.1850000000000147
- 20
-2.525
- 11
-1.315
- 21
-2.525
-  0
-LINE
-  5
-9C
-100
-AcDbEntity
-  8
-center-layer-wiring-non-diode-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-16.46499999999999
- 20
-2.524999999999999
- 11
-1.315000000000001
- 21
-2.524999999999999
-  0
-LINE
-  5
-9D
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-16.465
- 20
-7.314999999999996
- 11
-16.46499999999999
- 21
-2.525
-  0
-LINE
-  5
-9E
-100
-AcDbEntity
-  8
-center-layer-socket
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-17.47500000000002
- 20
-2.525
- 11
-16.46499999999999
- 21
-2.525
-  0
-LINE
-  5
-9F
-100
-AcDbEntity
-  8
-center-layer-wiring-non-diode-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
--0.1850000000000147
- 20
-2.525
- 11
-16.46499999999999
- 21
-2.525
-  0
-LINE
-  5
-A0
-100
-AcDbEntity
-  8
-center-layer-wiring-non-diode-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
--0.1850000000000147
- 20
-2.525
- 11
-16.46499999999999
- 21
-2.525
-  0
-LINE
-  5
-A1
-100
-AcDbEntity
-  8
-center-layer-wiring-non-diode-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-16.46499999999999
- 20
-2.525
- 11
--0.1850000000000147
- 21
-2.525
-  0
-LINE
-  5
-A2
+90
 100
 AcDbEntity
   8
@@ -4751,13 +4357,13 @@ AcDbLine
  20
 11.015
  11
--0.1850000000000147
+1.31260492519047
  21
 11.015
   0
 LINE
   5
-A3
+91
 100
 AcDbEntity
   8
@@ -4771,343 +4377,13 @@ ByLayer
 100
 AcDbLine
  10
--0.1850000000000147
+1.31260492519047
  20
-13.11500000000001
- 11
--0.1850000000000147
- 21
 11.015
-  0
-LINE
-  5
-A4
-100
-AcDbEntity
-  8
-center-layer-wiring-horizontal-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-22.525
- 20
-4.525
  11
-22.525
+1.31260492519047
  21
-2.524999999999999
-  0
-LINE
-  5
-A5
-100
-AcDbEntity
-  8
-center-layer-wiring-horizontal-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-16.46499999999999
- 20
-4.525
- 11
-22.525
- 21
-4.525
-  0
-LINE
-  5
-A6
-100
-AcDbEntity
-  8
-center-layer-wiring-non-diode-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
--0.1850000000000147
- 20
-11.22578437218161
- 11
--0.1850000000000147
- 21
-2.525
-  0
-LINE
-  5
-A7
-100
-AcDbEntity
-  8
-center-layer-wiring-non-diode-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-1.315
- 20
-11.22578437218161
- 11
--0.1850000000000147
- 21
-11.22578437218161
-  0
-LINE
-  5
-A8
-100
-AcDbEntity
-  8
-center-layer-wiring-non-diode-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-18.525
- 20
-4.525
- 11
-18.525
- 21
-2.528806224553634
-  0
-LINE
-  5
-A9
-100
-AcDbEntity
-  8
-center-layer-wiring-non-diode-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
--0.1850000000000147
- 20
-2.525
- 11
-18.525
- 21
-2.525
-  0
-LINE
-  5
-AA
-100
-AcDbEntity
-  8
-center-layer-wiring-non-diode-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-1.315000000000001
- 20
-4.521193775446365
- 11
-18.525
- 21
-4.521193775446365
-  0
-LINE
-  5
-AB
-100
-AcDbEntity
-  8
-center-layer-wiring-non-diode-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-1.315000000000001
- 20
-4.521193775446365
- 11
-1.315
- 21
-11.22578437218161
-  0
-LINE
-  5
-AC
-100
-AcDbEntity
-  8
-center-layer-wiring-horizontal-connector
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbLine
- 10
-22.525
- 20
-2.525
- 11
-16.46499999999999
- 21
-2.524999999999999
-  0
-LWPOLYLINE
-  5
-AD
-100
-AcDbEntity
-  8
-debug-key-spacing
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbPolyline
- 90
-    4
- 70
-    1
- 43
-0
- 10
-0
- 20
-0
- 10
-19.05
- 20
-0
- 10
-19.05
- 20
-19.05
- 10
-0
- 20
-19.05
-  0
-LWPOLYLINE
-  5
-AE
-100
-AcDbEntity
-  8
-debug-key-spacing
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbPolyline
- 90
-    4
- 70
-    1
- 43
-0
- 10
-19.05
- 20
-19.05
- 10
-19.05
- 20
-19.05
- 10
-19.05
- 20
-19.05
- 10
-19.05
- 20
-19.05
-  0
-LWPOLYLINE
-  5
-AF
-100
-AcDbEntity
-  8
-debug-key-spacing
-  6
-ByLayer
- 62
-  256
-370
-   -1
-100
-AcDbPolyline
- 90
-    4
- 70
-    1
- 43
-0
- 10
-0
- 20
-0
- 10
-9.525
- 20
-0
- 10
-9.525
- 20
-9.525
- 10
-0
- 20
-9.525
+13.115
   0
 ENDSEC
   0
