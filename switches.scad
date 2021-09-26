@@ -1,5 +1,8 @@
 use <util.scad>
 
+bleedMm = 0.1;
+halfBleedMm = bleedMm / 2;
+
 module topLayerSwitchCutout(topLayerHeightMm) {
   switchGrooveHeight = 3.5;
   union() {
@@ -33,9 +36,6 @@ module middleLayerSocketCutout(middleLayerHeightMm, row, column, numberOfRows,
   }
 }
 
-bleedMm = 0.1;
-halfBleedMm = bleedMm / 2;
-
 module middleLayerSocketCutouts(middleLayerHeightMm, numberOfRows,
                                 numberOfColumns, keyDistanceMm) {
   for (row = [0:numberOfRows - 1]) {
@@ -49,23 +49,26 @@ module middleLayerSocketCutouts(middleLayerHeightMm, numberOfRows,
 }
 
 module middleLayerSocketHoles(middleLayerHeightMm, numberOfRows,
-                                numberOfColumns, keyDistanceMm) {
+                              numberOfColumns, keyDistanceMm) {
   for (row = [0:numberOfRows - 1]) {
     for (column = [0:numberOfColumns - 1]) {
-      translate([ column * keyDistanceMm, row * keyDistanceMm,  -halfBleedMm ]) {
+      translate([ column * keyDistanceMm, row * keyDistanceMm, -halfBleedMm ]) {
         switchHoleSmallRadiusMm = 1.5;
         switchHoleLargeRadiusMm = 2;
-        translate([keyDistanceMm / 2, keyDistanceMm / 2]) {
+        translate([ keyDistanceMm / 2, keyDistanceMm / 2 ]) {
           // Small lower hole
-          translate([-3.81, 2.54]) {
-            cylinder(middleLayerHeightMm + bleedMm, switchHoleSmallRadiusMm, switchHoleSmallRadiusMm);
+          translate([ -3.81, 2.54 ]) {
+            cylinder(middleLayerHeightMm + bleedMm, switchHoleSmallRadiusMm,
+                     switchHoleSmallRadiusMm);
           }
           // Small upper hole
-          translate([2.54, 5.08]) {
-            cylinder(middleLayerHeightMm + bleedMm, switchHoleSmallRadiusMm, switchHoleSmallRadiusMm);
+          translate([ 2.54, 5.08 ]) {
+            cylinder(middleLayerHeightMm + bleedMm, switchHoleSmallRadiusMm,
+                     switchHoleSmallRadiusMm);
           }
           // Large center hole
-          cylinder(middleLayerHeightMm + bleedMm, switchHoleLargeRadiusMm, switchHoleLargeRadiusMm);
+          cylinder(middleLayerHeightMm + bleedMm, switchHoleLargeRadiusMm,
+                   switchHoleLargeRadiusMm);
         }
       }
     }
@@ -120,8 +123,8 @@ module middleLayerSwitches(middleLayerHeightMm, switchBezelMm, numberOfRows,
     center(layerLengthMm, layerWidthMm) {
       middleLayerSocketCutouts(middleLayerHeightMm, numberOfRows,
                                numberOfColumns, keyDistanceMm);
-      middleLayerSocketHoles(middleLayerHeightMm, numberOfRows,
-                               numberOfColumns, keyDistanceMm);
+      middleLayerSocketHoles(middleLayerHeightMm, numberOfRows, numberOfColumns,
+                             keyDistanceMm);
     }
   }
 }
