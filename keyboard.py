@@ -3,32 +3,27 @@ from timer import timer
 from fuse_parts import fuse_parts
 
 from add_bezel import add_bezel
-from drill_holes import drill_holes
 
 config = {
     # Configurable
     "number_of_rows": 3,
-    "number_of_columns": 4,
+    "number_of_columns": 5,
     "rotation_angle": 15,
     "is_staggered": True,
-    "bezel_size": 6,
     # Utility
     "focus_on": None,
-    "explode_by": 10,
+    "explode_by": 0,
     # Structural
     "key_length": 19.05,
     "key_width": 19.05,
     "plate_thickness": 5,
     "pcb_thickness": 3,
-    "bottom_case_cutout_height": 2,
-    "bottom_case_thickness": 5,
-    "bottom_case_cutout_height": 3,
+    "bezel_size_to_accomodate_wiring": 0,
 }
 
 # Load plugins
 
 cq.Workplane.add_bezel = add_bezel
-cq.Workplane.drill_holes = drill_holes
 
 
 def stagger_offset_for_column(column, config):
@@ -207,15 +202,6 @@ def make_plate_key(config):
     return result
 
 
-def make_bottom_layer_key(config):
-    result = cq.Workplane()
-    thickness = (
-        config["bottom_case_thickness"] - config["bottom_case_cutout_height"]
-    )
-    result = result.box(config["key_length"], config["key_width"], thickness)
-    return result
-
-
 def rotate_keys(keys_right, keys_left, config):
     keys_right = keys_right.rotate(
         (0, 0, 0), (0, 0, 1), config["rotation_angle"]
@@ -288,19 +274,13 @@ print(
 [time_elapsed, total_time] = timer()
 
 if config["focus_on"] == "top" or config["focus_on"] == None:
-    top_layer = (
-        make_layer(
-            make_plate_key(config),
-            config["plate_thickness"],
-            config,
-        )
-        .add_bezel(
-            config["bezel_size"],
-            config["plate_thickness"],
-        )
-        .drill_holes(
-            config["bezel_size"], config["rotation_angle"], is_top=True
-        )
+    top_layer = make_layer(
+        make_plate_key(config),
+        config["plate_thickness"],
+        config,
+    ).add_bezel(
+        config["bezel_size_to_accomodate_wiring"],
+        config["plate_thickness"],
     )
     time_elapsed("top")
 
@@ -318,51 +298,15 @@ if config["focus_on"] == "top" or config["focus_on"] == None:
     )
 
 if config["focus_on"] == "middle" or config["focus_on"] == None:
-    middle_layer = (
-        make_layer(
-            make_pcb_key(config),
-            config["pcb_thickness"],
-            config,
-        )
-        .add_bezel(
-            config["bezel_size"],
-            config["pcb_thickness"],
-        )
-        .drill_holes(config["bezel_size"], config["rotation_angle"])
+    middle_layer = make_layer(
+        make_pcb_key(config),
+        config["pcb_thickness"],
+        config,
+    ).add_bezel(
+        config["bezel_size_to_accomodate_wiring"],
+        config["pcb_thickness"],
     )
     show_object(middle_layer)
     time_elapsed("middle")
-
-if config["focus_on"] == "bottom" or config["focus_on"] == None:
-    bottom_layer = (
-        make_layer(
-            make_bottom_layer_key(config),
-            # Adjust thickness to create a cutout effect
-            config["bottom_case_thickness"]
-            - config["bottom_case_cutout_height"],
-            config,
-        )
-        .add_bezel(
-            config["bezel_size"],
-            config["bottom_case_thickness"],
-        )
-        .drill_holes(
-            config["bezel_size"], config["rotation_angle"], is_bottom=True
-        )
-    )
-    time_elapsed("bottom")
-
-    show_object(
-        bottom_layer.translate(
-            [0, 0, 0]
-            if config["focus_on"]
-            else [
-                0,
-                0,
-                -(config["pcb_thickness"] + config["plate_thickness"]) / 2
-                - config["explode_by"],
-            ]
-        )
-    )
 
 total_time()
