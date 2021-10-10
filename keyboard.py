@@ -1,76 +1,70 @@
-import time
+import cadquery as cq
+from timer import timer
+from fuse_parts import fuse_parts
 
-# Configurable
+from add_bezel import add_bezel
+from drill_holes import drill_holes
 
-config_number_of_rows = 3
-config_number_of_columns = 6
+config = {
+    # Configurable
+    "number_of_rows": 3,
+    "number_of_columns": 4,
+    "rotation_angle": 15,
+    "is_staggered": True,
+    "bezel_size": 6,
+    # Utility
+    "focus_on": None,
+    "explode_by": 10,
+    # Structural
+    "key_length": 19.05,
+    "key_width": 19.05,
+    "plate_thickness": 5,
+    "pcb_thickness": 3,
+    "bottom_case_cutout_height": 2,
+    "bottom_case_thickness": 5,
+    "bottom_case_cutout_height": 3,
+}
 
-config_angle = 15
-config_stagger = True
+# Load plugins
 
-# Structural
-
-config_key_length = 19.05
-config_key_width = 19.05
-
-config_plate_thickness = 5
-config_pcb_thickness = 3
-
-
-def fuse_parts(parts):
-    part_values = [part.val() for part in parts]
-    fused_parts = part_values[0].fuse(*part_values[1:], glue=True).clean()
-    return cq.Workplane().newObject([fused_parts])
-
-
-def timer():
-    start = time.time()
-    last_split = time.time()
-
-    def _time_elapsed(name):
-        nonlocal last_split
-        print(name + ": " + str(time.time() - last_split))
-        last_split = time.time()
-
-    def _total_time():
-        print("total: " + str(time.time() - start))
-
-    return [_time_elapsed, _total_time]
+cq.Workplane.add_bezel = add_bezel
+cq.Workplane.drill_holes = drill_holes
 
 
-def stagger_offset_for_column(x):
-    if config_stagger == None:
-        return 0
-
+def stagger_offset_for_column(column, config):
     # Light stagger, TODO parameterize
-    if x == 3:
-        return 0.1 * config_key_length
-    if x == 2:
-        return 0.2 * config_key_length
-    if x == 1:
-        return 0.1 * config_key_length
+    if column == 3:
+        return 0.2 * config["key_length"]
+    if column == 2:
+        return 0.4 * config["key_length"]
+    if column == 1:
+        return 0.2 * config["key_length"]
     return 0
 
 
-def key_position(x, y, number_of_columns, side_of_board):
-    x_center_of_workplane_offset = config_key_length / 2
-    y_center_of_workplane_offset = config_key_width / 2
+def key_position(column, row, side_of_board, config):
+    column_center_of_workplane_offset = config["key_length"] / 2
+    row_center_of_workplane_offset = config["key_width"] / 2
 
-    key_x = x * config_key_length + x_center_of_workplane_offset
-    key_y = (
-        y * config_key_width
-        + stagger_offset_for_column(
-            x if side_of_board == "left" else number_of_columns - (x + 1)
-        )
-        + y_center_of_workplane_offset
+    key_column = (
+        column * config["key_length"] + column_center_of_workplane_offset
     )
+    key_row = row * config["key_width"] + row_center_of_workplane_offset
 
-    return (key_x, key_y, 0)
+    if config["is_staggered"]:
+        key_row = key_row + stagger_offset_for_column(
+            column
+            if side_of_board == "right"
+            else config["number_of_columns"] - (column + 1),
+            config,
+        )
+
+    return (key_column, key_row, 0)
 
 
-def shift_keys_to_side_of_board(side_of_board):
-    total_key_width = config_key_width * config_number_of_rows
-    total_key_length = config_key_length * config_number_of_columns
+def shift_keys_to_side_of_board(side_of_board, config):
+    total_key_width = config["key_width"] * config["number_of_rows"]
+    total_key_length = config["key_length"] * config["number_of_columns"]
 
     return (
         -total_key_length if side_of_board == "right" else 0,
@@ -78,21 +72,21 @@ def shift_keys_to_side_of_board(side_of_board):
     )
 
 
-def reposition_key(key, side_of_board):
+def reposition_key(key, side_of_board, config):
     keys = []
 
-    for x in range(config_number_of_columns):
-        for y in range(config_number_of_rows):
+    for column in range(config["number_of_columns"]):
+        for row in range(config["number_of_rows"]):
             keys.append(
                 key.translate(
-                    key_position(x, y, config_number_of_columns, side_of_board)
-                ).translate(shift_keys_to_side_of_board(side_of_board))
+                    key_position(column, row, side_of_board, config)
+                ).translate(shift_keys_to_side_of_board(side_of_board, config))
             )
 
     return fuse_parts(keys)
 
 
-def make_pcb_key():
+def make_pcb_key(config):
     switch_middle_pin_hole_size = 2
 
     pin_for_hotswap_socket_hole_size = 1.5
@@ -100,58 +94,45 @@ def make_pcb_key():
     right_pin_for_hotswap_socket_distance_from_center = (2.54, 5.08)
 
     switch_stabilizing_pin_hole_size = 1
-    switch_stabilizing_left_in_hole_distance_from_center = (-5.08, 0)
-    switch_stabilizing_right_in_hole_distance_from_center = (5.08, 0)
+    switch_stabilizing_hole_distance_from_center = 5.08
 
     result = cq.Workplane()
 
-    result = result.box(
-        config_key_length, config_key_width, config_pcb_thickness
+    result = (
+        result.box(
+            config["key_length"], config["key_width"], config["pcb_thickness"]
+        )
+        .faces(">Z")
+        .workplane()
     )
 
-    switch_middle_pin_hole_cutout = (
-        cq.Workplane()
-        .circle(switch_middle_pin_hole_size)
-        .extrude(config_pcb_thickness)
-        .translate([0, 0, -config_pcb_thickness / 2])
+    result = result.circle(switch_middle_pin_hole_size).cutBlind(
+        -config["pcb_thickness"]
     )
-    result = result.cut(switch_middle_pin_hole_cutout)
 
-    left_switch_stabilizing_pin_hole_cutout = (
-        cq.Workplane()
+    result = (
+        result.moveTo(-switch_stabilizing_hole_distance_from_center, 0)
         .circle(switch_stabilizing_pin_hole_size)
-        .extrude(config_pcb_thickness)
-        .translate(switch_stabilizing_left_in_hole_distance_from_center)
-        .translate([0, 0, -config_pcb_thickness / 2])
+        .cutBlind(-config["pcb_thickness"])
     )
-    result = result.cut(left_switch_stabilizing_pin_hole_cutout)
 
-    right_switch_stabilizing_pin_hole_cutout = (
-        cq.Workplane()
+    result = (
+        result.moveTo(switch_stabilizing_hole_distance_from_center, 0)
         .circle(switch_stabilizing_pin_hole_size)
-        .extrude(config_pcb_thickness)
-        .translate(switch_stabilizing_right_in_hole_distance_from_center)
-        .translate([0, 0, -config_pcb_thickness / 2])
+        .cutBlind(-config["pcb_thickness"])
     )
-    result = result.cut(right_switch_stabilizing_pin_hole_cutout)
 
-    left_pin_for_hotswap_socket_cutout = (
-        cq.Workplane()
+    result = (
+        result.moveTo(*left_pin_for_hotswap_socket_distance_from_center)
         .circle(pin_for_hotswap_socket_hole_size)
-        .extrude(config_pcb_thickness)
-        .translate(left_pin_for_hotswap_socket_distance_from_center)
-        .translate([0, 0, -config_pcb_thickness / 2])
+        .cutBlind(-config["pcb_thickness"])
     )
-    result = result.cut(left_pin_for_hotswap_socket_cutout)
 
-    right_pin_for_hotswap_socket_cutout = (
-        cq.Workplane()
+    result = (
+        result.moveTo(*right_pin_for_hotswap_socket_distance_from_center)
         .circle(pin_for_hotswap_socket_hole_size)
-        .extrude(config_pcb_thickness)
-        .translate(right_pin_for_hotswap_socket_distance_from_center)
-        .translate([0, 0, -config_pcb_thickness / 2])
+        .cutBlind(-config["pcb_thickness"])
     )
-    result = result.cut(right_pin_for_hotswap_socket_cutout)
 
     hotswap_socket_height = 1.75
 
@@ -176,13 +157,13 @@ def make_pcb_key():
         .lineTo(0, 0.71)
         .close()
         .extrude(hotswap_socket_height)
-        .translate((-6.21, 0.78, -config_pcb_thickness / 2))
+        .translate((-6.21, 0.78, -config["pcb_thickness"] / 2))
     )
 
     return result.cut(hotswap_socket_cutout)
 
 
-def make_plate_key():
+def make_plate_key(config):
     switch_groove_cutout_length = 5
     switch_groove_cutout_width = 1
     switch_groove_cutout_height = 3.5
@@ -193,86 +174,78 @@ def make_plate_key():
     result = cq.Workplane()
 
     result = result.box(
-        config_key_length, config_key_width, config_plate_thickness
+        config["key_length"], config["key_width"], config["plate_thickness"]
     )
 
-    switch_hole_cutout = cq.Workplane().box(
-        switch_cutout_width, switch_cutout_length, config_plate_thickness
+    result = (
+        result.faces(">Z")
+        .workplane()
+        .rect(switch_cutout_width, switch_cutout_length)
+        .cutBlind(-config["plate_thickness"])
     )
-    result = result.cut(switch_hole_cutout)
 
-    switch_top_groove_cutout = (
-        cq.Workplane()
-        .box(
-            switch_groove_cutout_length,
-            switch_groove_cutout_width,
-            switch_groove_cutout_height,
+    result = (
+        result.faces(">Z")
+        .workplane(
+            offset=-config["plate_thickness"] + switch_groove_cutout_height
         )
-        .translate(
-            [
-                0,
-                switch_cutout_width / 2 + switch_groove_cutout_width / 2,
-                -(config_plate_thickness - switch_groove_cutout_height) / 2,
-            ]
-        )
+        .moveTo(0, switch_cutout_width / 2 + switch_groove_cutout_width / 2)
+        .rect(switch_groove_cutout_length, switch_groove_cutout_width)
+        .cutBlind(-switch_groove_cutout_height)
     )
-    result = result.cut(switch_top_groove_cutout)
 
-    switch_bottom_groove_cutout = (
-        cq.Workplane()
-        .box(
-            switch_groove_cutout_length,
-            switch_groove_cutout_width,
-            switch_groove_cutout_height,
+    result = (
+        result.faces(">Z")
+        .workplane(
+            offset=-config["plate_thickness"] + switch_groove_cutout_height
         )
-        .translate(
-            [
-                0,
-                -(switch_cutout_width / 2 + switch_groove_cutout_width / 2),
-                -(config_plate_thickness - switch_groove_cutout_height) / 2,
-            ]
-        )
+        .moveTo(0, -(switch_cutout_width / 2 + switch_groove_cutout_width / 2))
+        .rect(switch_groove_cutout_length, switch_groove_cutout_width)
+        .cutBlind(-switch_groove_cutout_height)
     )
-    result = result.cut(switch_bottom_groove_cutout)
 
     return result
 
 
-def angle_keys(keys_right, keys_left):
-    keys_right = keys_right.rotate((0, 0, 0), (0, 0, 1), config_angle)
-    keys_left = keys_left.rotate((0, 0, 0), (0, 0, 1), -config_angle)
-
-    tilt_right_side_top_left_corner = keys_right.vertices("<X").val().Center()
-    tilt_left_side_top_right_corner = keys_left.vertices(">X").val().Center()
-
-    keys_right = keys_right.translate(
-        [-tilt_right_side_top_left_corner.x, 0, 0]
+def make_bottom_layer_key(config):
+    result = cq.Workplane()
+    thickness = (
+        config["bottom_case_thickness"] - config["bottom_case_cutout_height"]
     )
-    keys_left = keys_left.translate([tilt_right_side_top_left_corner.x, 0, 0])
+    result = result.box(config["key_length"], config["key_width"], thickness)
+    return result
+
+
+def rotate_keys(keys_right, keys_left, config):
+    keys_right = keys_right.rotate(
+        (0, 0, 0), (0, 0, 1), config["rotation_angle"]
+    )
+    keys_left = keys_left.rotate(
+        (0, 0, 0), (0, 0, 1), -config["rotation_angle"]
+    )
+
+    right_side_top_left_corner = keys_right.vertices("<X").val().Center()
+    left_side_top_right_corner = keys_left.vertices(">X").val().Center()
+
+    keys_right = keys_right.translate([-right_side_top_left_corner.x, 0, 0])
+    keys_left = keys_left.translate([right_side_top_left_corner.x, 0, 0])
 
     return [keys_right, keys_left]
 
 
 def make_middle_connector(keys_right, keys_left, thickness):
-    tilt_right_side_bottom_left_corner = (
-        keys_right.vertices("<Y").val().Center()
-    )
-    tilt_right_side_top_left_corner = keys_right.vertices("<X").val().Center()
+    right_side_bottom_left_corner = keys_right.vertices("<Y").val().Center()
+    right_side_top_left_corner = keys_right.vertices("<X").val().Center()
 
     middle_connector = (
-        keys_right.faces("front")
+        keys_right.faces(">Z")
         .workplane()
-        .moveTo(
-            tilt_right_side_top_left_corner.x,
-            tilt_right_side_top_left_corner.y,
+        .moveTo(right_side_top_left_corner.x, right_side_top_left_corner.y)
+        .lineTo(
+            right_side_bottom_left_corner.x, right_side_bottom_left_corner.y
         )
         .lineTo(
-            tilt_right_side_bottom_left_corner.x,
-            tilt_right_side_bottom_left_corner.y,
-        )
-        .lineTo(
-            -tilt_right_side_bottom_left_corner.x,
-            tilt_right_side_bottom_left_corner.y,
+            -right_side_bottom_left_corner.x, right_side_bottom_left_corner.y
         )
         .close()
         .extrude(-thickness)
@@ -281,42 +254,115 @@ def make_middle_connector(keys_right, keys_left, thickness):
     return middle_connector
 
 
-def make_keys(make_key, thickness):
-    key = make_key()
+def make_layer(key, thickness, config):
+    keys_right = reposition_key(key, "right", config)
+    keys_left = reposition_key(key, "left", config)
 
-    keys_right = reposition_key(key, side_of_board="left")
-    keys_left = reposition_key(key, side_of_board="right")
+    keys = []
 
-    if config_angle == 0:
+    if config["rotation_angle"] == 0:
         return fuse_parts([keys_right, keys_left])
     else:
-        [keys_right, keys_left] = angle_keys(keys_right, keys_left)
-
-        middle_connector = make_middle_connector(
-            keys_right, keys_left, thickness
+        [rotated_keys_right, rotated_keys_left] = rotate_keys(
+            keys_right, keys_left, config
         )
-        return fuse_parts([keys_right, keys_left, middle_connector])
+        middle_connector = make_middle_connector(
+            rotated_keys_right, rotated_keys_left, thickness
+        )
+        return fuse_parts(
+            [rotated_keys_right, rotated_keys_left, middle_connector]
+        )
 
 
 print("")
 print(
     "size:",
-    config_number_of_rows,
+    config["number_of_rows"],
     "x",
-    config_number_of_columns,
-    "(total: " + str(config_number_of_rows * config_number_of_columns) + ")",
+    config["number_of_columns"],
+    "(total: "
+    + str(config["number_of_rows"] * config["number_of_columns"])
+    + ")",
 )
-
 
 [time_elapsed, total_time] = timer()
 
-pcb_keys = make_keys(make_pcb_key, config_pcb_thickness)
-time_elapsed("pcb")
+if config["focus_on"] == "top" or config["focus_on"] == None:
+    top_layer = (
+        make_layer(
+            make_plate_key(config),
+            config["plate_thickness"],
+            config,
+        )
+        .add_bezel(
+            config["bezel_size"],
+            config["plate_thickness"],
+        )
+        .drill_holes(
+            config["bezel_size"], config["rotation_angle"], is_top=True
+        )
+    )
+    time_elapsed("top")
 
-plate_keys = make_keys(make_plate_key, config_plate_thickness)
-time_elapsed("plate")
+    show_object(
+        top_layer.translate(
+            [0, 0, 0]
+            if config["focus_on"]
+            else [
+                0,
+                0,
+                (config["pcb_thickness"] + config["plate_thickness"]) / 2
+                + config["explode_by"],
+            ]
+        )
+    )
 
-show_object(pcb_keys.translate([0, 0, -config_pcb_thickness / 2]))
-show_object(plate_keys.translate([0, 0, config_plate_thickness / 2]))
+if config["focus_on"] == "middle" or config["focus_on"] == None:
+    middle_layer = (
+        make_layer(
+            make_pcb_key(config),
+            config["pcb_thickness"],
+            config,
+        )
+        .add_bezel(
+            config["bezel_size"],
+            config["pcb_thickness"],
+        )
+        .drill_holes(config["bezel_size"], config["rotation_angle"])
+    )
+    show_object(middle_layer)
+    time_elapsed("middle")
+
+if config["focus_on"] == "bottom" or config["focus_on"] == None:
+    bottom_layer = (
+        make_layer(
+            make_bottom_layer_key(config),
+            # Adjust thickness to create a cutout effect
+            config["bottom_case_thickness"]
+            - config["bottom_case_cutout_height"],
+            config,
+        )
+        .add_bezel(
+            config["bezel_size"],
+            config["bottom_case_thickness"],
+        )
+        .drill_holes(
+            config["bezel_size"], config["rotation_angle"], is_bottom=True
+        )
+    )
+    time_elapsed("bottom")
+
+    show_object(
+        bottom_layer.translate(
+            [0, 0, 0]
+            if config["focus_on"]
+            else [
+                0,
+                0,
+                -(config["pcb_thickness"] + config["plate_thickness"]) / 2
+                - config["explode_by"],
+            ]
+        )
+    )
 
 total_time()
