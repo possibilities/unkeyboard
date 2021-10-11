@@ -1,11 +1,11 @@
 import cadquery as cq
 
 
-def add_bezel(self, size, thickness):
+def add_bezel(part, size, thickness):
     if size == 0:
-        return self
+        return part
     return (
-        self.tag("layer")
+        part.tag("layer")
         .faces("<Z", tag="layer")
         .wires(cq.selectors.AreaNthSelector(-1))
         .toPending()

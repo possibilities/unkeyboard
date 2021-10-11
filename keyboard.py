@@ -9,10 +9,10 @@ config = {
     "number_of_rows": 3,
     "number_of_columns": 5,
     "rotation_angle": 15,
-    "is_staggered": True,
+    "stagger_preset": "heavy",
     # Utility
     "focus_on": None,
-    "explode_by": 0,
+    "explode_by": 4,
     # Structural
     "key_length": 19.05,
     "key_width": 19.05,
@@ -21,19 +21,19 @@ config = {
     "bezel_size_to_accomodate_wiring": 0,
 }
 
-# Load plugins
-
-cq.Workplane.add_bezel = add_bezel
+stagger_presets = {
+    "light": dict([(3, 0.1), (2, 0.2), (1, 0.1)]),
+    "medium": dict([(3, 0.2), (2, 0.4), (1, 0.2)]),
+    "heavy": dict([(3, 0.4), (2, 0.8), (1, 0.4)]),
+}
 
 
 def stagger_offset_for_column(column, config):
-    # Light stagger, TODO parameterize
-    if column == 3:
-        return 0.2 * config["key_length"]
-    if column == 2:
-        return 0.4 * config["key_length"]
-    if column == 1:
-        return 0.2 * config["key_length"]
+    if config["stagger_preset"]:
+        if config["stagger_preset"] in stagger_presets:
+            preset = stagger_presets[config["stagger_preset"]]
+            if column in preset:
+                return preset[column] * config["key_length"]
     return 0
 
 
@@ -46,13 +46,13 @@ def key_position(column, row, side_of_board, config):
     )
     key_row = row * config["key_width"] + row_center_of_workplane_offset
 
-    if config["is_staggered"]:
-        key_row = key_row + stagger_offset_for_column(
+    if config["stagger_preset"]:
+        relative_column = (
             column
             if side_of_board == "right"
-            else config["number_of_columns"] - (column + 1),
-            config,
+            else config["number_of_columns"] - (column + 1)
         )
+        key_row = key_row + stagger_offset_for_column(relative_column, config)
 
     return (key_column, key_row, 0)
 
@@ -73,12 +73,12 @@ def reposition_key(key, side_of_board, config):
     for column in range(config["number_of_columns"]):
         for row in range(config["number_of_rows"]):
             keys.append(
-                key.translate(
-                    key_position(column, row, side_of_board, config)
-                ).translate(shift_keys_to_side_of_board(side_of_board, config))
+                key.translate(key_position(column, row, side_of_board, config))
             )
 
-    return fuse_parts(keys)
+    return fuse_parts(keys).translate(
+        shift_keys_to_side_of_board(side_of_board, config)
+    )
 
 
 def make_pcb_key(config):
@@ -91,45 +91,28 @@ def make_pcb_key(config):
     switch_stabilizing_pin_hole_size = 1
     switch_stabilizing_hole_distance_from_center = 5.08
 
-    result = cq.Workplane()
+    hotswap_socket_height = 1.75
 
-    result = (
-        result.box(
-            config["key_length"], config["key_width"], config["pcb_thickness"]
-        )
+    key = (
+        cq.Workplane()
+        .box(config["key_length"], config["key_width"], config["pcb_thickness"])
         .faces(">Z")
         .workplane()
-    )
-
-    result = result.circle(switch_middle_pin_hole_size).cutBlind(
-        -config["pcb_thickness"]
-    )
-
-    result = (
-        result.moveTo(-switch_stabilizing_hole_distance_from_center, 0)
+        .circle(switch_middle_pin_hole_size)
+        .cutBlind(-config["pcb_thickness"])
+        .moveTo(-switch_stabilizing_hole_distance_from_center, 0)
         .circle(switch_stabilizing_pin_hole_size)
         .cutBlind(-config["pcb_thickness"])
-    )
-
-    result = (
-        result.moveTo(switch_stabilizing_hole_distance_from_center, 0)
+        .moveTo(switch_stabilizing_hole_distance_from_center, 0)
         .circle(switch_stabilizing_pin_hole_size)
         .cutBlind(-config["pcb_thickness"])
-    )
-
-    result = (
-        result.moveTo(*left_pin_for_hotswap_socket_distance_from_center)
+        .moveTo(*left_pin_for_hotswap_socket_distance_from_center)
+        .circle(pin_for_hotswap_socket_hole_size)
+        .cutBlind(-config["pcb_thickness"])
+        .moveTo(*right_pin_for_hotswap_socket_distance_from_center)
         .circle(pin_for_hotswap_socket_hole_size)
         .cutBlind(-config["pcb_thickness"])
     )
-
-    result = (
-        result.moveTo(*right_pin_for_hotswap_socket_distance_from_center)
-        .circle(pin_for_hotswap_socket_hole_size)
-        .cutBlind(-config["pcb_thickness"])
-    )
-
-    hotswap_socket_height = 1.75
 
     hotswap_socket_cutout = (
         cq.Workplane()
@@ -155,7 +138,7 @@ def make_pcb_key(config):
         .translate((-6.21, 0.78, -config["pcb_thickness"] / 2))
     )
 
-    return result.cut(hotswap_socket_cutout)
+    return key.cut(hotswap_socket_cutout)
 
 
 def make_plate_key(config):
@@ -166,31 +149,23 @@ def make_plate_key(config):
     switch_cutout_length = 13.9
     switch_cutout_width = 13.9
 
-    result = cq.Workplane()
-
-    result = result.box(
-        config["key_length"], config["key_width"], config["plate_thickness"]
-    )
-
-    result = (
-        result.faces(">Z")
+    return (
+        cq.Workplane()
+        .box(
+            config["key_length"], config["key_width"], config["plate_thickness"]
+        )
+        .faces(">Z")
         .workplane()
         .rect(switch_cutout_width, switch_cutout_length)
         .cutBlind(-config["plate_thickness"])
-    )
-
-    result = (
-        result.faces(">Z")
+        .faces(">Z")
         .workplane(
             offset=-config["plate_thickness"] + switch_groove_cutout_height
         )
         .moveTo(0, switch_cutout_width / 2 + switch_groove_cutout_width / 2)
         .rect(switch_groove_cutout_length, switch_groove_cutout_width)
         .cutBlind(-switch_groove_cutout_height)
-    )
-
-    result = (
-        result.faces(">Z")
+        .faces(">Z")
         .workplane(
             offset=-config["plate_thickness"] + switch_groove_cutout_height
         )
@@ -198,8 +173,6 @@ def make_plate_key(config):
         .rect(switch_groove_cutout_length, switch_groove_cutout_width)
         .cutBlind(-switch_groove_cutout_height)
     )
-
-    return result
 
 
 def rotate_keys(keys_right, keys_left, config):
@@ -273,40 +246,42 @@ print(
 
 [time_elapsed, total_time] = timer()
 
+parts = []
+
+if config["focus_on"] == "middle" or config["focus_on"] == None:
+    key = make_pcb_key(config)
+    layer = make_layer(key, config["pcb_thickness"], config)
+    middle_layer_with_bezel = add_bezel(
+        layer,
+        config["bezel_size_to_accomodate_wiring"],
+        config["pcb_thickness"],
+    )
+    time_elapsed("middle")
+    parts.append(middle_layer_with_bezel)
+
+
 if config["focus_on"] == "top" or config["focus_on"] == None:
-    top_layer = make_layer(
-        make_plate_key(config),
-        config["plate_thickness"],
-        config,
-    ).add_bezel(
+    key = make_plate_key(config)
+    layer = make_layer(key, config["plate_thickness"], config)
+    top_layer_with_bezel = add_bezel(
+        layer,
         config["bezel_size_to_accomodate_wiring"],
         config["plate_thickness"],
     )
     time_elapsed("top")
+    parts.append(top_layer_with_bezel)
 
-    show_object(
-        top_layer.translate(
+
+def show_parts(parts):
+    for index, part in enumerate(parts):
+        part = part.translate(
             [0, 0, 0]
             if config["focus_on"]
-            else [
-                0,
-                0,
-                (config["pcb_thickness"] + config["plate_thickness"]) / 2
-                + config["explode_by"],
-            ]
+            else [0, 0, index * config["explode_by"]]
         )
-    )
+        show_object(part)
 
-if config["focus_on"] == "middle" or config["focus_on"] == None:
-    middle_layer = make_layer(
-        make_pcb_key(config),
-        config["pcb_thickness"],
-        config,
-    ).add_bezel(
-        config["bezel_size_to_accomodate_wiring"],
-        config["pcb_thickness"],
-    )
-    show_object(middle_layer)
-    time_elapsed("middle")
+
+show_parts(parts)
 
 total_time()
