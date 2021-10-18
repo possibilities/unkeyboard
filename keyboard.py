@@ -24,6 +24,7 @@ config = {
     "microcontroller_width": 33,
     "case_exterior_thickness": 2,
     "bezel_for_screws_size": 5,
+    "screw_radius": 1,
 }
 
 stagger_presets = {
@@ -468,7 +469,7 @@ def add_screw_holes_to_left_side_of_board(self, thickness):
                 ],
             ]
         )
-        .circle(1)
+        .circle(config["screw_radius"])
         .cutBlind(-thickness)
     )
     return self
@@ -506,7 +507,7 @@ def add_screw_holes_to_right_side_of_board(self, thickness):
                 ],
             ]
         )
-        .circle(1)
+        .circle(config["screw_radius"])
         .cutBlind(-thickness)
     )
     return self
