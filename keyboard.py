@@ -448,30 +448,28 @@ def add_screw_holes_to_left_side_of_board(self, thickness):
     self = (
         self.faces(">Z")
         .workplane()
-        .moveTo(
-            top_right.x - screw_distance_from_edge,
-            top_right.y - screw_distance_from_edge,
+        .pushPoints(
+            [
+                [
+                    top_right.x - screw_distance_from_edge,
+                    top_right.y - screw_distance_from_edge,
+                ],
+                [
+                    bottom_right.x - screw_distance_from_edge,
+                    bottom_right.y + screw_distance_from_edge,
+                ],
+                [
+                    bottom_left.x + screw_distance_from_edge,
+                    bottom_left.y + screw_distance_from_edge,
+                ],
+                [
+                    top_left.x + screw_distance_from_edge,
+                    top_left.y - screw_distance_from_edge,
+                ],
+            ]
         )
         .circle(1)
-        .cutThruAll()
-        .moveTo(
-            bottom_right.x - screw_distance_from_edge,
-            bottom_right.y + screw_distance_from_edge,
-        )
-        .circle(1)
-        .cutThruAll()
-        .moveTo(
-            bottom_left.x + screw_distance_from_edge,
-            bottom_left.y + screw_distance_from_edge,
-        )
-        .circle(1)
-        .cutThruAll()
-        .moveTo(
-            top_left.x + screw_distance_from_edge,
-            top_left.y - screw_distance_from_edge,
-        )
-        .circle(1)
-        .cutThruAll()
+        .cutBlind(-thickness)
     )
     return self
 
@@ -488,30 +486,28 @@ def add_screw_holes_to_right_side_of_board(self, thickness):
     self = (
         self.faces(">Z")
         .workplane()
-        .moveTo(
-            top_right.x - screw_distance_from_edge,
-            top_right.y - screw_distance_from_edge,
+        .pushPoints(
+            [
+                [
+                    top_right.x - screw_distance_from_edge,
+                    top_right.y - screw_distance_from_edge,
+                ],
+                [
+                    bottom_right.x - screw_distance_from_edge,
+                    bottom_right.y + screw_distance_from_edge,
+                ],
+                [
+                    bottom_left.x + screw_distance_from_edge,
+                    bottom_left.y + screw_distance_from_edge,
+                ],
+                [
+                    top_left.x + screw_distance_from_edge,
+                    top_left.y - screw_distance_from_edge,
+                ],
+            ]
         )
         .circle(1)
-        .cutThruAll()
-        .moveTo(
-            bottom_right.x - screw_distance_from_edge,
-            bottom_right.y + screw_distance_from_edge,
-        )
-        .circle(1)
-        .cutThruAll()
-        .moveTo(
-            bottom_left.x + screw_distance_from_edge,
-            bottom_left.y + screw_distance_from_edge,
-        )
-        .circle(1)
-        .cutThruAll()
-        .moveTo(
-            top_left.x + screw_distance_from_edge,
-            top_left.y - screw_distance_from_edge,
-        )
-        .circle(1)
-        .cutThruAll()
+        .cutBlind(-thickness)
     )
     return self
 

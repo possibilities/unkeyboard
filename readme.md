@@ -1,6 +1,6 @@
 # Unkeyboard
 
-Experiments generating hotswappable 3d printed keyboard
+Experiments generating hotswappable 3d printed keyboard that can be assembled without soldering.
 
 #### License
 
