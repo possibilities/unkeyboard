@@ -2,7 +2,7 @@ import cadquery as cq
 from timer import timer
 from fuse_parts import fuse_parts
 
-config = {
+keyboard_config = {
     # Configurable
     "number_of_rows": 2,
     "number_of_columns": 3,
@@ -33,31 +33,31 @@ stagger_presets = {
     "heavy": dict([(3, 0.4), (2, 0.8), (1, 0.4)]),
 }
 
-if config["stagger_preset"]:
-    if config["rotation_angle"] > 84:
+if keyboard_config["stagger_preset"]:
+    if keyboard_config["rotation_angle"] > 84:
         raise Exception(
             "`rotation_angle` must be less than or equal to 84 when keys are staggered"
         )
 else:
-    if config["rotation_angle"] > 90:
+    if keyboard_config["rotation_angle"] > 90:
         raise Exception(
             "`rotation_angle` must be less than or equal to 90 when keys are staggered"
         )
 
 
-if config["right_side_only"] and config["left_side_only"]:
+if keyboard_config["right_side_only"] and keyboard_config["left_side_only"]:
     raise Exception(
         "`right_side_only` and `left_side_only` cannot both be enabled"
     )
 
 
 # For keychain remove unnecessary things
-if config["keychain"]:
-    config["has_microcontroller"] = False
-    config["rotation_angle"] = 0
-    config["left_side_only"] = True
-    config["right_side_only"] = False
-    config["stagger_preset"] = None
+if keyboard_config["keychain"]:
+    keyboard_config["has_microcontroller"] = False
+    keyboard_config["rotation_angle"] = 0
+    keyboard_config["left_side_only"] = True
+    keyboard_config["right_side_only"] = False
+    keyboard_config["stagger_preset"] = None
 
 
 def cq_workplane_plugin(func):
@@ -171,7 +171,8 @@ def make_positioned_keys(key, side_of_board, config):
     return fuse_parts(keys).translate(center_of_plane_coords)
 
 
-def make_pcb_key(config):
+@cq_workplane_plugin
+def add_holes_for_switch_on_pcb_key(key, config):
     switch_middle_pin_hole_size = 2
 
     pin_for_hotswap_socket_hole_size = 1.5
@@ -181,9 +182,7 @@ def make_pcb_key(config):
     switch_stabilizing_pin_hole_size = 1
     switch_stabilizing_hole_distance_from_center = 5.08
 
-    hotswap_socket_height = 1.8
-
-    key = (
+    return (
         cq.Workplane()
         .box(config["key_size"], config["key_size"], config["pcb_thickness"])
         .faces(">Z")
@@ -204,31 +203,47 @@ def make_pcb_key(config):
         .cutBlind(-config["pcb_thickness"])
     )
 
-    hotswap_socket_cutout = (
-        cq.Workplane()
-        .lineTo(3.5050, 0)
-        .sagittaArc((3.9427, 0.2582), -0.0693)
-        .lineTo(4.3507, 0.9965)
-        .sagittaArc((5.8823, 1.9), 0.2427)
-        .lineTo(10.65, 1.9)
-        .sagittaArc((11.15, 2.4), -0.1464)
-        .lineTo(11.15, 3.25)
-        .lineTo(13.15, 3.25)
-        .lineTo(13.15, 5.35)
-        .lineTo(11.15, 5.35)
-        .lineTo(11.15, 6.1)
-        .lineTo(1.5, 6.1)
-        .sagittaArc((0, 4.6), -0.4393)
-        .lineTo(0, 2.81)
-        .lineTo(-2, 2.81)
-        .lineTo(-2, 0.71)
-        .lineTo(0, 0.71)
+
+@cq_workplane_plugin
+def add_cutout_for_hotswap_socket_on_pcb_key(key, config):
+    hotswap_socket_height = 1.8
+
+    x_offset = -6.21
+    y_offset = -0.78
+
+    return (
+        key.faces("<Z")
+        .workplane()
+        .moveTo(0 + x_offset, 0 + y_offset)
+        .lineTo(3.5050 + x_offset, 0 + y_offset)
+        .sagittaArc((3.9427 + x_offset, -0.2582 + y_offset), 0.0693)
+        .lineTo(4.3507 + x_offset, -0.9965 + y_offset)
+        .sagittaArc((5.8823 + x_offset, -1.9 + y_offset), -0.2427)
+        .lineTo(10.65 + x_offset, -1.9 + y_offset)
+        .sagittaArc((11.15 + x_offset, -2.4 + y_offset), 0.1464)
+        .lineTo(11.15 + x_offset, -3.25 + y_offset)
+        .lineTo(13.15 + x_offset, -3.25 + y_offset)
+        .lineTo(13.15 + x_offset, -5.35 + y_offset)
+        .lineTo(11.15 + x_offset, -5.35 + y_offset)
+        .lineTo(11.15 + x_offset, -6.1 + y_offset)
+        .lineTo(1.5 + x_offset, -6.1 + y_offset)
+        .sagittaArc((0 + x_offset, -4.6 + y_offset), 0.4393)
+        .lineTo(0 + x_offset, -2.81 + y_offset)
+        .lineTo(-2 + x_offset, -2.81 + y_offset)
+        .lineTo(-2 + x_offset, -0.71 + y_offset)
+        .lineTo(0 + x_offset, -0.71 + y_offset)
         .close()
-        .extrude(hotswap_socket_height)
-        .translate((-6.21, 0.78, -config["pcb_thickness"] / 2))
+        .cutBlind(-hotswap_socket_height)
     )
 
-    return key.cut(hotswap_socket_cutout)
+
+def make_pcb_key(config):
+    return (
+        cq.Workplane()
+        .box(config["key_size"], config["key_size"], config["pcb_thickness"])
+        .add_holes_for_switch_on_pcb_key(config)
+        .add_cutout_for_hotswap_socket_on_pcb_key(config)
+    )
 
 
 def make_bottom_key(config):
@@ -331,7 +346,7 @@ def make_connector_between_left_side_and_microcontroller(
 
 
 @cq_workplane_plugin
-def add_rails_for_screws_on_right_side_of_board(self, thickness):
+def add_rails_for_screws_on_right_side_of_board(self, thickness, config):
     top_right = self.faces(">Z").vertices(">X").vertices(">Y").val().Center()
     bottom_right = self.faces(">Z").vertices(">X").vertices("<Y").val().Center()
     self = (
@@ -394,11 +409,11 @@ def add_rails_for_screws_on_left_side_of_board(self, thickness):
             top_right.y,
         )
         .lineTo(
-            top_right.x + config["bezel_for_screws_size"],
+            top_right.x + keyboard_config["bezel_for_screws_size"],
             top_right.y,
         )
         .lineTo(
-            top_right.x + config["bezel_for_screws_size"],
+            top_right.x + keyboard_config["bezel_for_screws_size"],
             bottom_right.y,
         )
         .lineTo(
@@ -419,11 +434,11 @@ def add_rails_for_screws_on_left_side_of_board(self, thickness):
             top_left.y,
         )
         .lineTo(
-            top_left.x - config["bezel_for_screws_size"],
+            top_left.x - keyboard_config["bezel_for_screws_size"],
             top_left.y,
         )
         .lineTo(
-            top_left.x - config["bezel_for_screws_size"],
+            top_left.x - keyboard_config["bezel_for_screws_size"],
             bottom_left.y,
         )
         .lineTo(
@@ -438,7 +453,7 @@ def add_rails_for_screws_on_left_side_of_board(self, thickness):
 
 
 @cq_workplane_plugin
-def add_screw_holes_to_left_side_of_board(self, thickness):
+def add_screw_holes_to_left_side_of_board(self, thickness, config):
     top_right = self.faces(">Z").vertices(">X").vertices(">Y").val().Center()
     top_left = self.faces(">Z").vertices("<X").vertices(">Y").val().Center()
     bottom_right = self.faces(">Z").vertices("<Y").vertices(">X").val().Center()
@@ -476,7 +491,7 @@ def add_screw_holes_to_left_side_of_board(self, thickness):
 
 
 @cq_workplane_plugin
-def add_screw_holes_to_right_side_of_board(self, thickness):
+def add_screw_holes_to_right_side_of_board(self, thickness, config):
     top_right = self.faces(">Z").vertices(">X").vertices(">Y").val().Center()
     top_left = self.faces(">Z").vertices("<X").vertices(">Y").val().Center()
     bottom_right = self.faces(">Z").vertices(">X").vertices("<Y").val().Center()
@@ -520,10 +535,10 @@ def make_layer(key, thickness, config):
     if not config["left_side_only"]:
         keys_right = make_positioned_keys(key, "right", config)
         keys_right = keys_right.add_rails_for_screws_on_right_side_of_board(
-            thickness
+            thickness, config
         )
         keys_right = keys_right.add_screw_holes_to_right_side_of_board(
-            thickness
+            thickness, config
         )
         keys_right = keys_right.rotate_keys_on_right_side_of_board(config)
         keys_right = keys_right.translate(
@@ -542,7 +557,9 @@ def make_layer(key, thickness, config):
         keys_left = keys_left.add_rails_for_screws_on_left_side_of_board(
             thickness
         )
-        keys_left = keys_left.add_screw_holes_to_left_side_of_board(thickness)
+        keys_left = keys_left.add_screw_holes_to_left_side_of_board(
+            thickness, config
+        )
         keys_left = keys_left.rotate_keys_on_left_side_of_board(config)
         keys_left = keys_left.translate(
             find_coords_to_shift_left_keys_to_center_after_rotation(
@@ -582,11 +599,13 @@ def make_layer(key, thickness, config):
 print("")
 print(
     "size:",
-    config["number_of_rows"],
+    keyboard_config["number_of_rows"],
     "x",
-    config["number_of_columns"],
+    keyboard_config["number_of_columns"],
     "(total: "
-    + str(config["number_of_rows"] * config["number_of_columns"])
+    + str(
+        keyboard_config["number_of_rows"] * keyboard_config["number_of_columns"]
+    )
     + ")",
 )
 
@@ -595,36 +614,52 @@ print(
 
 parts = []
 
-if config["focus_on"] == "top" or config["focus_on"] == None:
-    key = make_plate_key(config)
-    layer = make_layer(key, config["plate_thickness"], config)
+if keyboard_config["focus_on"] == "top" or keyboard_config["focus_on"] == None:
+    key = make_plate_key(keyboard_config)
+    layer = make_layer(key, keyboard_config["plate_thickness"], keyboard_config)
     time_elapsed("top")
     position = [
         0,
         0,
         4
-        if config["focus_on"]
-        else (4 + config["explode_by"] if config["explode_by"] else 4),
+        if keyboard_config["focus_on"]
+        else (
+            4 + keyboard_config["explode_by"]
+            if keyboard_config["explode_by"]
+            else 4
+        ),
     ]
     show_object(layer.translate(position))
 
-if config["focus_on"] == "middle" or config["focus_on"] == None:
-    key = make_pcb_key(config)
-    layer = make_layer(key, config["pcb_thickness"], config)
+if (
+    keyboard_config["focus_on"] == "middle"
+    or keyboard_config["focus_on"] == None
+):
+    key = make_pcb_key(keyboard_config)
+    layer = make_layer(key, keyboard_config["pcb_thickness"], keyboard_config)
     time_elapsed("middle")
     position = [0, 0, 0]
     show_object(layer)
 
-if config["focus_on"] == "bottom" or config["focus_on"] == None:
-    key = make_bottom_key(config)
-    layer = make_layer(key, config["bottom_thickness"], config)
+if (
+    keyboard_config["focus_on"] == "bottom"
+    or keyboard_config["focus_on"] == None
+):
+    key = make_bottom_key(keyboard_config)
+    layer = make_layer(
+        key, keyboard_config["bottom_thickness"], keyboard_config
+    )
     time_elapsed("bottom")
     position = [
         0,
         0,
         0
-        if config["focus_on"]
-        else (-4 - config["explode_by"] if config["explode_by"] else -4),
+        if keyboard_config["focus_on"]
+        else (
+            -4 - keyboard_config["explode_by"]
+            if keyboard_config["explode_by"]
+            else -4
+        ),
     ]
     show_object(layer.translate(position))
 
