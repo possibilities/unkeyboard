@@ -69,10 +69,10 @@ def make_switch_plate_inner():
             stagger_offset = (
                 distance_between_switch_centers * columns_stagger[column]
             )
-            offset_x = switch_offset + column_offset
-            offset_y = switch_offset + row_offset + stagger_offset
+            key_offset_x = switch_offset + column_offset
+            key_offset_y = switch_offset + row_offset + stagger_offset
             switch_plate = (
-                switch_plate.moveTo(offset_x, offset_y)
+                switch_plate.moveTo(key_offset_x, key_offset_y)
                 .rect(
                     distance_between_switch_centers + 1,
                     distance_between_switch_centers + 1,
@@ -83,8 +83,8 @@ def make_switch_plate_inner():
                 .extrude(thickness)
             )
 
-    offset_x = switch_offset
-    offset_y = switch_offset + (
+    inner_key_offset_x = switch_offset
+    inner_key_offset_y = switch_offset + (
         inner_keys_stagger * distance_between_switch_centers
     )
 
@@ -97,9 +97,9 @@ def make_switch_plate_inner():
     ) + widen_cutout_around_inner_keys_size
 
     switch_plate = (
-        switch_plate.moveTo(offset_x, offset_y)
+        switch_plate.moveTo(inner_key_offset_x, inner_key_offset_y)
         .rect(switch_plate_key_cutout_size, switch_plate_key_cutout_size)
-        .moveTo(offset_x, offset_y)
+        .moveTo(inner_key_offset_x, inner_key_offset_y)
         .rect(
             distance_between_switch_centers + widen_cutout_around_key_size,
             inner_keys_height,
