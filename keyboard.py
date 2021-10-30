@@ -1,667 +1,437 @@
+import os
 import cadquery as cq
-from timer import timer
-from fuse_parts import fuse_parts
+from cadquery import exporters
+from math import sin, cos, radians, pi
+from cq_workplane_plugin import cq_workplane_plugin
+from export_to_dxf_layers import export_to_dxf_layers
 
-keyboard_config = {
-    # Configurable
-    "number_of_rows": 2,
-    "number_of_columns": 3,
-    "rotation_angle": 20,
-    "stagger_preset": "light",
-    # Utility
-    "focus_on": None,
-    "explode_by": 20,
-    "keychain": False,
-    "has_microcontroller": True,
-    "left_side_only": False,
-    "right_side_only": False,
-    # Structural
-    "key_size": 19.05,
-    "plate_thickness": 5,
-    "pcb_thickness": 3,
-    "bottom_thickness": 5,
-    "microcontroller_length": 19,
-    "microcontroller_width": 33,
-    "case_exterior_thickness": 2,
-    "bezel_for_screws_size": 5,
-    "screw_radius": 1,
-}
+thicc_spacer = False
+use_chicago_bolt = True
 
-stagger_presets = {
-    "light": dict([(3, 0.1), (2, 0.2), (1, 0.1)]),
-    "medium": dict([(3, 0.2), (2, 0.4), (1, 0.2)]),
-    "heavy": dict([(3, 0.4), (2, 0.8), (1, 0.4)]),
-}
+angle = 10
+thickness = 3
+number_of_columns = 6
+number_of_rows = 5
+usb_cutout_width = 4
 
-if keyboard_config["stagger_preset"]:
-    if keyboard_config["rotation_angle"] > 84:
-        raise Exception(
-            "`rotation_angle` must be less than or equal to 84 when keys are staggered"
-        )
-else:
-    if keyboard_config["rotation_angle"] > 90:
-        raise Exception(
-            "`rotation_angle` must be less than or equal to 90 when keys are staggered"
-        )
+outer_frame_size = 20 if use_chicago_bolt else 16
+inner_frame_size = 2.1
+
+screw_hole_radius = 2.5 if use_chicago_bolt else 1.5
+reset_button_hole_radius = 1.5
+switch_plate_key_cutout_size = 13.97
+distance_between_switch_centers = 19
+switch_offset = distance_between_switch_centers / 2
+
+screw_distance_from_inner_edge = (outer_frame_size - inner_frame_size) / 2
 
 
-if keyboard_config["right_side_only"] and keyboard_config["left_side_only"]:
-    raise Exception(
-        "`right_side_only` and `left_side_only` cannot both be enabled"
-    )
-
-
-# For keychain remove unnecessary things
-if keyboard_config["keychain"]:
-    keyboard_config["has_microcontroller"] = False
-    keyboard_config["rotation_angle"] = 0
-    keyboard_config["left_side_only"] = True
-    keyboard_config["right_side_only"] = False
-    keyboard_config["stagger_preset"] = None
-
-
-def cq_workplane_plugin(func):
-    setattr(cq.Workplane, func.__name__, func)
-    return func
-
-
-def show_objects(objects):
-    for o in objects:
-        show_object(o)
-    return cq.Workplane()
-
-
-def find_stagger_offset_to_column(column, config):
-    if config["stagger_preset"]:
-        if config["stagger_preset"] in stagger_presets:
-            preset = stagger_presets[config["stagger_preset"]]
-            if column in preset:
-                return preset[column] * config["key_size"]
-    return 0
+def find_point_for_angle(vertice, d, theta):
+    theta_rad = pi / 2 - radians(theta)
+    return (vertice.x + d * cos(theta_rad), vertice.y + d * sin(theta_rad))
 
 
 @cq_workplane_plugin
-def rotate_keys_on_right_side_of_board(keys, config):
-    if config["rotation_angle"] != 0:
-        keys = keys.rotateAboutCenter((0, 0, 1), config["rotation_angle"])
-
-    return keys
-
-
-@cq_workplane_plugin
-def rotate_keys_on_left_side_of_board(keys, config):
-    if config["rotation_angle"] != 0:
-        keys = keys.rotateAboutCenter((0, 0, 1), -config["rotation_angle"])
-
-    return keys
-
-
-def find_coords_to_shift_right_keys_to_center_after_rotation(keys, config):
-    right_side_furthest_vertext_to_the_left = keys.vertices("<X")
-    return [
-        -right_side_furthest_vertext_to_the_left.val().Center().x,
-        0,
-        0,
-    ]
-
-
-def find_coords_to_shift_left_keys_to_center_after_rotation(keys, config):
-    left_side_furthest_vertext_to_the_right = keys.vertices(">X")
-    return [
-        -left_side_furthest_vertext_to_the_right.val().Center().x,
-        0,
-        0,
-    ]
-
-
-def find_coords_to_shift_right_keys_to_top_of_microcontroller(keys, config):
-    right_side_furthest_vertext_to_the_left = keys.vertices("<X").vertices(">Y")
-    return [
-        config["microcontroller_length"] / 2,
-        -right_side_furthest_vertext_to_the_left.val().Center().y
-        + config["microcontroller_width"] / 2,
-        0,
-    ]
-
-
-def find_coords_to_shift_left_keys_to_top_of_microcontroller(keys, config):
-    left_side_furthest_vertext_to_the_right = keys.vertices(">X").vertices(">Y")
-    return [
-        -config["microcontroller_length"] / 2,
-        -left_side_furthest_vertext_to_the_right.val().Center().y
-        + config["microcontroller_width"] / 2,
-        0,
-    ]
-
-
-def make_positioned_keys(key, side_of_board, config):
-    keys = []
-
-    for column in range(config["number_of_columns"]):
-        for row in range(config["number_of_rows"]):
-            if side_of_board == "right":
-                keys.append(
-                    key.translate(
-                        [
-                            config["key_size"] * column,
-                            config["key_size"] * row
-                            + find_stagger_offset_to_column(column, config),
-                            0,
-                        ]
-                    )
-                )
-            else:
-                keys.append(
-                    key.translate(
-                        [
-                            -config["key_size"] * column,
-                            config["key_size"] * row
-                            + find_stagger_offset_to_column(column, config),
-                            0,
-                        ]
-                    )
-                )
-
-    center_of_plane_coords = [
-        (config["key_size"] * (config["number_of_columns"] - 1)) / 2,
-        -(config["key_size"] * (config["number_of_rows"] - 1)) / 2,
-        0,
-    ]
-
-    return fuse_parts(keys).translate(center_of_plane_coords)
-
-
-@cq_workplane_plugin
-def add_holes_for_switch_on_pcb_key(key, config):
-    switch_middle_pin_hole_size = 2
-
-    pin_for_hotswap_socket_hole_size = 1.5
-    left_pin_for_hotswap_socket_distance_from_center = (-3.81, 2.54)
-    right_pin_for_hotswap_socket_distance_from_center = (2.54, 5.08)
-
-    switch_stabilizing_pin_hole_size = 1
-    switch_stabilizing_hole_distance_from_center = 5.08
-
-    return (
-        cq.Workplane()
-        .box(config["key_size"], config["key_size"], config["pcb_thickness"])
-        .faces(">Z")
-        .workplane()
-        .circle(switch_middle_pin_hole_size)
-        .cutBlind(-config["pcb_thickness"])
-        .moveTo(-switch_stabilizing_hole_distance_from_center, 0)
-        .circle(switch_stabilizing_pin_hole_size)
-        .cutBlind(-config["pcb_thickness"])
-        .moveTo(switch_stabilizing_hole_distance_from_center, 0)
-        .circle(switch_stabilizing_pin_hole_size)
-        .cutBlind(-config["pcb_thickness"])
-        .moveTo(*left_pin_for_hotswap_socket_distance_from_center)
-        .circle(pin_for_hotswap_socket_hole_size)
-        .cutBlind(-config["pcb_thickness"])
-        .moveTo(*right_pin_for_hotswap_socket_distance_from_center)
-        .circle(pin_for_hotswap_socket_hole_size)
-        .cutBlind(-config["pcb_thickness"])
-    )
-
-
-@cq_workplane_plugin
-def add_cutout_for_hotswap_socket_on_pcb_key(key, config):
-    hotswap_socket_height = 1.8
-
-    x_offset = -6.21
-    y_offset = -0.78
-
-    return (
-        key.faces("<Z")
-        .workplane()
-        .moveTo(0 + x_offset, 0 + y_offset)
-        .lineTo(3.5050 + x_offset, 0 + y_offset)
-        .sagittaArc((3.9427 + x_offset, -0.2582 + y_offset), 0.0693)
-        .lineTo(4.3507 + x_offset, -0.9965 + y_offset)
-        .sagittaArc((5.8823 + x_offset, -1.9 + y_offset), -0.2427)
-        .lineTo(10.65 + x_offset, -1.9 + y_offset)
-        .sagittaArc((11.15 + x_offset, -2.4 + y_offset), 0.1464)
-        .lineTo(11.15 + x_offset, -3.25 + y_offset)
-        .lineTo(13.15 + x_offset, -3.25 + y_offset)
-        .lineTo(13.15 + x_offset, -5.35 + y_offset)
-        .lineTo(11.15 + x_offset, -5.35 + y_offset)
-        .lineTo(11.15 + x_offset, -6.1 + y_offset)
-        .lineTo(1.5 + x_offset, -6.1 + y_offset)
-        .sagittaArc((0 + x_offset, -4.6 + y_offset), 0.4393)
-        .lineTo(0 + x_offset, -2.81 + y_offset)
-        .lineTo(-2 + x_offset, -2.81 + y_offset)
-        .lineTo(-2 + x_offset, -0.71 + y_offset)
-        .lineTo(0 + x_offset, -0.71 + y_offset)
-        .close()
-        .cutBlind(-hotswap_socket_height)
-    )
-
-
-def make_pcb_key(config):
-    return (
-        cq.Workplane()
-        .box(config["key_size"], config["key_size"], config["pcb_thickness"])
-        .add_holes_for_switch_on_pcb_key(config)
-        .add_cutout_for_hotswap_socket_on_pcb_key(config)
-    )
-
-
-def make_bottom_key(config):
-    key = cq.Workplane().box(
-        config["key_size"], config["key_size"], config["bottom_thickness"]
-    )
-    return key
-
-
-def make_plate_key(config):
-    switch_cutout_size = 13.9
-
-    switch_groove_cutout_length = 5
-    switch_groove_cutout_width = 1
-    switch_groove_cutout_height = 3.5
-
-    return (
-        cq.Workplane()
-        .box(config["key_size"], config["key_size"], config["plate_thickness"])
-        .faces(">Z")
-        .workplane()
-        .rect(switch_cutout_size, switch_cutout_size)
-        .cutBlind(-config["plate_thickness"])
-        .faces(">Z")
-        .workplane(
-            offset=-config["plate_thickness"] + switch_groove_cutout_height
-        )
-        .moveTo(0, switch_cutout_size / 2 + switch_groove_cutout_width / 2)
-        .rect(switch_groove_cutout_length, switch_groove_cutout_width)
-        .cutBlind(-switch_groove_cutout_height)
-        .faces(">Z")
-        .workplane(
-            offset=-config["plate_thickness"] + switch_groove_cutout_height
-        )
-        .moveTo(0, -(switch_cutout_size / 2 + switch_groove_cutout_width / 2))
-        .rect(switch_groove_cutout_length, switch_groove_cutout_width)
-        .cutBlind(-switch_groove_cutout_height)
-    )
-
-
-def make_microcontroller_container(thickness, config):
-    container = cq.Workplane().box(
-        config["microcontroller_length"],
-        config["microcontroller_width"],
-        thickness,
-    )
-    return container
-
-
-def make_connector_between_right_side_and_microcontroller(
-    keys, microcontroller, thickness
-):
-    right_side_top_left = (
-        keys.faces(">Z").vertices("<X").vertices(">Y").val().Center()
-    )
-    right_side_bottom_left = (
-        keys.faces(">Z").vertices("<Y").vertices(">X").val().Center()
-    )
-    center_bottom_right = (
-        microcontroller.faces(">Z").vertices(">X").vertices("<Y").val().Center()
-    )
-
-    right_connector = (
-        microcontroller.faces(">Z")
-        .workplane()
-        .moveTo(right_side_top_left.x, right_side_top_left.y)
-        .lineTo(center_bottom_right.x, center_bottom_right.y)
-        .lineTo(right_side_bottom_left.x, right_side_bottom_left.y)
-        .close()
-        .extrude(-thickness, combine=False)
-    )
-
-    return right_connector
-
-
-def make_connector_between_left_side_and_microcontroller(
-    keys, microcontroller, thickness
-):
-    left_side_top_right = (
-        keys.faces(">Z").vertices(">X").vertices(">Y").val().Center()
-    )
-    left_side_bottom_right = (
-        keys.faces(">Z").vertices("<Y").vertices("<X").val().Center()
-    )
-    center_bottom_left = (
-        microcontroller.faces(">Z").vertices("<X").vertices("<Y").val().Center()
-    )
-
-    left_connector = (
-        microcontroller.faces(">Z")
-        .workplane()
-        .moveTo(left_side_top_right.x, left_side_top_right.y)
-        .lineTo(center_bottom_left.x, center_bottom_left.y)
-        .lineTo(left_side_bottom_right.x, left_side_bottom_right.y)
-        .close()
-        .extrude(-thickness, combine=False)
-    )
-
-    return left_connector
-
-
-@cq_workplane_plugin
-def add_rails_for_screws_on_right_side_of_board(self, thickness, config):
-    top_right = self.faces(">Z").vertices(">X").vertices(">Y").val().Center()
-    bottom_right = self.faces(">Z").vertices(">X").vertices("<Y").val().Center()
-    self = (
-        self.faces(">Z")
-        .workplane()
-        .moveTo(
-            top_right.x,
-            top_right.y,
-        )
-        .lineTo(
-            top_right.x + config["bezel_for_screws_size"],
-            top_right.y,
-        )
-        .lineTo(
-            top_right.x + config["bezel_for_screws_size"],
-            bottom_right.y,
-        )
-        .lineTo(top_right.x, bottom_right.y)
-        .close()
-        .extrude(-thickness)
-    )
-
-    top_left = self.faces(">Z").vertices("<X").vertices(">Y").val().Center()
-    bottom_left = self.faces(">Z").vertices("<X").vertices("<Y").val().Center()
-    self = (
-        self.faces(">Z")
-        .workplane()
-        .moveTo(
-            top_left.x,
-            top_left.y,
-        )
-        .lineTo(
-            top_left.x - config["bezel_for_screws_size"],
-            top_left.y,
-        )
-        .lineTo(
-            top_left.x - config["bezel_for_screws_size"],
-            bottom_left.y,
-        )
-        .lineTo(
-            top_left.x,
-            bottom_left.y,
-        )
-        .close()
-        .extrude(-thickness)
-    )
-
-    return self
-
-
-@cq_workplane_plugin
-def add_rails_for_screws_on_left_side_of_board(self, thickness):
-    top_right = self.faces(">Z").vertices(">X").vertices(">Y").val().Center()
-    bottom_right = self.faces(">Z").vertices("<Y").vertices("<X").val().Center()
-    self = (
-        self.faces(">Z")
-        .workplane()
-        .moveTo(
-            top_right.x,
-            top_right.y,
-        )
-        .lineTo(
-            top_right.x + keyboard_config["bezel_for_screws_size"],
-            top_right.y,
-        )
-        .lineTo(
-            top_right.x + keyboard_config["bezel_for_screws_size"],
-            bottom_right.y,
-        )
-        .lineTo(
-            top_right.x,
-            bottom_right.y,
-        )
-        .close()
-        .extrude(-thickness)
-    )
-
-    top_left = self.faces(">Z").vertices("<X").vertices(">Y").val().Center()
-    bottom_left = self.faces(">Z").vertices("<X").vertices("<Y").val().Center()
-    self = (
-        self.faces(">Z")
-        .workplane()
-        .moveTo(
-            top_left.x,
-            top_left.y,
-        )
-        .lineTo(
-            top_left.x - keyboard_config["bezel_for_screws_size"],
-            top_left.y,
-        )
-        .lineTo(
-            top_left.x - keyboard_config["bezel_for_screws_size"],
-            bottom_left.y,
-        )
-        .lineTo(
-            top_left.x,
-            bottom_left.y,
-        )
-        .close()
-        .extrude(-thickness)
-    )
-
-    return self
-
-
-@cq_workplane_plugin
-def add_screw_holes_to_left_side_of_board(self, thickness, config):
-    top_right = self.faces(">Z").vertices(">X").vertices(">Y").val().Center()
-    top_left = self.faces(">Z").vertices("<X").vertices(">Y").val().Center()
-    bottom_right = self.faces(">Z").vertices("<Y").vertices(">X").val().Center()
-    bottom_left = self.faces(">Z").vertices("<X").vertices("<Y").val().Center()
-
-    screw_distance_from_edge = config["bezel_for_screws_size"] / 2
-
-    self = (
-        self.faces(">Z")
-        .workplane()
-        .pushPoints(
-            [
-                [
-                    top_right.x - screw_distance_from_edge,
-                    top_right.y - screw_distance_from_edge,
-                ],
-                [
-                    bottom_right.x - screw_distance_from_edge,
-                    bottom_right.y + screw_distance_from_edge,
-                ],
-                [
-                    bottom_left.x + screw_distance_from_edge,
-                    bottom_left.y + screw_distance_from_edge,
-                ],
-                [
-                    top_left.x + screw_distance_from_edge,
-                    top_left.y - screw_distance_from_edge,
-                ],
-            ]
-        )
-        .circle(config["screw_radius"])
-        .cutBlind(-thickness)
-    )
-    return self
-
-
-@cq_workplane_plugin
-def add_screw_holes_to_right_side_of_board(self, thickness, config):
-    top_right = self.faces(">Z").vertices(">X").vertices(">Y").val().Center()
-    top_left = self.faces(">Z").vertices("<X").vertices(">Y").val().Center()
-    bottom_right = self.faces(">Z").vertices(">X").vertices("<Y").val().Center()
-    bottom_left = self.faces(">Z").vertices("<Y").vertices("<X").val().Center()
-
-    screw_distance_from_edge = config["bezel_for_screws_size"] / 2
-
-    self = (
-        self.faces(">Z")
-        .workplane()
-        .pushPoints(
-            [
-                [
-                    top_right.x - screw_distance_from_edge,
-                    top_right.y - screw_distance_from_edge,
-                ],
-                [
-                    bottom_right.x - screw_distance_from_edge,
-                    bottom_right.y + screw_distance_from_edge,
-                ],
-                [
-                    bottom_left.x + screw_distance_from_edge,
-                    bottom_left.y + screw_distance_from_edge,
-                ],
-                [
-                    top_left.x + screw_distance_from_edge,
-                    top_left.y - screw_distance_from_edge,
-                ],
-            ]
-        )
-        .circle(config["screw_radius"])
-        .cutBlind(-thickness)
-    )
-    return self
-
-
-def make_layer(key, thickness, config):
-    key_parts = []
-    microcontroller_parts = []
-
-    if not config["left_side_only"]:
-        keys_right = make_positioned_keys(key, "right", config)
-        keys_right = keys_right.add_rails_for_screws_on_right_side_of_board(
-            thickness, config
-        )
-        keys_right = keys_right.add_screw_holes_to_right_side_of_board(
-            thickness, config
-        )
-        keys_right = keys_right.rotate_keys_on_right_side_of_board(config)
-        keys_right = keys_right.translate(
-            find_coords_to_shift_right_keys_to_center_after_rotation(
-                keys_right, config
-            )
-        ).translate(
-            find_coords_to_shift_right_keys_to_top_of_microcontroller(
-                keys_right, config
-            )
-        )
-        key_parts.append(keys_right)
-
-    if not config["right_side_only"]:
-        keys_left = make_positioned_keys(key, "left", config)
-        keys_left = keys_left.add_rails_for_screws_on_left_side_of_board(
-            thickness
-        )
-        keys_left = keys_left.add_screw_holes_to_left_side_of_board(
-            thickness, config
-        )
-        keys_left = keys_left.rotate_keys_on_left_side_of_board(config)
-        keys_left = keys_left.translate(
-            find_coords_to_shift_left_keys_to_center_after_rotation(
-                keys_left, config
-            )
-        ).translate(
-            find_coords_to_shift_left_keys_to_top_of_microcontroller(
-                keys_left, config
-            )
-        )
-        key_parts.append(keys_left)
-
-    if config["has_microcontroller"]:
-        microcontroller = make_microcontroller_container(thickness, config)
-        microcontroller_parts.append(microcontroller)
-
-    if config["rotation_angle"] > 0 and config["has_microcontroller"]:
-        if not config["right_side_only"]:
-            left_microcontroller = (
-                make_connector_between_left_side_and_microcontroller(
-                    keys_left, microcontroller, thickness
-                )
-            )
-            microcontroller_parts.append(left_microcontroller)
-
-        if not config["left_side_only"]:
-            right_microcontroller = (
-                make_connector_between_right_side_and_microcontroller(
-                    keys_right, microcontroller, thickness
-                )
-            )
-            microcontroller_parts.append(right_microcontroller)
-
-    return fuse_parts([*key_parts, *microcontroller_parts])
-
-
-print("")
-print(
-    "size:",
-    keyboard_config["number_of_rows"],
-    "x",
-    keyboard_config["number_of_columns"],
-    "(total: "
-    + str(
-        keyboard_config["number_of_rows"] * keyboard_config["number_of_columns"]
-    )
-    + ")",
+def center_on_plane(part):
+    top = part.vertices(">Y").val().Center()
+    left = part.vertices("<X").val().Center()
+    right = part.vertices(">X").val().Center()
+    bottom = part.vertices("<Y").val().Center()
+    height = top.y - bottom.y
+    width = left.x - right.x
+    return part.translate([-left.x + (width / 2), -top.y + (height / 2), 0])
+
+
+def stagger_percent_for_mm(stagger_mm):
+    return stagger_mm / distance_between_switch_centers
+
+
+thumb_stagger = stagger_percent_for_mm(8.5)
+columns_stagger = (
+    stagger_percent_for_mm(-1),
+    stagger_percent_for_mm(4),
+    stagger_percent_for_mm(10),
+    stagger_percent_for_mm(5),
+    stagger_percent_for_mm(2),
+    stagger_percent_for_mm(2),
 )
 
 
-[time_elapsed, total_time] = timer()
+def make_switch_plate_inner():
+    switch_plate = cq.Workplane()
 
-parts = []
+    for column in range(number_of_columns):
+        for row in range(number_of_rows):
+            row_offset = distance_between_switch_centers * row
+            column_offset = distance_between_switch_centers * (column + 1)
+            stagger_offset = (
+                distance_between_switch_centers * columns_stagger[column]
+            )
+            offset_x = switch_offset + column_offset
+            offset_y = switch_offset + row_offset + stagger_offset
+            switch_plate = (
+                switch_plate.moveTo(offset_x, offset_y)
+                .rect(
+                    distance_between_switch_centers + 1,
+                    distance_between_switch_centers + 1,
+                )
+                .rect(
+                    switch_plate_key_cutout_size, switch_plate_key_cutout_size
+                )
+                .extrude(thickness)
+            )
 
-if keyboard_config["focus_on"] == "top" or keyboard_config["focus_on"] == None:
-    key = make_plate_key(keyboard_config)
-    layer = make_layer(key, keyboard_config["plate_thickness"], keyboard_config)
-    time_elapsed("top")
-    position = [
-        0,
-        0,
-        4
-        if keyboard_config["focus_on"]
-        else (
-            4 + keyboard_config["explode_by"]
-            if keyboard_config["explode_by"]
-            else 4
-        ),
-    ]
-    show_object(layer.translate(position))
+    offset_x = switch_offset
+    offset_y = switch_offset + (thumb_stagger * distance_between_switch_centers)
 
-if (
-    keyboard_config["focus_on"] == "middle"
-    or keyboard_config["focus_on"] == None
-):
-    key = make_pcb_key(keyboard_config)
-    layer = make_layer(key, keyboard_config["pcb_thickness"], keyboard_config)
-    time_elapsed("middle")
-    position = [0, 0, 0]
-    show_object(layer)
+    widen_cutout_around_key = 1
+    widen_cutout_around_thumb_key = 1.5
+    unit_height_of_thumb_key = 1.5
 
-if (
-    keyboard_config["focus_on"] == "bottom"
-    or keyboard_config["focus_on"] == None
-):
-    key = make_bottom_key(keyboard_config)
-    layer = make_layer(
-        key, keyboard_config["bottom_thickness"], keyboard_config
+    thumb_key_height = (
+        distance_between_switch_centers * unit_height_of_thumb_key
+    ) + widen_cutout_around_thumb_key
+
+    switch_plate = (
+        switch_plate.moveTo(offset_x, offset_y)
+        .rect(switch_plate_key_cutout_size, switch_plate_key_cutout_size)
+        .moveTo(offset_x, offset_y)
+        .rect(
+            distance_between_switch_centers + widen_cutout_around_key,
+            thumb_key_height,
+        )
+        .extrude(thickness)
     )
-    time_elapsed("bottom")
-    position = [
-        0,
-        0,
-        0
-        if keyboard_config["focus_on"]
-        else (
-            -4 - keyboard_config["explode_by"]
-            if keyboard_config["explode_by"]
-            else -4
+
+    switch_plate = switch_plate.rotateAboutCenter([0, 0, 1], angle)
+
+    top_left_of_thumb_key = switch_plate.vertices("<X").val().Center()
+
+    switch_plate = switch_plate.mirror(
+        mirrorPlane="YZ",
+        union=True,
+        basePointVector=(
+            top_left_of_thumb_key.x + (widen_cutout_around_key / 2),
+            top_left_of_thumb_key.y,
         ),
-    ]
-    show_object(layer.translate(position))
+    )
+
+    return switch_plate
 
 
-total_time()
+@cq_workplane_plugin
+def drill_reset_button_hole(part, switch_plate_inner):
+    return (
+        part.faces("front")
+        .moveTo(-24, 41)
+        .circle(reset_button_hole_radius)
+        .cutThruAll()
+    )
+
+
+@cq_workplane_plugin
+def drill_holes(part, switch_plate_inner):
+    outline = switch_plate_inner.faces("front").wires(
+        cq.selectors.AreaNthSelector(-1)
+    )
+
+    top_left_outline = outline.edges("<X").vertices(">Y").val().Center()
+    top_right_outline = outline.vertices(">XY").val().Center()
+    right_outline = outline.vertices(">X").vertices("<Y").val().Center()
+    left_outline = outline.vertices("<X").vertices("<Y").val().Center()
+    bottom_right_outline = outline.vertices("<Y").vertices(">X").val().Center()
+    bottom_left_outline = outline.vertices("<Y").vertices("<X").val().Center()
+
+    return (
+        part.faces("front")
+        .moveTo(
+            *find_point_for_angle(
+                top_right_outline, screw_distance_from_inner_edge, 45 - angle
+            )
+        )
+        .circle(screw_hole_radius)
+        .cutThruAll()
+        .moveTo(
+            *find_point_for_angle(
+                right_outline, -screw_distance_from_inner_edge, -45 - angle
+            )
+        )
+        .circle(screw_hole_radius)
+        .cutThruAll()
+        .moveTo(
+            *find_point_for_angle(
+                bottom_right_outline,
+                -screw_distance_from_inner_edge,
+                45 - angle,
+            )
+        )
+        .circle(screw_hole_radius)
+        .cutThruAll()
+        .moveTo(
+            *find_point_for_angle(
+                bottom_left_outline,
+                -screw_distance_from_inner_edge,
+                -45 + angle,
+            )
+        )
+        .circle(screw_hole_radius)
+        .cutThruAll()
+        .moveTo(
+            *find_point_for_angle(
+                left_outline, -screw_distance_from_inner_edge, 45 + angle
+            )
+        )
+        .circle(screw_hole_radius)
+        .cutThruAll()
+        .moveTo(
+            *find_point_for_angle(
+                top_left_outline, screw_distance_from_inner_edge, -45 + angle
+            ),
+        )
+        .circle(screw_hole_radius)
+        .cutThruAll()
+        .moveTo(
+            -11.25,
+            find_point_for_angle(
+                top_left_outline, screw_distance_from_inner_edge, -45 + angle
+            )[1],
+        )
+        .circle(screw_hole_radius)
+        .cutThruAll()
+        .moveTo(
+            11.25,
+            find_point_for_angle(
+                top_left_outline, screw_distance_from_inner_edge, -45 + angle
+            )[1],
+        )
+        .circle(screw_hole_radius)
+        .cutThruAll()
+    )
+
+
+def make_bottom_plate(switch_plate_inner, thickness):
+    outline = switch_plate_inner.faces("front").wires(
+        cq.selectors.AreaNthSelector(-1)
+    )
+    top_right_outline = outline.vertices(">XY").val().Center()
+    right_outline = outline.vertices(">X").vertices("<Y").val().Center()
+    bottom_right_outline = outline.vertices("<Y").vertices(">X").val().Center()
+
+    return (
+        cq.Workplane()
+        .newObject([])
+        .moveTo(
+            0,
+            find_point_for_angle(
+                top_right_outline, outer_frame_size, 45 - angle
+            )[1],
+        )
+        .lineTo(
+            *find_point_for_angle(
+                top_right_outline, outer_frame_size, 45 - angle
+            )
+        )
+        .lineTo(
+            *find_point_for_angle(right_outline, -outer_frame_size, -45 - angle)
+        )
+        .lineTo(
+            *find_point_for_angle(
+                bottom_right_outline, -outer_frame_size, 45 - angle
+            )
+        )
+        .lineTo(
+            0,
+            find_point_for_angle(
+                bottom_right_outline, -outer_frame_size, 45 - angle
+            )[1],
+        )
+        .close()
+        .extrude(-thickness, combine=False)
+        .mirror(mirrorPlane="YZ", union=True)
+    )
+
+
+def make_top_plate(switch_plate_inner):
+    outline = switch_plate_inner.faces("front").wires(
+        cq.selectors.AreaNthSelector(-1)
+    )
+
+    return (
+        make_bottom_plate(switch_plate_inner, thickness)
+        .cut(
+            outline.toPending()
+            .extrude(-thickness, combine=False)
+            .translate([0, 0, -thickness])
+        )
+        .translate([0, 0, thickness / 2])
+    )
+
+
+def make_switch_plate(switch_plate_inner):
+    switch_plate_uncut = make_bottom_plate(switch_plate_inner, thickness)
+    outline = switch_plate_inner.faces("front").wires(
+        cq.selectors.AreaNthSelector(-1)
+    )
+
+    switch_plate_outer = switch_plate_uncut.cut(
+        outline.toPending()
+        .extrude(-thickness, combine=False)
+        .translate([0, 0, -thickness])
+    ).translate([0, 0, thickness / 2])
+
+    return switch_plate_inner.translate([0, 0, -thickness / 2]).union(
+        switch_plate_outer
+    )
+
+
+def make_spacer(switch_plate_inner, thickness):
+    outline = switch_plate_inner.faces("front").wires(
+        cq.selectors.AreaNthSelector(-1)
+    )
+
+    top_left_outline = outline.edges("<X").vertices(">Y").val().Center()
+    top_right_outline = outline.vertices(">XY").val().Center()
+    right_outline = outline.vertices(">X").vertices("<Y").val().Center()
+    left_outline = outline.vertices("<X").vertices("<Y").val().Center()
+    bottom_right_outline = outline.vertices("<Y").vertices(">X").val().Center()
+    bottom_left_outline = outline.vertices("<Y").vertices("<X").val().Center()
+
+    return (
+        make_bottom_plate(switch_plate_inner, thickness)
+        .moveTo(
+            *find_point_for_angle(
+                top_right_outline, -inner_frame_size, 45 - angle
+            )
+        )
+        .lineTo(
+            *find_point_for_angle(right_outline, inner_frame_size, -45 - angle)
+        )
+        .lineTo(
+            *find_point_for_angle(
+                bottom_right_outline,
+                inner_frame_size,
+                45 - angle,
+            )
+        )
+        .lineTo(
+            *find_point_for_angle(
+                bottom_left_outline,
+                inner_frame_size,
+                -45 + angle,
+            )
+        )
+        .lineTo(
+            *find_point_for_angle(left_outline, inner_frame_size, 45 + angle)
+        )
+        .lineTo(
+            *find_point_for_angle(
+                top_left_outline, -inner_frame_size, -45 + angle
+            ),
+        )
+        .close()
+        .cutThruAll()
+        .moveTo(
+            0,
+            find_point_for_angle(
+                top_right_outline,
+                outer_frame_size,
+                45 - angle,
+            )[1]
+            - outer_frame_size / 2,
+        )
+        .rect(usb_cutout_width, outer_frame_size)
+        .cutBlind(-thickness)
+    )
+
+
+switch_plate_inner = make_switch_plate_inner().center_on_plane()
+
+top_plate = make_top_plate(switch_plate_inner).drill_holes(switch_plate_inner)
+switch_plate = make_switch_plate(switch_plate_inner).drill_holes(
+    switch_plate_inner
+)
+
+spacer_thickness = thickness * 2 if thicc_spacer else thickness
+spacer = make_spacer(switch_plate_inner, spacer_thickness).drill_holes(
+    switch_plate_inner
+)
+
+bottom_plate = (
+    make_bottom_plate(switch_plate_inner, thickness)
+    .drill_holes(switch_plate_inner)
+    .drill_reset_button_hole(switch_plate_inner)
+)
+
+if not os.environ.get("FORMAT"):
+    show_object(top_plate.translate([0, 0, 23]), name="top_plate")
+    show_object(switch_plate.translate([0, 0, 0]), name="switch_plate")
+    if thicc_spacer:
+        show_object(spacer.translate([0, 0, -20]), name="spacer")
+        show_object(
+            bottom_plate.translate([0, 0, -46 if thicc_spacer else -60]),
+            name="bottom_plate",
+        )
+    else:
+        show_object(spacer.translate([0, 0, -20]), name="spacer_1")
+        show_object(spacer.translate([0, 0, -40]), name="spacer_2")
+        show_object(
+            bottom_plate.translate([0, 0, -60 if thicc_spacer else -60]),
+            name="bottom_plate",
+        )
+
+if os.environ.get("FORMAT"):
+    try:
+        os.mkdir("./data")
+    except:
+        pass
+
+    if os.environ.get("FORMAT") == "STL":
+        exporters.export(top_plate, "./data/top_plate.stl")
+        exporters.export(switch_plate, "./data/switch_plate.stl")
+        exporters.export(spacer, "./data/spacer_1.stl")
+        if not thicc_spacer:
+            exporters.export(spacer, "./data/spacer_2.stl")
+        exporters.export(bottom_plate, "./data/bottom_plate.stl")
+
+    if os.environ.get("FORMAT") == "DXF":
+        if thicc_spacer:
+            export_to_dxf_layers(
+                [
+                    ("Top plate", top_plate, 3),
+                    ("Switch plate", switch_plate, 3),
+                    ("Spacer 1", spacer, 3),
+                    ("Spacer 2", spacer, 3),
+                    ("Bottom plate", bottom_plate, 3),
+                ],
+                "./data/layered.dxf",
+            )
+        else:
+            export_to_dxf_layers(
+                [
+                    ("Top plate", top_plate, 3),
+                    ("Switch plate", switch_plate, 3),
+                    ("Spacer", spacer, 6),
+                    ("Bottom plate", bottom_plate, 3),
+                ],
+                "./data/layered.dxf",
+            )
+        export_to_dxf_layers(
+            [("Top plate", top_plate, 3)], "./data/top-plate.dxf"
+        )
+        export_to_dxf_layers(
+            [("Switch plate", switch_plate, 3)], "./data/switch-plate.dxf"
+        )
+        if thicc_spacer:
+            export_to_dxf_layers(
+                [("Thicc spacer", spacer, 6)], "./data/switch-plate.dxf"
+            )
+        else:
+            export_to_dxf_layers(
+                [("Spacer 1", spacer, 3)], "./data/spacer-1.dxf"
+            )
+            export_to_dxf_layers(
+                [("Spacer 2", spacer, 3)], "./data/spacer-2.dxf"
+            )
+        export_to_dxf_layers(
+            [("Bottom plate", bottom_plate, 3)], "./data/bottom-plate.dxf"
+        )
