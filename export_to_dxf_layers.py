@@ -124,8 +124,12 @@ def export_to_dxf_layers(parts, fname):
     dxf = ezdxf.new(setup=True, units=units.MM)
     msp = dxf.modelspace()
 
-    for layer_name_part_and_thickness in parts:
-        [layer_name, part, thickness] = layer_name_part_and_thickness
+    for layer_name_and_part in parts:
+        [layer_name, part] = layer_name_and_part
+        thickness = (
+            part.vertices("front").val().Center().z
+            - part.vertices("back").val().Center().z
+        )
         part = part.faces("front")
         full_layer_name = "%s (1 x %smm)" % (layer_name, thickness)
         dxf.layers.new(name=full_layer_name)

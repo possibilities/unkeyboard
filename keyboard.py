@@ -388,6 +388,7 @@ bottom_plate = (
     .translate([0, 0, thickness / 2])
 )
 
+
 def show_parts(parts):
     parts.reverse()
 
@@ -416,21 +417,21 @@ if os.environ.get("EXPORT"):
     if thicc_spacer:
         export_to_dxf_layers(
             [
-                ("Top plate", top_plate, 3),
-                ("Switch plate", switch_plate, 3),
-                ("Spacer", spacer, 6),
-                ("Bottom plate", bottom_plate, 3),
+                ("Top plate", top_plate),
+                ("Switch plate", switch_plate),
+                ("Spacer", spacer),
+                ("Bottom plate", bottom_plate),
             ],
             "./data/keyboard.dxf",
         )
     else:
         export_to_dxf_layers(
             [
-                ("Top plate", top_plate, 3),
-                ("Switch plate", switch_plate, 3),
-                ("Spacer 1", spacer, 3),
-                ("Spacer 2", spacer, 3),
-                ("Bottom plate", bottom_plate, 3),
+                ("Top plate", top_plate),
+                ("Switch plate", switch_plate),
+                ("Spacer 1", spacer),
+                ("Spacer 2", spacer),
+                ("Bottom plate", bottom_plate),
             ],
             "./data/keyboard.dxf",
         )
