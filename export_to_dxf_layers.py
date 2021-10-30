@@ -126,6 +126,7 @@ def export_to_dxf_layers(parts, fname):
 
     for layer_name_part_and_thickness in parts:
         [layer_name, part, thickness] = layer_name_part_and_thickness
+        part = part.faces("front")
         full_layer_name = "%s (1 x %smm)" % (layer_name, thickness)
         dxf.layers.new(name=full_layer_name)
         plane = part.plane
