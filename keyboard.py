@@ -243,7 +243,7 @@ def make_bottom_plate(switch_plate_inner, thickness):
     right_outline = outline.vertices(">X").vertices("<Y").val().Center()
     bottom_right_outline = outline.vertices("<Y").vertices(">X").val().Center()
 
-    return (
+    bottom_plate = (
         cq.Workplane()
         .newObject([])
         .moveTo(
@@ -276,13 +276,17 @@ def make_bottom_plate(switch_plate_inner, thickness):
         .mirror(mirrorPlane="YZ", union=True)
     )
 
+    return bottom_plate.drill_holes(
+        switch_plate_inner
+    ).drill_reset_button_hole()
+
 
 def make_top_plate(switch_plate_inner):
     outline = switch_plate_inner.faces("front").wires(
         cq.selectors.AreaNthSelector(-1)
     )
 
-    return (
+    top_plate = (
         make_bottom_plate(switch_plate_inner, thickness)
         .cut(
             outline.toPending()
@@ -291,6 +295,8 @@ def make_top_plate(switch_plate_inner):
         )
         .translate([0, 0, thickness / 2])
     )
+
+    return top_plate.drill_holes(switch_plate_inner)
 
 
 def make_switch_plate(switch_plate_inner):
@@ -305,9 +311,14 @@ def make_switch_plate(switch_plate_inner):
         .translate([0, 0, -thickness])
     ).translate([0, 0, thickness / 2])
 
-    return switch_plate_inner.translate([0, 0, -thickness / 2]).union(
-        switch_plate_outer
+    switch_plate = fuse_parts(
+        [
+            switch_plate_outer,
+            switch_plate_inner.translate([0, 0, -thickness / 2]),
+        ]
     )
+
+    return switch_plate.drill_holes(switch_plate_inner)
 
 
 def make_spacer(switch_plate_inner, thickness):
@@ -322,7 +333,7 @@ def make_spacer(switch_plate_inner, thickness):
     bottom_right_outline = outline.vertices("<Y").vertices(">X").val().Center()
     bottom_left_outline = outline.vertices("<Y").vertices("<X").val().Center()
 
-    return (
+    spacer = (
         make_bottom_plate(switch_plate_inner, thickness)
         .moveTo(
             *find_point_for_angle(
@@ -369,63 +380,29 @@ def make_spacer(switch_plate_inner, thickness):
         .cutBlind(-thickness)
     ).translate([0, 0, thickness / 2])
 
+    return spacer.drill_holes(switch_plate_inner)
+
 
 def make_keyboard_parts():
     parts = []
 
     switch_plate_inner = make_switch_plate_inner().center_on_plane()
-
-    parts.append(
-        (
-            "Top plate",
-            make_top_plate(switch_plate_inner).drill_holes(switch_plate_inner),
-        )
-    )
-
-    parts.append(
-        (
-            "Switch plate",
-            make_switch_plate(switch_plate_inner).drill_holes(
-                switch_plate_inner
-            ),
-        )
-    )
+    parts.append(("Top plate", make_top_plate(switch_plate_inner)))
+    parts.append(("Switch plate", make_switch_plate(switch_plate_inner)))
 
     if thicc_spacer:
-        parts.append(
-            (
-                "Spacer",
-                make_spacer(switch_plate_inner, thickness * 2).drill_holes(
-                    switch_plate_inner
-                ),
-            )
-        )
+        parts.append(("Spacer", make_spacer(switch_plate_inner, thickness * 2)))
     else:
-        parts.append(
-            (
-                "Spacer 1",
-                make_spacer(switch_plate_inner, thickness).drill_holes(
-                    switch_plate_inner
-                ),
-            )
-        )
-        parts.append(
-            (
-                "Spacer 2",
-                make_spacer(switch_plate_inner, thickness).drill_holes(
-                    switch_plate_inner
-                ),
-            )
-        )
+        parts.append(("Spacer 1", make_spacer(switch_plate_inner, thickness)))
+        parts.append(("Spacer 2", make_spacer(switch_plate_inner, thickness)))
 
+    # TODO move this adjustment into make_bottom_plate
     parts.append(
         (
             "Bottom plate",
-            make_bottom_plate(switch_plate_inner, thickness)
-            .drill_holes(switch_plate_inner)
-            .drill_reset_button_hole()
-            # TODO move this adjustment into make_bottom_plate
-            .translate([0, 0, thickness / 2]),
+            make_bottom_plate(switch_plate_inner, thickness).translate(
+                [0, 0, thickness / 2]
+            ),
         )
     )
 
