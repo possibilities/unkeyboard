@@ -20,6 +20,10 @@ number_of_rows = 5
 inner_frame_size = 2.1
 outer_frame_size = 20 if use_chicago_bolt else 16
 
+# View
+
+explode_by = 12
+
 # Structural
 
 usb_cutout_width = 4
@@ -361,7 +365,7 @@ def make_spacer(switch_plate_inner, thickness):
         )
         .rect(usb_cutout_width, outer_frame_size)
         .cutBlind(-thickness)
-    )
+    ).translate([0, 0, thickness / 2])
 
 
 switch_plate_inner = make_switch_plate_inner().center_on_plane()
@@ -380,24 +384,27 @@ bottom_plate = (
     make_bottom_plate(switch_plate_inner, thickness)
     .drill_holes(switch_plate_inner)
     .drill_reset_button_hole(switch_plate_inner)
+    # TODO move this adjustment into make_bottom_plate
+    .translate([0, 0, thickness / 2])
 )
 
-if not os.environ.get("FORMAT"):
-    show_object(top_plate.translate([0, 0, 23]), name="top_plate")
-    show_object(switch_plate.translate([0, 0, 0]), name="switch_plate")
-    if thicc_spacer:
-        show_object(spacer.translate([0, 0, -20]), name="spacer")
-        show_object(
-            bottom_plate.translate([0, 0, -46 if thicc_spacer else -60]),
-            name="bottom_plate",
+def show_parts(parts):
+    parts.reverse()
+
+    total_thickness = 0
+    for index, layer_name_and_part in enumerate(parts):
+        [layer_name, part] = layer_name_and_part
+
+        thickness = (
+            part.vertices("front").val().Center().z
+            - part.vertices("back").val().Center().z
         )
-    else:
-        show_object(spacer.translate([0, 0, -20]), name="spacer_1")
-        show_object(spacer.translate([0, 0, -40]), name="spacer_2")
+
         show_object(
-            bottom_plate.translate([0, 0, -60 if thicc_spacer else -60]),
-            name="bottom_plate",
+            part.translate([0, 0, total_thickness + (thickness / 2)]),
+            name=layer_name,
         )
+        total_thickness = total_thickness + thickness + explode_by
 
 
 if os.environ.get("EXPORT"):
@@ -426,4 +433,24 @@ if os.environ.get("EXPORT"):
                 ("Bottom plate", bottom_plate, 3),
             ],
             "./data/keyboard.dxf",
+        )
+else:
+    if thicc_spacer:
+        show_parts(
+            [
+                ("Top plate", top_plate),
+                ("Switch plate", switch_plate),
+                ("Spacer", spacer),
+                ("Bottom plate", bottom_plate),
+            ],
+        )
+    else:
+        show_parts(
+            [
+                ("Top plate", top_plate),
+                ("Switch plate", switch_plate),
+                ("Spacer 1", spacer),
+                ("Spacer 2", spacer),
+                ("Bottom plate", bottom_plate),
+            ],
         )
