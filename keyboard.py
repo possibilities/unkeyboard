@@ -24,6 +24,7 @@ outer_frame_size = 20 if use_chicago_bolt else 16
 # View
 
 explode_by = 12
+flatten = False
 
 # Structural
 
@@ -414,6 +415,9 @@ keyboard_parts = make_keyboard_parts()
 if os.environ.get("EXPORT"):
     export_to_dxf_layers(keyboard_parts, "./data/keyboard.dxf")
 else:
-    for layer_name_and_part in explode_parts(keyboard_parts, explode_by):
+    if not flatten:
+        keyboard_parts = explode_parts(keyboard_parts, explode_by)
+
+    for layer_name_and_part in keyboard_parts:
         [layer_name, part] = layer_name_and_part
         show_object(part, name=layer_name)
