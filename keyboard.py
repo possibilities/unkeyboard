@@ -399,8 +399,7 @@ if os.environ.get("FORMAT"):
                 [
                     ("Top plate", top_plate, 3),
                     ("Switch plate", switch_plate, 3),
-                    ("Spacer 1", spacer, 3),
-                    ("Spacer 2", spacer, 3),
+                    ("Spacer", spacer, 6),
                     ("Bottom plate", bottom_plate, 3),
                 ],
                 "./data/layered.dxf",
@@ -410,28 +409,9 @@ if os.environ.get("FORMAT"):
                 [
                     ("Top plate", top_plate, 3),
                     ("Switch plate", switch_plate, 3),
-                    ("Spacer", spacer, 6),
+                    ("Spacer 1", spacer, 3),
+                    ("Spacer 2", spacer, 3),
                     ("Bottom plate", bottom_plate, 3),
                 ],
                 "./data/layered.dxf",
             )
-        export_to_dxf_layers(
-            [("Top plate", top_plate, 3)], "./data/top-plate.dxf"
-        )
-        export_to_dxf_layers(
-            [("Switch plate", switch_plate, 3)], "./data/switch-plate.dxf"
-        )
-        if thicc_spacer:
-            export_to_dxf_layers(
-                [("Thicc spacer", spacer, 6)], "./data/switch-plate.dxf"
-            )
-        else:
-            export_to_dxf_layers(
-                [("Spacer 1", spacer, 3)], "./data/spacer-1.dxf"
-            )
-            export_to_dxf_layers(
-                [("Spacer 2", spacer, 3)], "./data/spacer-2.dxf"
-            )
-        export_to_dxf_layers(
-            [("Bottom plate", bottom_plate, 3)], "./data/bottom-plate.dxf"
-        )
