@@ -400,50 +400,30 @@ if not os.environ.get("FORMAT"):
         )
 
 
-if os.environ.get("FORMAT"):
+if os.environ.get("EXPORT"):
     try:
         os.mkdir("./data")
     except:
         pass
 
-    if os.environ.get("FORMAT") == "SVG":
-        exporters.export(
-            fuse_parts(
-                [
-                    switch_plate.translate([0, 0, 0]),
-                    top_plate.translate([330, 0, 0]),
-                    spacer.translate([0, -160, 1.5]),
-                    spacer.translate([330, -160, 1.5]),
-                    bottom_plate.translate([330, -320, 1.5]),
-                ]
-            ).faces("front"),
-            "./data/keyboard.svg",
-            opt={
-                "showAxes": False,
-                "projectionDir": (0, 0, 1),
-                "strokeWidth": 0.25,
-            },
+    if thicc_spacer:
+        export_to_dxf_layers(
+            [
+                ("Top plate", top_plate, 3),
+                ("Switch plate", switch_plate, 3),
+                ("Spacer", spacer, 6),
+                ("Bottom plate", bottom_plate, 3),
+            ],
+            "./data/keyboard.dxf",
         )
-
-    if os.environ.get("FORMAT") == "DXF":
-        if thicc_spacer:
-            export_to_dxf_layers(
-                [
-                    ("Top plate", top_plate, 3),
-                    ("Switch plate", switch_plate, 3),
-                    ("Spacer", spacer, 6),
-                    ("Bottom plate", bottom_plate, 3),
-                ],
-                "./data/keyboard.dxf",
-            )
-        else:
-            export_to_dxf_layers(
-                [
-                    ("Top plate", top_plate, 3),
-                    ("Switch plate", switch_plate, 3),
-                    ("Spacer 1", spacer, 3),
-                    ("Spacer 2", spacer, 3),
-                    ("Bottom plate", bottom_plate, 3),
-                ],
-                "./data/keyboard.dxf",
-            )
+    else:
+        export_to_dxf_layers(
+            [
+                ("Top plate", top_plate, 3),
+                ("Switch plate", switch_plate, 3),
+                ("Spacer 1", spacer, 3),
+                ("Spacer 2", spacer, 3),
+                ("Bottom plate", bottom_plate, 3),
+            ],
+            "./data/keyboard.dxf",
+        )
