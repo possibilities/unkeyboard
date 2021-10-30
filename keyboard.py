@@ -7,6 +7,7 @@ from export_to_dxf_layers import export_to_dxf_layers
 
 thicc_spacer = False
 use_chicago_bolt = True
+has_two_inner_keys = False
 
 angle = 10
 thickness = 3
@@ -46,7 +47,7 @@ def stagger_percent_for_mm(stagger_mm):
     return stagger_mm / distance_between_switch_centers
 
 
-thumb_stagger = stagger_percent_for_mm(8.5)
+inner_keys_stagger = stagger_percent_for_mm(3.98 if has_two_inner_keys else 8.5)
 columns_stagger = (
     stagger_percent_for_mm(-1),
     stagger_percent_for_mm(4),
@@ -82,37 +83,39 @@ def make_switch_plate_inner():
             )
 
     offset_x = switch_offset
-    offset_y = switch_offset + (thumb_stagger * distance_between_switch_centers)
+    offset_y = switch_offset + (
+        inner_keys_stagger * distance_between_switch_centers
+    )
 
-    widen_cutout_around_key = 1
-    widen_cutout_around_thumb_key = 1.5
-    unit_height_of_thumb_key = 1.5
+    widen_cutout_around_key_size = 1
+    widen_cutout_around_inner_keys_size = 1.5
+    inner_keys_unit_height = 1.5
 
-    thumb_key_height = (
-        distance_between_switch_centers * unit_height_of_thumb_key
-    ) + widen_cutout_around_thumb_key
+    inner_keys_height = (
+        distance_between_switch_centers * inner_keys_unit_height
+    ) + widen_cutout_around_inner_keys_size
 
     switch_plate = (
         switch_plate.moveTo(offset_x, offset_y)
         .rect(switch_plate_key_cutout_size, switch_plate_key_cutout_size)
         .moveTo(offset_x, offset_y)
         .rect(
-            distance_between_switch_centers + widen_cutout_around_key,
-            thumb_key_height,
+            distance_between_switch_centers + widen_cutout_around_key_size,
+            inner_keys_height,
         )
         .extrude(thickness)
     )
 
     switch_plate = switch_plate.rotateAboutCenter([0, 0, 1], angle)
 
-    top_left_of_thumb_key = switch_plate.vertices("<X").val().Center()
+    top_left_off_inner_keys = switch_plate.vertices("<X").val().Center()
 
     switch_plate = switch_plate.mirror(
         mirrorPlane="YZ",
         union=True,
         basePointVector=(
-            top_left_of_thumb_key.x + (widen_cutout_around_key / 2),
-            top_left_of_thumb_key.y,
+            top_left_off_inner_keys.x + (widen_cutout_around_key_size / 2),
+            top_left_off_inner_keys.y,
         ),
     )
 
