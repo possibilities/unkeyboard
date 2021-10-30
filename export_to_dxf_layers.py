@@ -1,3 +1,4 @@
+import os
 import ezdxf
 from ezdxf import units
 from cadquery import exporters
@@ -121,6 +122,11 @@ DXF_CONVERTERS = {
 
 
 def export_to_dxf_layers(parts, fname):
+    try:
+        os.mkdir("./data")
+    except:
+        pass
+
     dxf = ezdxf.new(setup=True, units=units.MM)
     msp = dxf.modelspace()
 

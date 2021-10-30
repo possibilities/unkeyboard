@@ -4,6 +4,7 @@ from cadquery import exporters
 from fuse_parts import fuse_parts
 from math import sin, cos, radians, pi
 from cq_workplane_plugin import cq_workplane_plugin
+from explode_parts import explode_parts
 from export_to_dxf_layers import export_to_dxf_layers
 
 # Configurable
@@ -38,17 +39,6 @@ screw_distance_from_inner_edge = (outer_frame_size - inner_frame_size) / 2
 def find_point_for_angle(vertice, d, theta):
     theta_rad = pi / 2 - radians(theta)
     return (vertice.x + d * cos(theta_rad), vertice.y + d * sin(theta_rad))
-
-
-@cq_workplane_plugin
-def center_on_plane(part):
-    top = part.vertices(">Y").val().Center()
-    left = part.vertices("<X").val().Center()
-    right = part.vertices(">X").val().Center()
-    bottom = part.vertices("<Y").val().Center()
-    height = top.y - bottom.y
-    width = left.x - right.x
-    return part.translate([-left.x + (width / 2), -top.y + (height / 2), 0])
 
 
 def stagger_percent_for_mm(stagger_mm):
@@ -368,90 +358,48 @@ def make_spacer(switch_plate_inner, thickness):
     ).translate([0, 0, thickness / 2])
 
 
-switch_plate_inner = make_switch_plate_inner().center_on_plane()
+def make_keyboard_parts():
+    parts = []
 
-top_plate = make_top_plate(switch_plate_inner).drill_holes(switch_plate_inner)
-switch_plate = make_switch_plate(switch_plate_inner).drill_holes(
-    switch_plate_inner
-)
+    switch_plate_inner = make_switch_plate_inner()
 
-spacer_thickness = thickness * 2 if thicc_spacer else thickness
-spacer = make_spacer(switch_plate_inner, spacer_thickness).drill_holes(
-    switch_plate_inner
-)
+    top_plate = make_top_plate(switch_plate_inner).drill_holes(
+        switch_plate_inner
+    )
+    parts.append(("Top plate", top_plate))
 
-bottom_plate = (
-    make_bottom_plate(switch_plate_inner, thickness)
-    .drill_holes(switch_plate_inner)
-    .drill_reset_button_hole(switch_plate_inner)
-    # TODO move this adjustment into make_bottom_plate
-    .translate([0, 0, thickness / 2])
-)
+    switch_plate = make_switch_plate(switch_plate_inner).drill_holes(
+        switch_plate_inner
+    )
+    parts.append(("Switch plate", switch_plate))
+
+    spacer_thickness = thickness * 2 if thicc_spacer else thickness
+    spacer = make_spacer(switch_plate_inner, spacer_thickness).drill_holes(
+        switch_plate_inner
+    )
+    if thicc_spacer:
+        parts.append(("Spacer", spacer))
+    else:
+        parts.append(("Spacer 1", spacer))
+        parts.append(("Spacer 2", spacer))
+
+    bottom_plate = (
+        make_bottom_plate(switch_plate_inner, thickness)
+        .drill_holes(switch_plate_inner)
+        .drill_reset_button_hole(switch_plate_inner)
+        # TODO move this adjustment into make_bottom_plate
+        .translate([0, 0, thickness / 2])
+    )
+    parts.append(("Bottom plate", bottom_plate))
+
+    return parts
 
 
-def show_parts(parts):
-    parts.reverse()
-
-    total_thickness = 0
-    for index, layer_name_and_part in enumerate(parts):
-        [layer_name, part] = layer_name_and_part
-
-        thickness = (
-            part.vertices("front").val().Center().z
-            - part.vertices("back").val().Center().z
-        )
-
-        show_object(
-            part.translate([0, 0, total_thickness + (thickness / 2)]),
-            name=layer_name,
-        )
-        total_thickness = total_thickness + thickness + explode_by
-
+keyboard_parts = make_keyboard_parts()
 
 if os.environ.get("EXPORT"):
-    try:
-        os.mkdir("./data")
-    except:
-        pass
-
-    if thicc_spacer:
-        export_to_dxf_layers(
-            [
-                ("Top plate", top_plate),
-                ("Switch plate", switch_plate),
-                ("Spacer", spacer),
-                ("Bottom plate", bottom_plate),
-            ],
-            "./data/keyboard.dxf",
-        )
-    else:
-        export_to_dxf_layers(
-            [
-                ("Top plate", top_plate),
-                ("Switch plate", switch_plate),
-                ("Spacer 1", spacer),
-                ("Spacer 2", spacer),
-                ("Bottom plate", bottom_plate),
-            ],
-            "./data/keyboard.dxf",
-        )
+    export_to_dxf_layers(keyboard_parts, "./data/keyboard.dxf")
 else:
-    if thicc_spacer:
-        show_parts(
-            [
-                ("Top plate", top_plate),
-                ("Switch plate", switch_plate),
-                ("Spacer", spacer),
-                ("Bottom plate", bottom_plate),
-            ],
-        )
-    else:
-        show_parts(
-            [
-                ("Top plate", top_plate),
-                ("Switch plate", switch_plate),
-                ("Spacer 1", spacer),
-                ("Spacer 2", spacer),
-                ("Bottom plate", bottom_plate),
-            ],
-        )
+    for layer_name_and_part in explode_parts(keyboard_parts, explode_by):
+        [layer_name, part] = layer_name_and_part
+        show_object(part, name=layer_name)
