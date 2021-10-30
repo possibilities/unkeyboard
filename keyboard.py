@@ -6,6 +6,8 @@ from math import sin, cos, radians, pi
 from cq_workplane_plugin import cq_workplane_plugin
 from export_to_dxf_layers import export_to_dxf_layers
 
+# Configurable
+
 thicc_spacer = False
 use_chicago_bolt = True
 has_two_inner_keys = False
@@ -14,17 +16,18 @@ angle = 10
 thickness = 3
 number_of_columns = 6
 number_of_rows = 5
-usb_cutout_width = 4
 
-outer_frame_size = 20 if use_chicago_bolt else 16
 inner_frame_size = 2.1
+outer_frame_size = 20 if use_chicago_bolt else 16
 
+# Structural
+
+usb_cutout_width = 4
 screw_hole_radius = 2.5 if use_chicago_bolt else 1.5
 reset_button_hole_radius = 1.5
 switch_plate_key_cutout_size = 13.97
 distance_between_switch_centers = 19
 switch_offset = distance_between_switch_centers / 2
-
 screw_distance_from_inner_edge = (outer_frame_size - inner_frame_size) / 2
 
 
@@ -89,8 +92,8 @@ def make_switch_plate_inner():
     )
 
     widen_cutout_around_key_size = 1
-    widen_cutout_around_inner_keys_size = 1.5
-    inner_keys_unit_height = 1.5
+    widen_cutout_around_inner_keys_size = 0 if has_two_inner_keys else 1.5
+    inner_keys_unit_height = 1 if has_two_inner_keys else 1.5
 
     inner_keys_height = (
         distance_between_switch_centers * inner_keys_unit_height
@@ -99,13 +102,26 @@ def make_switch_plate_inner():
     switch_plate = (
         switch_plate.moveTo(inner_key_offset_x, inner_key_offset_y)
         .rect(switch_plate_key_cutout_size, switch_plate_key_cutout_size)
-        .moveTo(inner_key_offset_x, inner_key_offset_y)
         .rect(
             distance_between_switch_centers + widen_cutout_around_key_size,
             inner_keys_height,
         )
         .extrude(thickness)
     )
+
+    if has_two_inner_keys:
+        switch_plate = (
+            switch_plate.moveTo(
+                inner_key_offset_x,
+                inner_key_offset_y + distance_between_switch_centers,
+            )
+            .rect(switch_plate_key_cutout_size, switch_plate_key_cutout_size)
+            .rect(
+                distance_between_switch_centers + widen_cutout_around_key_size,
+                inner_keys_height,
+            )
+            .extrude(thickness)
+        )
 
     switch_plate = switch_plate.rotateAboutCenter([0, 0, 1], angle)
 
