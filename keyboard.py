@@ -145,7 +145,7 @@ def make_switch_plate_inner():
 
 
 @cq_workplane_plugin
-def drill_reset_button_hole(part, switch_plate_inner):
+def drill_reset_button_hole(part):
     return (
         part.faces("front")
         .moveTo(-24, 41)
@@ -374,34 +374,59 @@ def make_keyboard_parts():
 
     switch_plate_inner = make_switch_plate_inner().center_on_plane()
 
-    top_plate = make_top_plate(switch_plate_inner).drill_holes(
-        switch_plate_inner
+    parts.append(
+        (
+            "Top plate",
+            make_top_plate(switch_plate_inner).drill_holes(switch_plate_inner),
+        )
     )
-    parts.append(("Top plate", top_plate))
 
-    switch_plate = make_switch_plate(switch_plate_inner).drill_holes(
-        switch_plate_inner
+    parts.append(
+        (
+            "Switch plate",
+            make_switch_plate(switch_plate_inner).drill_holes(
+                switch_plate_inner
+            ),
+        )
     )
-    parts.append(("Switch plate", switch_plate))
 
-    spacer_thickness = thickness * 2 if thicc_spacer else thickness
-    spacer = make_spacer(switch_plate_inner, spacer_thickness).drill_holes(
-        switch_plate_inner
-    )
     if thicc_spacer:
-        parts.append(("Spacer", spacer))
+        parts.append(
+            (
+                "Spacer",
+                make_spacer(switch_plate_inner, thickness * 2).drill_holes(
+                    switch_plate_inner
+                ),
+            )
+        )
     else:
-        parts.append(("Spacer 1", spacer))
-        parts.append(("Spacer 2", spacer))
+        parts.append(
+            (
+                "Spacer 1",
+                make_spacer(switch_plate_inner, thickness).drill_holes(
+                    switch_plate_inner
+                ),
+            )
+        )
+        parts.append(
+            (
+                "Spacer 2",
+                make_spacer(switch_plate_inner, thickness).drill_holes(
+                    switch_plate_inner
+                ),
+            )
+        )
 
-    bottom_plate = (
-        make_bottom_plate(switch_plate_inner, thickness)
-        .drill_holes(switch_plate_inner)
-        .drill_reset_button_hole(switch_plate_inner)
-        # TODO move this adjustment into make_bottom_plate
-        .translate([0, 0, thickness / 2])
+    parts.append(
+        (
+            "Bottom plate",
+            make_bottom_plate(switch_plate_inner, thickness)
+            .drill_holes(switch_plate_inner)
+            .drill_reset_button_hole()
+            # TODO move this adjustment into make_bottom_plate
+            .translate([0, 0, thickness / 2]),
+        )
     )
-    parts.append(("Bottom plate", bottom_plate))
 
     return parts
 
