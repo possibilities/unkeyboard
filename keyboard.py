@@ -33,7 +33,6 @@ reset_button_hole_radius = 1.5
 switch_plate_key_cutout_size = 13.97
 distance_between_switch_centers = 19
 switch_offset = distance_between_switch_centers / 2
-screw_distance_from_inner_edge = (outer_frame_size - inner_frame_size) / 2
 
 
 def find_point_for_angle(vertice, d, theta):
@@ -166,6 +165,8 @@ def drill_holes(part, switch_plate_inner):
     left_outline = outline.vertices("<X").vertices("<Y").val().Center()
     bottom_right_outline = outline.vertices("<Y").vertices(">X").val().Center()
     bottom_left_outline = outline.vertices("<Y").vertices("<X").val().Center()
+
+    screw_distance_from_inner_edge = (outer_frame_size - inner_frame_size) / 2
 
     return (
         part.faces("front")
