@@ -41,6 +41,17 @@ def find_point_for_angle(vertice, d, theta):
     return (vertice.x + d * cos(theta_rad), vertice.y + d * sin(theta_rad))
 
 
+@cq_workplane_plugin
+def center_on_plane(part):
+    top = part.vertices(">Y").val().Center()
+    left = part.vertices("<X").val().Center()
+    right = part.vertices(">X").val().Center()
+    bottom = part.vertices("<Y").val().Center()
+    height = top.y - bottom.y
+    width = left.x - right.x
+    return part.translate([-left.x + (width / 2), -top.y + (height / 2), 0])
+
+
 def stagger_percent_for_mm(stagger_mm):
     return stagger_mm / distance_between_switch_centers
 
@@ -361,7 +372,7 @@ def make_spacer(switch_plate_inner, thickness):
 def make_keyboard_parts():
     parts = []
 
-    switch_plate_inner = make_switch_plate_inner()
+    switch_plate_inner = make_switch_plate_inner().center_on_plane()
 
     top_plate = make_top_plate(switch_plate_inner).drill_holes(
         switch_plate_inner
