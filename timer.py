@@ -11,6 +11,6 @@ def timer():
         last_split = time.time()
 
     def _total_time():
-        print("total: " + str(time.time() - start))
+        print("Total: " + str(time.time() - start))
 
     return [_time_elapsed, _total_time]
