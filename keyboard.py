@@ -12,8 +12,8 @@ has_two_inner_keys = False
 
 angle = 10
 thickness = 3
-number_of_columns = 6
 number_of_rows = 5
+number_of_columns = 6
 
 inner_frame_size = 2.1
 outer_frame_size = 20 if use_chicago_bolt else 16
