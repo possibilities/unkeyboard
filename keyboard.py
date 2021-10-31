@@ -156,16 +156,26 @@ def drill_reset_button_hole(part):
 
 @cq_workplane_plugin
 def drill_holes(part, switch_plate_inner):
-    outline = switch_plate_inner.faces("front").wires(
+    switch_plate_outline = switch_plate_inner.faces("front").wires(
         cq.selectors.AreaNthSelector(-1)
     )
 
-    top_left_outline = outline.edges("<X").vertices(">Y").val().Center()
-    top_right_outline = outline.vertices(">XY").val().Center()
-    right_outline = outline.vertices(">X").vertices("<Y").val().Center()
-    left_outline = outline.vertices("<X").vertices("<Y").val().Center()
-    bottom_right_outline = outline.vertices("<Y").vertices(">X").val().Center()
-    bottom_left_outline = outline.vertices("<Y").vertices("<X").val().Center()
+    top_left_outline = (
+        switch_plate_outline.edges("<X").vertices(">Y").val().Center()
+    )
+    top_right_outline = switch_plate_outline.vertices(">XY").val().Center()
+    right_outline = (
+        switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
+    )
+    left_outline = (
+        switch_plate_outline.vertices("<X").vertices("<Y").val().Center()
+    )
+    bottom_right_outline = (
+        switch_plate_outline.vertices("<Y").vertices(">X").val().Center()
+    )
+    bottom_left_outline = (
+        switch_plate_outline.vertices("<Y").vertices("<X").val().Center()
+    )
 
     screw_distance_from_inner_edge = (outer_frame_size - inner_frame_size) / 2
 
@@ -237,12 +247,16 @@ def drill_holes(part, switch_plate_inner):
 
 
 def make_bottom_plate(switch_plate_inner, thickness):
-    outline = switch_plate_inner.faces("front").wires(
+    switch_plate_outline = switch_plate_inner.faces("front").wires(
         cq.selectors.AreaNthSelector(-1)
     )
-    top_right_outline = outline.vertices(">XY").val().Center()
-    right_outline = outline.vertices(">X").vertices("<Y").val().Center()
-    bottom_right_outline = outline.vertices("<Y").vertices(">X").val().Center()
+    top_right_outline = switch_plate_outline.vertices(">XY").val().Center()
+    right_outline = (
+        switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
+    )
+    bottom_right_outline = (
+        switch_plate_outline.vertices("<Y").vertices(">X").val().Center()
+    )
 
     bottom_plate = (
         cq.Workplane()
@@ -283,14 +297,14 @@ def make_bottom_plate(switch_plate_inner, thickness):
 
 
 def make_top_plate(switch_plate_inner):
-    outline = switch_plate_inner.faces("front").wires(
+    switch_plate_outline = switch_plate_inner.faces("front").wires(
         cq.selectors.AreaNthSelector(-1)
     )
 
     top_plate = (
         make_bottom_plate(switch_plate_inner, thickness)
         .cut(
-            outline.toPending()
+            switch_plate_outline.toPending()
             .extrude(-thickness, combine=False)
             .translate([0, 0, -thickness])
         )
@@ -302,12 +316,12 @@ def make_top_plate(switch_plate_inner):
 
 def make_switch_plate(switch_plate_inner):
     switch_plate_uncut = make_bottom_plate(switch_plate_inner, thickness)
-    outline = switch_plate_inner.faces("front").wires(
+    switch_plate_outline = switch_plate_inner.faces("front").wires(
         cq.selectors.AreaNthSelector(-1)
     )
 
     switch_plate_outer = switch_plate_uncut.cut(
-        outline.toPending()
+        switch_plate_outline.toPending()
         .extrude(-thickness, combine=False)
         .translate([0, 0, -thickness])
     ).translate([0, 0, thickness / 2])
@@ -323,16 +337,26 @@ def make_switch_plate(switch_plate_inner):
 
 
 def make_spacer(switch_plate_inner, thickness):
-    outline = switch_plate_inner.faces("front").wires(
+    switch_plate_outline = switch_plate_inner.faces("front").wires(
         cq.selectors.AreaNthSelector(-1)
     )
 
-    top_left_outline = outline.edges("<X").vertices(">Y").val().Center()
-    top_right_outline = outline.vertices(">XY").val().Center()
-    right_outline = outline.vertices(">X").vertices("<Y").val().Center()
-    left_outline = outline.vertices("<X").vertices("<Y").val().Center()
-    bottom_right_outline = outline.vertices("<Y").vertices(">X").val().Center()
-    bottom_left_outline = outline.vertices("<Y").vertices("<X").val().Center()
+    top_left_outline = (
+        switch_plate_outline.edges("<X").vertices(">Y").val().Center()
+    )
+    top_right_outline = switch_plate_outline.vertices(">XY").val().Center()
+    right_outline = (
+        switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
+    )
+    left_outline = (
+        switch_plate_outline.vertices("<X").vertices("<Y").val().Center()
+    )
+    bottom_right_outline = (
+        switch_plate_outline.vertices("<Y").vertices(">X").val().Center()
+    )
+    bottom_left_outline = (
+        switch_plate_outline.vertices("<Y").vertices("<X").val().Center()
+    )
 
     spacer = (
         make_bottom_plate(switch_plate_inner, thickness)
