@@ -1,9 +1,11 @@
+from pprint import pprint
 import math
 import cadquery as cq
 from timer import timer
 from fuse_parts import fuse_parts
 from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
+from types import SimpleNamespace
 
 # Configurable
 
@@ -51,12 +53,20 @@ outer_frame_size = (
 )
 
 
+def coords_from_vertice(vertice):
+    return (vertice.x, vertice.y)
+
+
 def find_point_for_angle(vertice, d, theta):
     theta_rad = math.pi / 2 - math.radians(theta)
     return (
         vertice.x + d * math.cos(theta_rad),
         vertice.y + d * math.sin(theta_rad),
     )
+
+
+def extrude_shape(points, thickness):
+    return cq.Workplane().polyline(points).close().extrude(thickness)
 
 
 @cq_workplane_plugin
@@ -86,99 +96,177 @@ columns_stagger = (
 
 
 @cq_workplane_plugin
-def drill_holes(part, switch_plate_inner):
-    switch_plate_outline = switch_plate_inner.faces("front").wires(
-        cq.selectors.AreaNthSelector(-1)
-    )
-
-    top_left = switch_plate_outline.edges("<X").vertices(">Y").val().Center()
-    top_right = switch_plate_outline.vertices(">XY").val().Center()
-    right = switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
-    left = switch_plate_outline.vertices("<X").vertices("<Y").val().Center()
-    bottom_right = (
-        switch_plate_outline.vertices("<Y").vertices(">X").val().Center()
-    )
-    bottom_left = (
-        switch_plate_outline.vertices("<Y").vertices("<X").val().Center()
-    )
-
-    screw_distance_from_inner_edge = (outer_frame_size - inner_frame_size) / 2
-
+def drill_holes(part, geometry):
     return (
-        part.faces("front")
-        .moveTo(
-            *find_point_for_angle(
-                top_right, screw_distance_from_inner_edge, 45 - angle
-            )
-        )
+        part.pushPoints(geometry.screws)
         .circle(screw_hole_radius)
-        .cutThruAll()
-        .moveTo(
-            *find_point_for_angle(
-                right, -screw_distance_from_inner_edge, -45 - angle
-            )
-        )
-        .circle(screw_hole_radius)
-        .cutThruAll()
-        .moveTo(
-            *find_point_for_angle(
-                bottom_right, -screw_distance_from_inner_edge, 45 - angle
-            )
-        )
-        .circle(screw_hole_radius)
-        .cutThruAll()
-        .moveTo(
-            *find_point_for_angle(
-                bottom_left, -screw_distance_from_inner_edge, -45 + angle
-            )
-        )
-        .circle(screw_hole_radius)
-        .cutThruAll()
-        .moveTo(
-            *find_point_for_angle(
-                left, -screw_distance_from_inner_edge, 45 + angle
-            )
-        )
-        .circle(screw_hole_radius)
-        .cutThruAll()
-        .moveTo(
-            *find_point_for_angle(
-                top_left, screw_distance_from_inner_edge, -45 + angle
-            ),
-        )
-        .circle(screw_hole_radius)
-        .cutThruAll()
-        .moveTo(
-            -top_inside_screw_distance_from_usb,
-            find_point_for_angle(
-                top_left, screw_distance_from_inner_edge, -45 + angle
-            )[1],
-        )
-        .circle(screw_hole_radius)
-        .cutThruAll()
-        .moveTo(
-            top_inside_screw_distance_from_usb,
-            find_point_for_angle(
-                top_left, screw_distance_from_inner_edge, -45 + angle
-            )[1],
-        )
-        .circle(screw_hole_radius)
-        .cutThruAll()
+        .cutBlind(-thickness)
     )
 
 
 @cq_workplane_plugin
-def drill_reset_button_hole(part):
+def drill_reset_button_hole(part, geometry):
     return (
         part.faces("front")
-        .moveTo(-24, 41)
+        .pushPoints([geometry.reset_button])
         .circle(reset_button_hole_radius)
-        .cutThruAll()
+        .cutBlind(-thickness)
     )
+
+
+def calculate_coords_from_switch_plate_inner(switch_plate_inner):
+    switch_plate_outline = switch_plate_inner.faces("front").wires(
+        cq.selectors.AreaNthSelector(-1)
+    )
+
+    inner_plate_top_left = (
+        switch_plate_outline.edges("<X").vertices(">Y").val().Center()
+    )
+    inner_plate_top_right = switch_plate_outline.vertices(">XY").val().Center()
+    inner_plate_left = (
+        switch_plate_outline.vertices("<X").vertices("<Y").val().Center()
+    )
+    inner_plate_right = (
+        switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
+    )
+    inner_plate_bottom_left = (
+        switch_plate_outline.vertices("<Y").vertices("<X").val().Center()
+    )
+    inner_plate_bottom_right = (
+        switch_plate_outline.vertices("<Y").vertices(">X").val().Center()
+    )
+
+    case_outer_top_right = find_point_for_angle(
+        inner_plate_top_right, outer_frame_size, 45 - angle
+    )
+    case_outer_right = find_point_for_angle(
+        inner_plate_right, -outer_frame_size, -45 - angle
+    )
+    case_outer_bottom_right = find_point_for_angle(
+        inner_plate_bottom_right, -outer_frame_size, 45 - angle
+    )
+    case_outer_bottom_left = find_point_for_angle(
+        inner_plate_bottom_left, -outer_frame_size, -45 + angle
+    )
+    case_outer_left = find_point_for_angle(
+        inner_plate_left, -outer_frame_size, 45 + angle
+    )
+    case_outer_top_left = find_point_for_angle(
+        inner_plate_top_left, outer_frame_size, -45 + angle
+    )
+
+    case_outer_points = [
+        case_outer_top_left,
+        case_outer_top_right,
+        case_outer_right,
+        case_outer_bottom_right,
+        case_outer_bottom_left,
+        case_outer_left,
+    ]
+
+    screw_distance_from_inner_edge = (outer_frame_size - inner_frame_size) / 2
+
+    switch_plate_inner_outline_wires = switch_plate_inner.faces("front").wires(
+        cq.selectors.AreaNthSelector(-1)
+    )
+
+    screw_top_left = find_point_for_angle(
+        inner_plate_top_left, screw_distance_from_inner_edge, -45 + angle
+    )
+    screw_top_right = find_point_for_angle(
+        inner_plate_top_right, screw_distance_from_inner_edge, 45 - angle
+    )
+    screw_top_middle_left = (
+        -top_inside_screw_distance_from_usb,
+        find_point_for_angle(
+            inner_plate_top_left, screw_distance_from_inner_edge, -45 + angle
+        )[1],
+    )
+    screw_top_middle_right = (
+        top_inside_screw_distance_from_usb,
+        find_point_for_angle(
+            inner_plate_top_right, screw_distance_from_inner_edge, 45 - angle
+        )[1],
+    )
+    screw_bottom_middle_left = find_point_for_angle(
+        inner_plate_bottom_left, -screw_distance_from_inner_edge, 45 - angle
+    )
+    screw_bottom_middle_right = find_point_for_angle(
+        inner_plate_bottom_right, -screw_distance_from_inner_edge, -45 + angle
+    )
+    screw_bottom_left = find_point_for_angle(
+        inner_plate_left, -screw_distance_from_inner_edge, 45 - angle
+    )
+    screw_bottom_right = find_point_for_angle(
+        inner_plate_right, -screw_distance_from_inner_edge, -45 + angle
+    )
+
+    screw_points = [
+        screw_top_left,
+        screw_top_right,
+        screw_top_middle_left,
+        screw_top_middle_right,
+        screw_bottom_right,
+        screw_bottom_left,
+        screw_bottom_middle_right,
+        screw_bottom_middle_left,
+    ]
+
+    spacer_inner_top_left = find_point_for_angle(
+        inner_plate_top_left, -inner_frame_size, -45 + angle
+    )
+    spacer_inner_top_right = find_point_for_angle(
+        inner_plate_top_right, -inner_frame_size, 45 - angle
+    )
+    spacer_inner_right = find_point_for_angle(
+        inner_plate_right, inner_frame_size, -45 - angle
+    )
+    spacer_inner_bottom_right = find_point_for_angle(
+        inner_plate_bottom_right, inner_frame_size, 45 - angle
+    )
+    spacer_inner_bottom_left = find_point_for_angle(
+        inner_plate_bottom_left, inner_frame_size, -45 + angle
+    )
+    spacer_inner_left = find_point_for_angle(
+        inner_plate_left, inner_frame_size, 45 + angle
+    )
+
+    spacer_inner_points = [
+        spacer_inner_top_left,
+        spacer_inner_top_right,
+        spacer_inner_right,
+        spacer_inner_bottom_right,
+        spacer_inner_bottom_left,
+        spacer_inner_left,
+    ]
+
+    reset_button_point = (-24, 41)
+
+    usb_rect_points = [
+        (usb_cutout_width / 2, case_outer_top_left[1]),
+        (usb_cutout_width / 2, spacer_inner_top_left[1]),
+        (-usb_cutout_width / 2, spacer_inner_top_left[1]),
+        (-usb_cutout_width / 2, case_outer_top_left[1]),
+    ]
+
+    geometry_points = SimpleNamespace(
+        **{
+            "usb_rect": usb_rect_points,
+            "screws": screw_points,
+            "reset_button": reset_button_point,
+            "case_outer": case_outer_points,
+            "spacer_inner": spacer_inner_points,
+            "switch_plate_inner_outline": switch_plate_inner_outline_wires,
+        }
+    )
+
+    return geometry_points
 
 
 def make_switch_plate_inner():
     switch_plate = cq.Workplane()
+
+    widen_cutout_around_key_size = 1
 
     for column in range(number_of_columns):
         for row in range(number_of_rows):
@@ -192,8 +280,10 @@ def make_switch_plate_inner():
             switch_plate = (
                 switch_plate.moveTo(key_offset_x, key_offset_y)
                 .rect(
-                    distance_between_switch_centers + 1,
-                    distance_between_switch_centers + 1,
+                    distance_between_switch_centers
+                    + widen_cutout_around_key_size,
+                    distance_between_switch_centers
+                    + widen_cutout_around_key_size,
                 )
                 .rect(
                     switch_plate_key_cutout_size, switch_plate_key_cutout_size
@@ -206,7 +296,6 @@ def make_switch_plate_inner():
         inner_keys_stagger * distance_between_switch_centers
     )
 
-    widen_cutout_around_key_size = 1
     widen_cutout_around_inner_keys_size = 0 if has_two_inner_keys else 1.5
     inner_keys_unit_height = 1 if has_two_inner_keys else 1.5
 
@@ -254,117 +343,63 @@ def make_switch_plate_inner():
     return switch_plate
 
 
-def make_bottom_plate(switch_plate_inner, thickness):
-    switch_plate_outline = switch_plate_inner.faces("front").wires(
-        cq.selectors.AreaNthSelector(-1)
-    )
-    top_right = switch_plate_outline.vertices(">XY").val().Center()
-    right = switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
-    bottom_right = (
-        switch_plate_outline.vertices("<Y").vertices(">X").val().Center()
-    )
-
-    bottom_plate = (
+def make_bottom_plate(geometry, thickness):
+    return (
         cq.Workplane()
-        .newObject([])
-        .moveTo(
-            0,
-            find_point_for_angle(top_right, outer_frame_size, 45 - angle)[1],
-        )
-        .lineTo(*find_point_for_angle(top_right, outer_frame_size, 45 - angle))
-        .lineTo(*find_point_for_angle(right, -outer_frame_size, -45 - angle))
-        .lineTo(
-            *find_point_for_angle(bottom_right, -outer_frame_size, 45 - angle)
-        )
-        .lineTo(
-            0,
-            find_point_for_angle(bottom_right, -outer_frame_size, 45 - angle)[
-                1
-            ],
-        )
+        .polyline(geometry.case_outer)
         .close()
-        .extrude(-thickness, combine=False)
-        .mirror(mirrorPlane="YZ", union=True)
-    )
-
-    return bottom_plate.drill_holes(
-        switch_plate_inner
-    ).drill_reset_button_hole()
-
-
-def make_top_plate(switch_plate_inner):
-    switch_plate_outline = switch_plate_inner.faces("front").wires(
-        cq.selectors.AreaNthSelector(-1)
-    )
-
-    top_plate = make_bottom_plate(switch_plate_inner, thickness).cut(
-        switch_plate_outline.toPending()
-        .extrude(-thickness, combine=False)
-        .translate([0, 0, -thickness])
-    )
-
-    return top_plate.drill_holes(switch_plate_inner)
-
-
-def make_switch_plate(switch_plate_inner):
-    switch_plate_uncut = make_bottom_plate(switch_plate_inner, thickness)
-    switch_plate_outline = switch_plate_inner.faces("front").wires(
-        cq.selectors.AreaNthSelector(-1)
-    )
-
-    switch_plate_outer = switch_plate_uncut.cut(
-        switch_plate_outline.toPending()
-        .extrude(-thickness, combine=False)
-        .translate([0, 0, -thickness])
-    )
-
-    return fuse_parts(
-        [switch_plate_outer, switch_plate_inner.translate([0, 0, -thickness])]
+        .extrude(-thickness)
+        .drill_holes(geometry)
+        .drill_reset_button_hole(geometry)
     )
 
 
-def make_spacer(switch_plate_inner, thickness):
-    switch_plate_outline = switch_plate_inner.faces("front").wires(
-        cq.selectors.AreaNthSelector(-1)
-    )
-
-    top_left = switch_plate_outline.edges("<X").vertices(">Y").val().Center()
-    top_right = switch_plate_outline.vertices(">XY").val().Center()
-    right = switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
-    left = switch_plate_outline.vertices("<X").vertices("<Y").val().Center()
-    bottom_right = (
-        switch_plate_outline.vertices("<Y").vertices(">X").val().Center()
-    )
-    bottom_left = (
-        switch_plate_outline.vertices("<Y").vertices("<X").val().Center()
-    )
-
-    spacer = (
-        make_bottom_plate(switch_plate_inner, thickness)
-        .moveTo(*find_point_for_angle(top_right, -inner_frame_size, 45 - angle))
-        .lineTo(*find_point_for_angle(right, inner_frame_size, -45 - angle))
-        .lineTo(
-            *find_point_for_angle(bottom_right, inner_frame_size, 45 - angle)
-        )
-        .lineTo(
-            *find_point_for_angle(bottom_left, inner_frame_size, -45 + angle)
-        )
-        .lineTo(*find_point_for_angle(left, inner_frame_size, 45 + angle))
-        .lineTo(
-            *find_point_for_angle(top_left, -inner_frame_size, -45 + angle),
-        )
+def make_top_plate(geometry):
+    return (
+        cq.Workplane()
+        .polyline(geometry.case_outer)
         .close()
-        .cutThruAll()
-        .moveTo(
-            0,
-            find_point_for_angle(top_right, outer_frame_size, 45 - angle)[1]
-            - outer_frame_size / 2,
+        .extrude(-thickness)
+        .translate([0, 0, thickness])
+        .cut(
+            geometry.switch_plate_inner_outline.toPending().extrude(-thickness)
         )
-        .rect(usb_cutout_width, outer_frame_size)
-        .cutBlind(-thickness)
+        .translate([0, 0, -thickness])
+        .drill_holes(geometry)
     )
 
-    return spacer.drill_holes(switch_plate_inner)
+
+def make_switch_plate(switch_plate_inner, geometry):
+    switch_plate_outer = (
+        cq.Workplane()
+        .polyline(geometry.case_outer)
+        .close()
+        .extrude(-thickness)
+        .translate([0, 0, thickness])
+        .cut(
+            geometry.switch_plate_inner_outline.toPending().extrude(-thickness)
+        )
+        .translate([0, 0, -thickness])
+        .drill_holes(geometry)
+    )
+    switch_plate_inner = switch_plate_inner.translate([0, 0, -thickness])
+    return fuse_parts([switch_plate_outer, switch_plate_inner])
+
+
+def make_spacer(geometry, thickness):
+    return (
+        cq.Workplane()
+        .polyline(geometry.spacer_inner)
+        .close()
+        .polyline(geometry.case_outer)
+        .close()
+        .extrude(thickness)
+        .polyline(geometry.usb_rect)
+        .close()
+        .cutBlind(thickness)
+        .translate([0, 0, -thickness])
+        .drill_holes(geometry)
+    )
 
 
 def make_keyboard_parts():
@@ -384,23 +419,25 @@ def make_keyboard_parts():
     switch_plate_inner = make_switch_plate_inner().center_on_plane()
     time_elapsed("Inner switch plate")
 
-    parts.append(("Top plate", make_top_plate(switch_plate_inner)))
+    geometry = calculate_coords_from_switch_plate_inner(switch_plate_inner)
+
+    parts.append(("Top plate", make_top_plate(geometry)))
     time_elapsed("Top plate")
 
-    parts.append(("Switch plate", make_switch_plate(switch_plate_inner)))
+    parts.append(
+        ("Switch plate", make_switch_plate(switch_plate_inner, geometry))
+    )
     time_elapsed("Switch plate")
 
     if thicc_spacer:
-        parts.append(("Spacer", make_spacer(switch_plate_inner, thickness * 2)))
+        parts.append(("Spacer", make_spacer(geometry, thickness * 2)))
         time_elapsed("Spacer")
     else:
-        parts.append(("Spacer 1", make_spacer(switch_plate_inner, thickness)))
-        parts.append(("Spacer 2", make_spacer(switch_plate_inner, thickness)))
+        parts.append(("Spacer 1", make_spacer(geometry, thickness)))
+        parts.append(("Spacer 2", make_spacer(geometry, thickness)))
         time_elapsed("Spacers")
 
-    parts.append(
-        ("Bottom plate", make_bottom_plate(switch_plate_inner, thickness))
-    )
+    parts.append(("Bottom plate", make_bottom_plate(geometry, thickness)))
     time_elapsed("Bottom plate")
 
     total_time()
