@@ -1,5 +1,6 @@
 import math
 import cadquery as cq
+from timer import timer
 from fuse_parts import fuse_parts
 from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
@@ -412,20 +413,40 @@ def make_spacer(switch_plate_inner, thickness):
 def make_keyboard_parts():
     parts = []
 
+    print("")
+    print(
+        "Size:",
+        number_of_rows,
+        "x",
+        number_of_columns,
+        "(total: " + str(number_of_rows * number_of_columns) + ")",
+    )
+
+    [time_elapsed, total_time] = timer()
+
     switch_plate_inner = make_switch_plate_inner().center_on_plane()
+    time_elapsed("Inner switch plate")
 
     parts.append(("Top plate", make_top_plate(switch_plate_inner)))
+    time_elapsed("Top plate")
+
     parts.append(("Switch plate", make_switch_plate(switch_plate_inner)))
+    time_elapsed("Switch plate")
 
     if thicc_spacer:
         parts.append(("Spacer", make_spacer(switch_plate_inner, thickness * 2)))
+        time_elapsed("Spacer")
     else:
         parts.append(("Spacer 1", make_spacer(switch_plate_inner, thickness)))
         parts.append(("Spacer 2", make_spacer(switch_plate_inner, thickness)))
+        time_elapsed("Spacers")
 
     parts.append(
         ("Bottom plate", make_bottom_plate(switch_plate_inner, thickness))
     )
+    time_elapsed("Bottom plate")
+
+    total_time()
 
     return parts
 
