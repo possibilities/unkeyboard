@@ -36,6 +36,7 @@ switch_plate_key_cutout_size = 13.97
 distance_between_switch_centers = 19
 switch_offset = distance_between_switch_centers / 2
 inner_frame_size = 2.1
+top_inside_screw_distance_from_usb = 11.25
 
 screw_hole_radius = (
     screw_hole_radius_for_chicago_bolt
@@ -235,7 +236,7 @@ def drill_holes(part, switch_plate_inner):
         .circle(screw_hole_radius)
         .cutThruAll()
         .moveTo(
-            -11.25,
+            -top_inside_screw_distance_from_usb,
             find_point_for_angle(
                 top_left, screw_distance_from_inner_edge, -45 + angle
             )[1],
@@ -243,7 +244,7 @@ def drill_holes(part, switch_plate_inner):
         .circle(screw_hole_radius)
         .cutThruAll()
         .moveTo(
-            11.25,
+            top_inside_screw_distance_from_usb,
             find_point_for_angle(
                 top_left, screw_distance_from_inner_edge, -45 + angle
             )[1],
