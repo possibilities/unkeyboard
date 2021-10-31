@@ -5,7 +5,6 @@ from fuse_parts import fuse_parts
 from math import sin, cos, radians, pi
 from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
-from export_to_dxf_layers import export_to_dxf_layers
 
 # Configurable
 
@@ -410,11 +409,8 @@ def make_keyboard_parts():
     return parts
 
 
-keyboard_parts = make_keyboard_parts()
-
-if os.environ.get("EXPORT"):
-    export_to_dxf_layers(keyboard_parts, "./data/keyboard.dxf")
-else:
+if "show_object" in globals():
+    keyboard_parts = make_keyboard_parts()
     if not flatten:
         keyboard_parts = explode_parts(keyboard_parts, explode_by)
 
