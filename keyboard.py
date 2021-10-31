@@ -85,93 +85,6 @@ columns_stagger = (
 )
 
 
-def make_switch_plate_inner():
-    switch_plate = cq.Workplane()
-
-    for column in range(number_of_columns):
-        for row in range(number_of_rows):
-            row_offset = distance_between_switch_centers * row
-            column_offset = distance_between_switch_centers * (column + 1)
-            stagger_offset = (
-                distance_between_switch_centers * columns_stagger[column]
-            )
-            key_offset_x = switch_offset + column_offset
-            key_offset_y = switch_offset + row_offset + stagger_offset
-            switch_plate = (
-                switch_plate.moveTo(key_offset_x, key_offset_y)
-                .rect(
-                    distance_between_switch_centers + 1,
-                    distance_between_switch_centers + 1,
-                )
-                .rect(
-                    switch_plate_key_cutout_size, switch_plate_key_cutout_size
-                )
-                .extrude(thickness)
-            )
-
-    inner_key_offset_x = switch_offset
-    inner_key_offset_y = switch_offset + (
-        inner_keys_stagger * distance_between_switch_centers
-    )
-
-    widen_cutout_around_key_size = 1
-    widen_cutout_around_inner_keys_size = 0 if has_two_inner_keys else 1.5
-    inner_keys_unit_height = 1 if has_two_inner_keys else 1.5
-
-    inner_keys_height = (
-        distance_between_switch_centers * inner_keys_unit_height
-    ) + widen_cutout_around_inner_keys_size
-
-    switch_plate = (
-        switch_plate.moveTo(inner_key_offset_x, inner_key_offset_y)
-        .rect(switch_plate_key_cutout_size, switch_plate_key_cutout_size)
-        .rect(
-            distance_between_switch_centers + widen_cutout_around_key_size,
-            inner_keys_height,
-        )
-        .extrude(thickness)
-    )
-
-    if has_two_inner_keys:
-        switch_plate = (
-            switch_plate.moveTo(
-                inner_key_offset_x,
-                inner_key_offset_y + distance_between_switch_centers,
-            )
-            .rect(switch_plate_key_cutout_size, switch_plate_key_cutout_size)
-            .rect(
-                distance_between_switch_centers + widen_cutout_around_key_size,
-                inner_keys_height,
-            )
-            .extrude(thickness)
-        )
-
-    switch_plate = switch_plate.rotateAboutCenter([0, 0, 1], angle)
-
-    top_left_off_inner_keys = switch_plate.vertices("<X").val().Center()
-
-    switch_plate = switch_plate.mirror(
-        mirrorPlane="YZ",
-        union=True,
-        basePointVector=(
-            top_left_off_inner_keys.x + (widen_cutout_around_key_size / 2),
-            top_left_off_inner_keys.y,
-        ),
-    )
-
-    return switch_plate
-
-
-@cq_workplane_plugin
-def drill_reset_button_hole(part):
-    return (
-        part.faces("front")
-        .moveTo(-24, 41)
-        .circle(reset_button_hole_radius)
-        .cutThruAll()
-    )
-
-
 @cq_workplane_plugin
 def drill_holes(part, switch_plate_inner):
     switch_plate_outline = switch_plate_inner.faces("front").wires(
@@ -252,6 +165,93 @@ def drill_holes(part, switch_plate_inner):
         .circle(screw_hole_radius)
         .cutThruAll()
     )
+
+
+@cq_workplane_plugin
+def drill_reset_button_hole(part):
+    return (
+        part.faces("front")
+        .moveTo(-24, 41)
+        .circle(reset_button_hole_radius)
+        .cutThruAll()
+    )
+
+
+def make_switch_plate_inner():
+    switch_plate = cq.Workplane()
+
+    for column in range(number_of_columns):
+        for row in range(number_of_rows):
+            row_offset = distance_between_switch_centers * row
+            column_offset = distance_between_switch_centers * (column + 1)
+            stagger_offset = (
+                distance_between_switch_centers * columns_stagger[column]
+            )
+            key_offset_x = switch_offset + column_offset
+            key_offset_y = switch_offset + row_offset + stagger_offset
+            switch_plate = (
+                switch_plate.moveTo(key_offset_x, key_offset_y)
+                .rect(
+                    distance_between_switch_centers + 1,
+                    distance_between_switch_centers + 1,
+                )
+                .rect(
+                    switch_plate_key_cutout_size, switch_plate_key_cutout_size
+                )
+                .extrude(thickness)
+            )
+
+    inner_key_offset_x = switch_offset
+    inner_key_offset_y = switch_offset + (
+        inner_keys_stagger * distance_between_switch_centers
+    )
+
+    widen_cutout_around_key_size = 1
+    widen_cutout_around_inner_keys_size = 0 if has_two_inner_keys else 1.5
+    inner_keys_unit_height = 1 if has_two_inner_keys else 1.5
+
+    inner_keys_height = (
+        distance_between_switch_centers * inner_keys_unit_height
+    ) + widen_cutout_around_inner_keys_size
+
+    switch_plate = (
+        switch_plate.moveTo(inner_key_offset_x, inner_key_offset_y)
+        .rect(switch_plate_key_cutout_size, switch_plate_key_cutout_size)
+        .rect(
+            distance_between_switch_centers + widen_cutout_around_key_size,
+            inner_keys_height,
+        )
+        .extrude(thickness)
+    )
+
+    if has_two_inner_keys:
+        switch_plate = (
+            switch_plate.moveTo(
+                inner_key_offset_x,
+                inner_key_offset_y + distance_between_switch_centers,
+            )
+            .rect(switch_plate_key_cutout_size, switch_plate_key_cutout_size)
+            .rect(
+                distance_between_switch_centers + widen_cutout_around_key_size,
+                inner_keys_height,
+            )
+            .extrude(thickness)
+        )
+
+    switch_plate = switch_plate.rotateAboutCenter([0, 0, 1], angle)
+
+    top_left_off_inner_keys = switch_plate.vertices("<X").val().Center()
+
+    switch_plate = switch_plate.mirror(
+        mirrorPlane="YZ",
+        union=True,
+        basePointVector=(
+            top_left_off_inner_keys.x + (widen_cutout_around_key_size / 2),
+            top_left_off_inner_keys.y,
+        ),
+    )
+
+    return switch_plate
 
 
 def make_bottom_plate(switch_plate_inner, thickness):
