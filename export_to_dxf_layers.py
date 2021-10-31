@@ -6,6 +6,12 @@ from cadquery.units import RAD2DEG
 from OCP.gp import gp_Dir
 from OCP.GeomConvert import GeomConvert
 
+# This is largely copped from cadquery with the bottom modified:
+# * Adds models to named layers
+#   * Includes thickness in layer name
+# * Updates the units to MM
+# * Removes empty 'Defpoints' layer
+
 CURVE_TOLERANCE = 1e-9
 
 
