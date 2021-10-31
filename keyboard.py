@@ -11,12 +11,8 @@ use_chicago_bolt = True
 has_two_inner_keys = False
 
 angle = 10
-thickness = 3
 number_of_rows = 5
 number_of_columns = 6
-
-inner_frame_size = 2.1
-outer_frame_size = 20 if use_chicago_bolt else 16
 
 # View
 
@@ -25,12 +21,32 @@ flatten = False
 
 # Structural
 
+thickness = 3
+
+outer_frame_size_for_chicago_bolt = 20
+outer_frame_size_for_regular_screw = 16
+
+screw_hole_radius_for_chicago_bolt = 2.5
+screw_hole_radius_for_regular_screw = 1.5
+
 usb_cutout_width = 4
-screw_hole_radius = 2.5 if use_chicago_bolt else 1.5
 reset_button_hole_radius = 1.5
 switch_plate_key_cutout_size = 13.97
 distance_between_switch_centers = 19
 switch_offset = distance_between_switch_centers / 2
+inner_frame_size = 2.1
+
+screw_hole_radius = (
+    screw_hole_radius_for_chicago_bolt
+    if use_chicago_bolt
+    else screw_hole_radius_for_regular_screw
+)
+
+outer_frame_size = (
+    outer_frame_size_for_chicago_bolt
+    if use_chicago_bolt
+    else outer_frame_size_for_regular_screw
+)
 
 
 def find_point_for_angle(vertice, d, theta):
@@ -323,10 +339,7 @@ def make_switch_plate(switch_plate_inner):
     )
 
     return fuse_parts(
-        [
-            switch_plate_outer,
-            switch_plate_inner.translate([0, 0, -thickness]),
-        ]
+        [switch_plate_outer, switch_plate_inner.translate([0, 0, -thickness])]
     )
 
 
@@ -364,16 +377,12 @@ def make_spacer(switch_plate_inner, thickness):
         )
         .lineTo(
             *find_point_for_angle(
-                bottom_right_outline,
-                inner_frame_size,
-                45 - angle,
+                bottom_right_outline, inner_frame_size, 45 - angle
             )
         )
         .lineTo(
             *find_point_for_angle(
-                bottom_left_outline,
-                inner_frame_size,
-                -45 + angle,
+                bottom_left_outline, inner_frame_size, -45 + angle
             )
         )
         .lineTo(
@@ -389,9 +398,7 @@ def make_spacer(switch_plate_inner, thickness):
         .moveTo(
             0,
             find_point_for_angle(
-                top_right_outline,
-                outer_frame_size,
-                45 - angle,
+                top_right_outline, outer_frame_size, 45 - angle
             )[1]
             - outer_frame_size / 2,
         )
