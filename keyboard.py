@@ -177,20 +177,14 @@ def drill_holes(part, switch_plate_inner):
         cq.selectors.AreaNthSelector(-1)
     )
 
-    top_left_outline = (
-        switch_plate_outline.edges("<X").vertices(">Y").val().Center()
-    )
-    top_right_outline = switch_plate_outline.vertices(">XY").val().Center()
-    right_outline = (
-        switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
-    )
-    left_outline = (
-        switch_plate_outline.vertices("<X").vertices("<Y").val().Center()
-    )
-    bottom_right_outline = (
+    top_left = switch_plate_outline.edges("<X").vertices(">Y").val().Center()
+    top_right = switch_plate_outline.vertices(">XY").val().Center()
+    right = switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
+    left = switch_plate_outline.vertices("<X").vertices("<Y").val().Center()
+    bottom_right = (
         switch_plate_outline.vertices("<Y").vertices(">X").val().Center()
     )
-    bottom_left_outline = (
+    bottom_left = (
         switch_plate_outline.vertices("<Y").vertices("<X").val().Center()
     )
 
@@ -200,46 +194,42 @@ def drill_holes(part, switch_plate_inner):
         part.faces("front")
         .moveTo(
             *find_point_for_angle(
-                top_right_outline, screw_distance_from_inner_edge, 45 - angle
+                top_right, screw_distance_from_inner_edge, 45 - angle
             )
         )
         .circle(screw_hole_radius)
         .cutThruAll()
         .moveTo(
             *find_point_for_angle(
-                right_outline, -screw_distance_from_inner_edge, -45 - angle
+                right, -screw_distance_from_inner_edge, -45 - angle
             )
         )
         .circle(screw_hole_radius)
         .cutThruAll()
         .moveTo(
             *find_point_for_angle(
-                bottom_right_outline,
-                -screw_distance_from_inner_edge,
-                45 - angle,
+                bottom_right, -screw_distance_from_inner_edge, 45 - angle
             )
         )
         .circle(screw_hole_radius)
         .cutThruAll()
         .moveTo(
             *find_point_for_angle(
-                bottom_left_outline,
-                -screw_distance_from_inner_edge,
-                -45 + angle,
+                bottom_left, -screw_distance_from_inner_edge, -45 + angle
             )
         )
         .circle(screw_hole_radius)
         .cutThruAll()
         .moveTo(
             *find_point_for_angle(
-                left_outline, -screw_distance_from_inner_edge, 45 + angle
+                left, -screw_distance_from_inner_edge, 45 + angle
             )
         )
         .circle(screw_hole_radius)
         .cutThruAll()
         .moveTo(
             *find_point_for_angle(
-                top_left_outline, screw_distance_from_inner_edge, -45 + angle
+                top_left, screw_distance_from_inner_edge, -45 + angle
             ),
         )
         .circle(screw_hole_radius)
@@ -247,7 +237,7 @@ def drill_holes(part, switch_plate_inner):
         .moveTo(
             -11.25,
             find_point_for_angle(
-                top_left_outline, screw_distance_from_inner_edge, -45 + angle
+                top_left, screw_distance_from_inner_edge, -45 + angle
             )[1],
         )
         .circle(screw_hole_radius)
@@ -255,7 +245,7 @@ def drill_holes(part, switch_plate_inner):
         .moveTo(
             11.25,
             find_point_for_angle(
-                top_left_outline, screw_distance_from_inner_edge, -45 + angle
+                top_left, screw_distance_from_inner_edge, -45 + angle
             )[1],
         )
         .circle(screw_hole_radius)
@@ -267,11 +257,9 @@ def make_bottom_plate(switch_plate_inner, thickness):
     switch_plate_outline = switch_plate_inner.faces("front").wires(
         cq.selectors.AreaNthSelector(-1)
     )
-    top_right_outline = switch_plate_outline.vertices(">XY").val().Center()
-    right_outline = (
-        switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
-    )
-    bottom_right_outline = (
+    top_right = switch_plate_outline.vertices(">XY").val().Center()
+    right = switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
+    bottom_right = (
         switch_plate_outline.vertices("<Y").vertices(">X").val().Center()
     )
 
@@ -280,28 +268,18 @@ def make_bottom_plate(switch_plate_inner, thickness):
         .newObject([])
         .moveTo(
             0,
-            find_point_for_angle(
-                top_right_outline, outer_frame_size, 45 - angle
-            )[1],
+            find_point_for_angle(top_right, outer_frame_size, 45 - angle)[1],
         )
+        .lineTo(*find_point_for_angle(top_right, outer_frame_size, 45 - angle))
+        .lineTo(*find_point_for_angle(right, -outer_frame_size, -45 - angle))
         .lineTo(
-            *find_point_for_angle(
-                top_right_outline, outer_frame_size, 45 - angle
-            )
-        )
-        .lineTo(
-            *find_point_for_angle(right_outline, -outer_frame_size, -45 - angle)
-        )
-        .lineTo(
-            *find_point_for_angle(
-                bottom_right_outline, -outer_frame_size, 45 - angle
-            )
+            *find_point_for_angle(bottom_right, -outer_frame_size, 45 - angle)
         )
         .lineTo(
             0,
-            find_point_for_angle(
-                bottom_right_outline, -outer_frame_size, 45 - angle
-            )[1],
+            find_point_for_angle(bottom_right, -outer_frame_size, 45 - angle)[
+                1
+            ],
         )
         .close()
         .extrude(-thickness, combine=False)
@@ -349,58 +327,36 @@ def make_spacer(switch_plate_inner, thickness):
         cq.selectors.AreaNthSelector(-1)
     )
 
-    top_left_outline = (
-        switch_plate_outline.edges("<X").vertices(">Y").val().Center()
-    )
-    top_right_outline = switch_plate_outline.vertices(">XY").val().Center()
-    right_outline = (
-        switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
-    )
-    left_outline = (
-        switch_plate_outline.vertices("<X").vertices("<Y").val().Center()
-    )
-    bottom_right_outline = (
+    top_left = switch_plate_outline.edges("<X").vertices(">Y").val().Center()
+    top_right = switch_plate_outline.vertices(">XY").val().Center()
+    right = switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
+    left = switch_plate_outline.vertices("<X").vertices("<Y").val().Center()
+    bottom_right = (
         switch_plate_outline.vertices("<Y").vertices(">X").val().Center()
     )
-    bottom_left_outline = (
+    bottom_left = (
         switch_plate_outline.vertices("<Y").vertices("<X").val().Center()
     )
 
     spacer = (
         make_bottom_plate(switch_plate_inner, thickness)
-        .moveTo(
-            *find_point_for_angle(
-                top_right_outline, -inner_frame_size, 45 - angle
-            )
+        .moveTo(*find_point_for_angle(top_right, -inner_frame_size, 45 - angle))
+        .lineTo(*find_point_for_angle(right, inner_frame_size, -45 - angle))
+        .lineTo(
+            *find_point_for_angle(bottom_right, inner_frame_size, 45 - angle)
         )
         .lineTo(
-            *find_point_for_angle(right_outline, inner_frame_size, -45 - angle)
+            *find_point_for_angle(bottom_left, inner_frame_size, -45 + angle)
         )
+        .lineTo(*find_point_for_angle(left, inner_frame_size, 45 + angle))
         .lineTo(
-            *find_point_for_angle(
-                bottom_right_outline, inner_frame_size, 45 - angle
-            )
-        )
-        .lineTo(
-            *find_point_for_angle(
-                bottom_left_outline, inner_frame_size, -45 + angle
-            )
-        )
-        .lineTo(
-            *find_point_for_angle(left_outline, inner_frame_size, 45 + angle)
-        )
-        .lineTo(
-            *find_point_for_angle(
-                top_left_outline, -inner_frame_size, -45 + angle
-            ),
+            *find_point_for_angle(top_left, -inner_frame_size, -45 + angle),
         )
         .close()
         .cutThruAll()
         .moveTo(
             0,
-            find_point_for_angle(
-                top_right_outline, outer_frame_size, 45 - angle
-            )[1]
+            find_point_for_angle(top_right, outer_frame_size, 45 - angle)[1]
             - outer_frame_size / 2,
         )
         .rect(usb_cutout_width, outer_frame_size)
