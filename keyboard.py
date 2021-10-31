@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 # Configurable
 
-thicc_spacer = False
+has_single_thicc_spacer = False
 use_chicago_bolt = True
 has_two_inner_keys = False
 
@@ -65,10 +65,6 @@ def find_point_for_angle(vertice, d, theta):
     )
 
 
-def extrude_shape(points, thickness):
-    return cq.Workplane().polyline(points).close().extrude(thickness)
-
-
 @cq_workplane_plugin
 def center_on_plane(part):
     top = part.vertices(">Y").val().Center()
@@ -100,17 +96,16 @@ def drill_holes(part, geometry):
     return (
         part.pushPoints(geometry.screws)
         .circle(screw_hole_radius)
-        .cutBlind(-thickness)
+        .cutBlind(-geometry.thickness)
     )
 
 
 @cq_workplane_plugin
 def drill_reset_button_hole(part, geometry):
     return (
-        part.faces("front")
-        .pushPoints([geometry.reset_button])
+        part.pushPoints([geometry.reset_button])
         .circle(reset_button_hole_radius)
-        .cutBlind(-thickness)
+        .cutBlind(-geometry.thickness)
     )
 
 
@@ -165,10 +160,6 @@ def calculate_coords_from_switch_plate_inner(switch_plate_inner):
     ]
 
     screw_distance_from_inner_edge = (outer_frame_size - inner_frame_size) / 2
-
-    switch_plate_inner_outline_wires = switch_plate_inner.faces("front").wires(
-        cq.selectors.AreaNthSelector(-1)
-    )
 
     screw_top_left = find_point_for_angle(
         inner_plate_top_left, screw_distance_from_inner_edge, -45 + angle
@@ -249,21 +240,25 @@ def calculate_coords_from_switch_plate_inner(switch_plate_inner):
         (-usb_cutout_width / 2, case_outer_top_left[1]),
     ]
 
+    spacer_thickness = thickness * 2 if has_single_thicc_spacer else thickness
+
     geometry_points = SimpleNamespace(
         **{
+            "thickness": thickness,
             "usb_rect": usb_rect_points,
             "screws": screw_points,
             "reset_button": reset_button_point,
             "case_outer": case_outer_points,
             "spacer_inner": spacer_inner_points,
-            "switch_plate_inner_outline": switch_plate_inner_outline_wires,
+            "spacer_thickness": spacer_thickness,
+            "switch_plate_inner_outline": switch_plate_outline,
         }
     )
 
     return geometry_points
 
 
-def make_switch_plate_inner():
+def make_switch_plate_inner(thickness):
     switch_plate = cq.Workplane()
 
     widen_cutout_around_key_size = 1
@@ -329,75 +324,81 @@ def make_switch_plate_inner():
 
     switch_plate = switch_plate.rotateAboutCenter([0, 0, 1], angle)
 
-    top_left_off_inner_keys = switch_plate.vertices("<X").val().Center()
+    inner_keys_top_left = switch_plate.vertices("<X").val().Center()
 
-    switch_plate = switch_plate.mirror(
+    return switch_plate.mirror(
         mirrorPlane="YZ",
         union=True,
         basePointVector=(
-            top_left_off_inner_keys.x + (widen_cutout_around_key_size / 2),
-            top_left_off_inner_keys.y,
+            inner_keys_top_left.x + (widen_cutout_around_key_size / 2),
+            inner_keys_top_left.y,
         ),
     )
 
-    return switch_plate
 
-
-def make_bottom_plate(geometry, thickness):
+def make_bottom_plate(geometry):
     return (
         cq.Workplane()
         .polyline(geometry.case_outer)
         .close()
-        .extrude(-thickness)
+        .extrude(-geometry.thickness)
         .drill_holes(geometry)
         .drill_reset_button_hole(geometry)
     )
 
 
 def make_top_plate(geometry):
+    switch_plate_cutout = (
+        geometry.switch_plate_inner_outline.toPending().extrude(
+            -geometry.thickness
+        )
+    )
     return (
         cq.Workplane()
         .polyline(geometry.case_outer)
         .close()
-        .extrude(-thickness)
-        .translate([0, 0, thickness])
-        .cut(
-            geometry.switch_plate_inner_outline.toPending().extrude(-thickness)
-        )
-        .translate([0, 0, -thickness])
+        .extrude(-geometry.thickness)
+        .translate([0, 0, geometry.thickness])
+        .cut(switch_plate_cutout)
+        .translate([0, 0, -geometry.thickness])
         .drill_holes(geometry)
     )
 
 
 def make_switch_plate(switch_plate_inner, geometry):
+    switch_plate_cutout = (
+        geometry.switch_plate_inner_outline.toPending().extrude(
+            -geometry.thickness
+        )
+    )
     switch_plate_outer = (
         cq.Workplane()
         .polyline(geometry.case_outer)
         .close()
-        .extrude(-thickness)
-        .translate([0, 0, thickness])
-        .cut(
-            geometry.switch_plate_inner_outline.toPending().extrude(-thickness)
-        )
-        .translate([0, 0, -thickness])
+        .extrude(-geometry.thickness)
+        .translate([0, 0, geometry.thickness])
+        .cut(switch_plate_cutout)
+        .translate([0, 0, -geometry.thickness])
         .drill_holes(geometry)
     )
-    switch_plate_inner = switch_plate_inner.translate([0, 0, -thickness])
+    switch_plate_inner = switch_plate_inner.translate(
+        [0, 0, -geometry.thickness]
+    )
     return fuse_parts([switch_plate_outer, switch_plate_inner])
 
 
-def make_spacer(geometry, thickness):
+def make_spacer(geometry):
     return (
         cq.Workplane()
         .polyline(geometry.spacer_inner)
         .close()
         .polyline(geometry.case_outer)
         .close()
-        .extrude(thickness)
+        .extrude(geometry.spacer_thickness)
         .polyline(geometry.usb_rect)
         .close()
-        .cutBlind(thickness)
-        .translate([0, 0, -thickness])
+        .cutBlind(geometry.spacer_thickness)
+        .translate([0, 0, -geometry.spacer_thickness])
         .drill_holes(geometry)
     )
 
@@ -416,7 +417,7 @@ def make_keyboard_parts():
 
     [time_elapsed, total_time] = timer()
 
-    switch_plate_inner = make_switch_plate_inner().center_on_plane()
+    switch_plate_inner = make_switch_plate_inner(thickness).center_on_plane()
     time_elapsed("Inner switch plate")
 
     geometry = calculate_coords_from_switch_plate_inner(switch_plate_inner)
@@ -429,15 +430,15 @@ def make_keyboard_parts():
     )
     time_elapsed("Switch plate")
 
-    if thicc_spacer:
-        parts.append(("Spacer", make_spacer(geometry, thickness * 2)))
+    if has_single_thicc_spacer:
+        parts.append(("Spacer", make_spacer(geometry)))
         time_elapsed("Spacer")
     else:
-        parts.append(("Spacer 1", make_spacer(geometry, thickness)))
-        parts.append(("Spacer 2", make_spacer(geometry, thickness)))
+        parts.append(("Spacer 1", make_spacer(geometry)))
+        parts.append(("Spacer 2", make_spacer(geometry)))
         time_elapsed("Spacers")
 
-    parts.append(("Bottom plate", make_bottom_plate(geometry, thickness)))
+    parts.append(("Bottom plate", make_bottom_plate(geometry)))
     time_elapsed("Bottom plate")
 
     total_time()
