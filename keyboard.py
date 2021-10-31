@@ -1,8 +1,6 @@
-import os
+import math
 import cadquery as cq
-from cadquery import exporters
 from fuse_parts import fuse_parts
-from math import sin, cos, radians, pi
 from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
 
@@ -36,8 +34,11 @@ switch_offset = distance_between_switch_centers / 2
 
 
 def find_point_for_angle(vertice, d, theta):
-    theta_rad = pi / 2 - radians(theta)
-    return (vertice.x + d * cos(theta_rad), vertice.y + d * sin(theta_rad))
+    theta_rad = math.pi / 2 - math.radians(theta)
+    return (
+        vertice.x + d * math.cos(theta_rad),
+        vertice.y + d * math.sin(theta_rad),
+    )
 
 
 @cq_workplane_plugin
