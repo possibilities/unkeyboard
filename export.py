@@ -128,31 +128,99 @@ DXF_CONVERTERS = {
 }
 
 
-file_name = "./data/keyboard.dxf"
-parts = make_keyboard_parts()
+def export_flat_dxf(file_name):
+    rotate_parts = False
+    parts_per_column = 1
+    space_between_parts = 3
 
-try:
-    os.mkdir("./data")
-except:
-    pass
+    offset_y = 0
+    offset_x = 0
 
-dxf = ezdxf.new(setup=True, units=units.MM)
-msp = dxf.modelspace()
+    parts = make_keyboard_parts()
 
-for layer_name_and_part in parts:
-    [layer_name, part] = layer_name_and_part
-    thickness = (
-        part.vertices("front").val().Center().z
-        - part.vertices("back").val().Center().z
-    )
-    part = part.faces("front")
-    full_layer_name = "%s (1 x %smm)" % (layer_name, thickness)
-    dxf.layers.new(name=full_layer_name)
-    plane = part.plane
-    shape = exporters.toCompound(part).transformShape(plane.fG)
+    dxf = ezdxf.new(setup=True, units=units.MM)
+    msp = dxf.modelspace()
 
-    for e in shape.Edges():
-        conv = DXF_CONVERTERS.get(e.geomType(), _dxf_spline)
-        conv(e, msp, plane, full_layer_name)
-dxf.layers.remove("Defpoints")
-dxf.saveas(file_name)
+    layer_name = "All parts"
+    dxf.layers.new(name=layer_name)
+
+    for (index, layer_name_and_part) in enumerate(parts):
+        part = layer_name_and_part[1]
+
+        if rotate_parts:
+            part = part.rotateAboutCenter((0, 0, 1), 90)
+
+        height = (
+            part.vertices(">Y").val().Center().y
+            - part.vertices("<Y").val().Center().y
+        )
+
+        width = (
+            part.vertices(">X").val().Center().x
+            - part.vertices("<X").val().Center().x
+        )
+
+        part = part.translate([offset_x, offset_y, 0]).faces('front')
+
+        plane = part.plane
+        shape = exporters.toCompound(part).transformShape(plane.fG)
+
+        for e in shape.Edges():
+            conv = DXF_CONVERTERS.get(e.geomType(), _dxf_spline)
+            conv(e, msp, plane, layer_name)
+
+        if ((index + 1) % parts_per_column) == 0:
+            offset_x = 0
+            offset_y = offset_y + height + space_between_parts
+        else:
+            offset_x = offset_x + width + space_between_parts
+
+    dxf.layers.remove("Defpoints")
+    dxf.saveas(file_name)
+
+
+def export_layered_dxf(file_name):
+    parts = make_keyboard_parts()
+
+    dxf = ezdxf.new(setup=True, units=units.MM)
+    msp = dxf.modelspace()
+
+    for layer_name_and_part in parts:
+        [layer_name, part] = layer_name_and_part
+        thickness = (
+            part.vertices("front").val().Center().z
+            - part.vertices("back").val().Center().z
+        )
+        part = part.faces("front")
+        full_layer_name = "%s (1 x %smm)" % (layer_name, thickness)
+        dxf.layers.new(name=full_layer_name)
+        plane = part.plane
+        shape = exporters.toCompound(part).transformShape(plane.fG)
+
+        for e in shape.Edges():
+            conv = DXF_CONVERTERS.get(e.geomType(), _dxf_spline)
+            conv(e, msp, plane, full_layer_name)
+
+    dxf.layers.remove("Defpoints")
+    dxf.saveas(file_name)
+
+
+def main():
+    try:
+        os.mkdir("./data")
+    except:
+        pass
+
+    file_name = "./data/keyboard.dxf"
+    preset = os.getenv("PRESET") if os.getenv("PRESET") else "layered"
+
+    if preset == "layered":
+        export_layered_dxf(file_name)
+    else:
+        export_flat_dxf(file_name)
+
+    print()
+    print("Exported: %s" % (file_name))
+
+
+main()
