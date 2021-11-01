@@ -406,15 +406,6 @@ def make_spacer(geometry):
 def make_keyboard_parts():
     parts = []
 
-    print("")
-    print(
-        "Size:",
-        number_of_rows,
-        "x",
-        number_of_columns,
-        "(total: " + str(number_of_rows * number_of_columns) + ")",
-    )
-
     [time_elapsed, total_time] = timer()
 
     switch_plate_inner = make_switch_plate_inner(thickness).center_on_plane()
