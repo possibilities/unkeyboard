@@ -6,6 +6,7 @@ from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
 from types import SimpleNamespace
 
+# Defaults to an Atreus 64, with a wide bezel, and chicago bolts
 default_config = SimpleNamespace(
     **{
         # Configurable
@@ -54,7 +55,7 @@ def find_point_for_angle(vertice, distance, angel):
 
 
 @cq_workplane_plugin
-def center_on_plane(part):
+def center_on_2d_plane(part):
     top = part.vertices(">Y").val().Center()
     left = part.vertices("<X").val().Center()
     right = part.vertices(">X").val().Center()
@@ -458,7 +459,7 @@ def make_keyboard_parts(user_config={}):
 
     [time_elapsed, total_time] = timer()
 
-    switch_plate_inner = make_switch_plate_inner(config).center_on_plane()
+    switch_plate_inner = make_switch_plate_inner(config).center_on_2d_plane()
     time_elapsed("Inner switch plate")
 
     geometry = calculate_geometry_from_switch_plate_inner(
