@@ -106,26 +106,16 @@ def drill_reset_button_hole(part, geometry, config):
 
 
 def calculate_case_geometry_from_switch_plate_inner(switch_plate_inner, config):
-    switch_plate_outline = switch_plate_inner.faces("front").wires(
+    outline = switch_plate_inner.faces("front").wires(
         cq.selectors.AreaNthSelector(-1)
     )
 
-    inner_plate_top_left = (
-        switch_plate_outline.edges("<X").vertices(">Y").val().Center()
-    )
-    inner_plate_top_right = switch_plate_outline.vertices(">XY").val().Center()
-    inner_plate_left = (
-        switch_plate_outline.vertices("<X").vertices("<Y").val().Center()
-    )
-    inner_plate_right = (
-        switch_plate_outline.vertices(">X").vertices("<Y").val().Center()
-    )
-    inner_plate_bottom_left = (
-        switch_plate_outline.vertices("<Y").vertices("<X").val().Center()
-    )
-    inner_plate_bottom_right = (
-        switch_plate_outline.vertices("<Y").vertices(">X").val().Center()
-    )
+    top_left = outline.edges("<X").vertices(">Y").val().Center()
+    top_right = outline.vertices(">XY").val().Center()
+    left = outline.vertices("<X").vertices("<Y").val().Center()
+    right = outline.vertices(">X").vertices("<Y").val().Center()
+    bottom_left = outline.vertices("<Y").vertices("<X").val().Center()
+    bottom_right = outline.vertices("<Y").vertices(">X").val().Center()
 
     outer_frame_size = (
         config.outer_frame_size_for_chicago_bolt
@@ -134,22 +124,22 @@ def calculate_case_geometry_from_switch_plate_inner(switch_plate_inner, config):
     )
 
     case_outer_top_right = find_point_for_angle(
-        inner_plate_top_right, outer_frame_size, 45 - config.angle
+        top_right, outer_frame_size, 45 - config.angle
     )
     case_outer_right = find_point_for_angle(
-        inner_plate_right, -outer_frame_size, -45 - config.angle
+        right, -outer_frame_size, -45 - config.angle
     )
     case_outer_bottom_right = find_point_for_angle(
-        inner_plate_bottom_right, -outer_frame_size, 45 - config.angle
+        bottom_right, -outer_frame_size, 45 - config.angle
     )
     case_outer_bottom_left = find_point_for_angle(
-        inner_plate_bottom_left, -outer_frame_size, -45 + config.angle
+        bottom_left, -outer_frame_size, -45 + config.angle
     )
     case_outer_left = find_point_for_angle(
-        inner_plate_left, -outer_frame_size, 45 + config.angle
+        left, -outer_frame_size, 45 + config.angle
     )
     case_outer_top_left = find_point_for_angle(
-        inner_plate_top_left, outer_frame_size, -45 + config.angle
+        top_left, outer_frame_size, -45 + config.angle
     )
 
     case_outer_points = [
@@ -166,19 +156,19 @@ def calculate_case_geometry_from_switch_plate_inner(switch_plate_inner, config):
     ) / 2
 
     screw_top_left = find_point_for_angle(
-        inner_plate_top_left,
+        top_left,
         screw_distance_from_inner_edge,
         -45 + config.angle,
     )
     screw_top_right = find_point_for_angle(
-        inner_plate_top_right,
+        top_right,
         screw_distance_from_inner_edge,
         45 - config.angle,
     )
     screw_top_middle_left = (
         -config.top_inside_screw_distance_from_usb,
         find_point_for_angle(
-            inner_plate_top_left,
+            top_left,
             screw_distance_from_inner_edge,
             -45 + config.angle,
         )[1],
@@ -186,28 +176,28 @@ def calculate_case_geometry_from_switch_plate_inner(switch_plate_inner, config):
     screw_top_middle_right = (
         config.top_inside_screw_distance_from_usb,
         find_point_for_angle(
-            inner_plate_top_right,
+            top_right,
             screw_distance_from_inner_edge,
             45 - config.angle,
         )[1],
     )
     screw_bottom_middle_left = find_point_for_angle(
-        inner_plate_bottom_left,
+        bottom_left,
         -screw_distance_from_inner_edge,
         45 - config.angle,
     )
     screw_bottom_middle_right = find_point_for_angle(
-        inner_plate_bottom_right,
+        bottom_right,
         -screw_distance_from_inner_edge,
         -45 + config.angle,
     )
     screw_bottom_left = find_point_for_angle(
-        inner_plate_left,
+        left,
         -screw_distance_from_inner_edge,
         45 - config.angle,
     )
     screw_bottom_right = find_point_for_angle(
-        inner_plate_right,
+        right,
         -screw_distance_from_inner_edge,
         -45 + config.angle,
     )
@@ -224,32 +214,32 @@ def calculate_case_geometry_from_switch_plate_inner(switch_plate_inner, config):
     ]
 
     spacer_inner_top_left = find_point_for_angle(
-        inner_plate_top_left,
+        top_left,
         -config.inner_frame_size,
         -45 + config.angle,
     )
     spacer_inner_top_right = find_point_for_angle(
-        inner_plate_top_right,
+        top_right,
         -config.inner_frame_size,
         45 - config.angle,
     )
     spacer_inner_right = find_point_for_angle(
-        inner_plate_right,
+        right,
         config.inner_frame_size,
         -45 - config.angle,
     )
     spacer_inner_bottom_right = find_point_for_angle(
-        inner_plate_bottom_right,
+        bottom_right,
         config.inner_frame_size,
         45 - config.angle,
     )
     spacer_inner_bottom_left = find_point_for_angle(
-        inner_plate_bottom_left,
+        bottom_left,
         config.inner_frame_size,
         -45 + config.angle,
     )
     spacer_inner_left = find_point_for_angle(
-        inner_plate_left,
+        left,
         config.inner_frame_size,
         45 + config.angle,
     )
@@ -287,7 +277,7 @@ def calculate_case_geometry_from_switch_plate_inner(switch_plate_inner, config):
             "spacer_inner": spacer_inner_points,
             "spacer_thickness": spacer_thickness,
             "thickness": config.base_layer_thickness,
-            "switch_plate_inner_outline": switch_plate_outline,
+            "switch_plate_inner_outline": outline,
         }
     )
 
