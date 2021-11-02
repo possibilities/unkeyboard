@@ -160,7 +160,7 @@ def export_flat_dxf(file_name):
             - part.vertices("<X").val().Center().x
         )
 
-        part = part.translate([offset_x, offset_y, 0]).faces('front')
+        part = part.translate([offset_x, offset_y, 0]).faces("front")
 
         plane = part.plane
         shape = exporters.toCompound(part).transformShape(plane.fG)
