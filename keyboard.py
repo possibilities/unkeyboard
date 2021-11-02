@@ -6,7 +6,7 @@ from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
 from types import SimpleNamespace
 
-config = SimpleNamespace(
+default_config = SimpleNamespace(
     **{
         # Configurable
         "has_thicc_spacer": False,
@@ -61,7 +61,7 @@ def center_on_plane(part):
 
 
 @cq_workplane_plugin
-def drill_holes(part, geometry):
+def drill_holes(part, geometry, config):
     screw_hole_radius = (
         config.screw_hole_radius_for_chicago_bolt
         if config.use_chicago_bolt
@@ -75,7 +75,7 @@ def drill_holes(part, geometry):
 
 
 @cq_workplane_plugin
-def drill_reset_button_hole(part, geometry):
+def drill_reset_button_hole(part, geometry, config):
     return (
         part.pushPoints([geometry.reset_button])
         .circle(config.reset_button_hole_radius)
@@ -83,7 +83,7 @@ def drill_reset_button_hole(part, geometry):
     )
 
 
-def calculate_geometry_from_switch_plate_inner(switch_plate_inner):
+def calculate_geometry_from_switch_plate_inner(switch_plate_inner, config):
     switch_plate_outline = switch_plate_inner.faces("front").wires(
         cq.selectors.AreaNthSelector(-1)
     )
@@ -272,7 +272,7 @@ def calculate_geometry_from_switch_plate_inner(switch_plate_inner):
     return geometry_points
 
 
-def make_switch_plate_inner(thickness):
+def make_switch_plate_inner(config):
     switch_plate = cq.Workplane()
 
     widen_cutout_around_key_size = 1
@@ -310,7 +310,7 @@ def make_switch_plate_inner(thickness):
                     config.switch_plate_key_cutout_size,
                     config.switch_plate_key_cutout_size,
                 )
-                .extrude(thickness)
+                .extrude(config.base_layer_thickness)
             )
 
     inner_keys_stagger_percent = (
@@ -344,7 +344,7 @@ def make_switch_plate_inner(thickness):
             + widen_cutout_around_key_size,
             inner_keys_height,
         )
-        .extrude(thickness)
+        .extrude(config.base_layer_thickness)
     )
 
     if config.has_double_inner_keys:
@@ -362,7 +362,7 @@ def make_switch_plate_inner(thickness):
                 + widen_cutout_around_key_size,
                 inner_keys_height,
             )
-            .extrude(thickness)
+            .extrude(config.base_layer_thickness)
         )
 
     switch_plate = switch_plate.rotateAboutCenter([0, 0, 1], config.angle)
@@ -380,18 +380,18 @@ def make_switch_plate_inner(thickness):
     return switch_plate
 
 
-def make_bottom_plate(geometry):
+def make_bottom_plate(geometry, config):
     return (
         cq.Workplane()
         .polyline(geometry.case_outer)
         .close()
         .extrude(-geometry.thickness)
-        .drill_holes(geometry)
-        .drill_reset_button_hole(geometry)
+        .drill_holes(geometry, config)
+        .drill_reset_button_hole(geometry, config)
     )
 
 
-def make_top_plate(geometry):
+def make_top_plate(geometry, config):
     switch_plate_cutout = (
         geometry.switch_plate_inner_outline.toPending().extrude(
             -geometry.thickness
@@ -405,11 +405,11 @@ def make_top_plate(geometry):
         .translate([0, 0, geometry.thickness])
         .cut(switch_plate_cutout)
         .translate([0, 0, -geometry.thickness])
-        .drill_holes(geometry)
+        .drill_holes(geometry, config)
     )
 
 
-def make_switch_plate(switch_plate_inner, geometry):
+def make_switch_plate(switch_plate_inner, geometry, config):
     switch_plate_cutout = (
         geometry.switch_plate_inner_outline.toPending().extrude(
             -geometry.thickness
@@ -423,7 +423,7 @@ def make_switch_plate(switch_plate_inner, geometry):
         .translate([0, 0, geometry.thickness])
         .cut(switch_plate_cutout)
         .translate([0, 0, -geometry.thickness])
-        .drill_holes(geometry)
+        .drill_holes(geometry, config)
     )
     switch_plate_inner = switch_plate_inner.translate(
         [0, 0, -geometry.thickness]
@@ -431,7 +431,7 @@ def make_switch_plate(switch_plate_inner, geometry):
     return fuse_parts([switch_plate_outer, switch_plate_inner])
 
 
-def make_spacer(geometry):
+def make_spacer(geometry, config):
     return (
         cq.Workplane()
         .polyline(geometry.spacer_inner)
@@ -443,39 +443,42 @@ def make_spacer(geometry):
         .close()
         .cutBlind(geometry.spacer_thickness)
         .translate([0, 0, -geometry.spacer_thickness])
-        .drill_holes(geometry)
+        .drill_holes(geometry, config)
     )
 
 
-def make_keyboard_parts():
+def make_keyboard_parts(config):
     parts = []
 
     [time_elapsed, total_time] = timer()
 
-    switch_plate_inner = make_switch_plate_inner(
-        config.base_layer_thickness
-    ).center_on_plane()
+    switch_plate_inner = make_switch_plate_inner(config).center_on_plane()
     time_elapsed("Inner switch plate")
 
-    geometry = calculate_geometry_from_switch_plate_inner(switch_plate_inner)
+    geometry = calculate_geometry_from_switch_plate_inner(
+        switch_plate_inner, config
+    )
 
-    parts.append(("Top plate", make_top_plate(geometry)))
+    parts.append(("Top plate", make_top_plate(geometry, config)))
     time_elapsed("Top plate")
 
     parts.append(
-        ("Switch plate", make_switch_plate(switch_plate_inner, geometry))
+        (
+            "Switch plate",
+            make_switch_plate(switch_plate_inner, geometry, config),
+        )
     )
     time_elapsed("Switch plate")
 
     if config.has_thicc_spacer:
-        parts.append(("Spacer", make_spacer(geometry)))
+        parts.append(("Spacer", make_spacer(geometry, config)))
         time_elapsed("Spacer")
     else:
-        parts.append(("Spacer 1", make_spacer(geometry)))
-        parts.append(("Spacer 2", make_spacer(geometry)))
+        parts.append(("Spacer 1", make_spacer(geometry, config)))
+        parts.append(("Spacer 2", make_spacer(geometry, config)))
         time_elapsed("Spacers")
 
-    parts.append(("Bottom plate", make_bottom_plate(geometry)))
+    parts.append(("Bottom plate", make_bottom_plate(geometry, config)))
     time_elapsed("Bottom plate")
 
     total_time()
@@ -484,9 +487,11 @@ def make_keyboard_parts():
 
 
 if "show_object" in globals():
-    keyboard_parts = make_keyboard_parts()
-    if not config.flatten:
-        keyboard_parts = explode_parts(keyboard_parts, config.explode_by)
+    keyboard_parts = make_keyboard_parts(default_config)
+    if not default_config.flatten:
+        keyboard_parts = explode_parts(
+            keyboard_parts, default_config.explode_by
+        )
 
     for layer_name_and_part in keyboard_parts:
         [layer_name, part] = layer_name_and_part
