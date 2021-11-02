@@ -20,6 +20,7 @@ test_data = build_data_matrix(
         "reset_button",
         "case_outer",
         "spacer_inner",
+        "thickness",
         "spacer_thickness",
     ],
 )

@@ -99,6 +99,9 @@
 # name: test_geometry_usb_rect[atreus_42-spacer_thickness]
   3
 ---
+# name: test_geometry_usb_rect[atreus_42-thickness]
+  3
+---
 # name: test_geometry_usb_rect[atreus_42-usb_rect]
   <class 'list'> [
     <class 'tuple'> (
@@ -220,6 +223,9 @@
 # name: test_geometry_usb_rect[atreus_44-spacer_thickness]
   3
 ---
+# name: test_geometry_usb_rect[atreus_44-thickness]
+  3
+---
 # name: test_geometry_usb_rect[atreus_44-usb_rect]
   <class 'list'> [
     <class 'tuple'> (
@@ -339,6 +345,9 @@
   ]
 ---
 # name: test_geometry_usb_rect[atreus_62-spacer_thickness]
+  3
+---
+# name: test_geometry_usb_rect[atreus_62-thickness]
   3
 ---
 # name: test_geometry_usb_rect[atreus_62-usb_rect]
