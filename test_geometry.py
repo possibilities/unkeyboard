@@ -22,12 +22,13 @@ test_data = build_data_matrix(
         "spacer_inner",
         "thickness",
         "spacer_thickness",
+        # "key_positions",
     ],
 )
 
 
 @pytest.mark.parametrize("preset_name,geometry_name", test_data)
-def test_geometry_usb_rect(preset_name, geometry_name, snapshot):
+def test_geometry(preset_name, geometry_name, snapshot):
     preset = presets.__dict__[preset_name]
     [
         geometry,

@@ -1,4 +1,4 @@
-# name: test_geometry_usb_rect[atreus_42-case_outer]
+# name: test_geometry[atreus_42-case_outer]
   <class 'list'> [
     <class 'tuple'> (
       -116.32342823957953,
@@ -26,13 +26,13 @@
     ),
   ]
 ---
-# name: test_geometry_usb_rect[atreus_42-reset_button]
+# name: test_geometry[atreus_42-reset_button]
   <class 'tuple'> (
     -24,
     41,
   )
 ---
-# name: test_geometry_usb_rect[atreus_42-screws]
+# name: test_geometry[atreus_42-screws]
   <class 'list'> [
     <class 'tuple'> (
       -109.98540861790046,
@@ -68,7 +68,7 @@
     ),
   ]
 ---
-# name: test_geometry_usb_rect[atreus_42-spacer_inner]
+# name: test_geometry[atreus_42-spacer_inner]
   <class 'list'> [
     <class 'tuple'> (
       -103.64738899622141,
@@ -96,13 +96,13 @@
     ),
   ]
 ---
-# name: test_geometry_usb_rect[atreus_42-spacer_thickness]
+# name: test_geometry[atreus_42-spacer_thickness]
   3
 ---
-# name: test_geometry_usb_rect[atreus_42-thickness]
+# name: test_geometry[atreus_42-thickness]
   3
 ---
-# name: test_geometry_usb_rect[atreus_42-usb_rect]
+# name: test_geometry[atreus_42-usb_rect]
   <class 'list'> [
     <class 'tuple'> (
       2.0,
@@ -122,7 +122,7 @@
     ),
   ]
 ---
-# name: test_geometry_usb_rect[atreus_44-case_outer]
+# name: test_geometry[atreus_44-case_outer]
   <class 'list'> [
     <class 'tuple'> (
       -117.88278887502855,
@@ -150,13 +150,13 @@
     ),
   ]
 ---
-# name: test_geometry_usb_rect[atreus_44-reset_button]
+# name: test_geometry[atreus_44-reset_button]
   <class 'tuple'> (
     -24,
     41,
   )
 ---
-# name: test_geometry_usb_rect[atreus_44-screws]
+# name: test_geometry[atreus_44-screws]
   <class 'list'> [
     <class 'tuple'> (
       -111.54476925334949,
@@ -192,7 +192,7 @@
     ),
   ]
 ---
-# name: test_geometry_usb_rect[atreus_44-spacer_inner]
+# name: test_geometry[atreus_44-spacer_inner]
   <class 'list'> [
     <class 'tuple'> (
       -105.20674963167043,
@@ -220,13 +220,13 @@
     ),
   ]
 ---
-# name: test_geometry_usb_rect[atreus_44-spacer_thickness]
+# name: test_geometry[atreus_44-spacer_thickness]
   3
 ---
-# name: test_geometry_usb_rect[atreus_44-thickness]
+# name: test_geometry[atreus_44-thickness]
   3
 ---
-# name: test_geometry_usb_rect[atreus_44-usb_rect]
+# name: test_geometry[atreus_44-usb_rect]
   <class 'list'> [
     <class 'tuple'> (
       2.0,
@@ -246,7 +246,7 @@
     ),
   ]
 ---
-# name: test_geometry_usb_rect[atreus_62-case_outer]
+# name: test_geometry[atreus_62-case_outer]
   <class 'list'> [
     <class 'tuple'> (
       -131.7354601711398,
@@ -274,13 +274,13 @@
     ),
   ]
 ---
-# name: test_geometry_usb_rect[atreus_62-reset_button]
+# name: test_geometry[atreus_62-reset_button]
   <class 'tuple'> (
     -24,
     41,
   )
 ---
-# name: test_geometry_usb_rect[atreus_62-screws]
+# name: test_geometry[atreus_62-screws]
   <class 'list'> [
     <class 'tuple'> (
       -125.39744054946075,
@@ -316,7 +316,7 @@
     ),
   ]
 ---
-# name: test_geometry_usb_rect[atreus_62-spacer_inner]
+# name: test_geometry[atreus_62-spacer_inner]
   <class 'list'> [
     <class 'tuple'> (
       -119.0594209277817,
@@ -344,13 +344,13 @@
     ),
   ]
 ---
-# name: test_geometry_usb_rect[atreus_62-spacer_thickness]
+# name: test_geometry[atreus_62-spacer_thickness]
   3
 ---
-# name: test_geometry_usb_rect[atreus_62-thickness]
+# name: test_geometry[atreus_62-thickness]
   3
 ---
-# name: test_geometry_usb_rect[atreus_62-usb_rect]
+# name: test_geometry[atreus_62-usb_rect]
   <class 'list'> [
     <class 'tuple'> (
       2.0,
