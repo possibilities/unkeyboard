@@ -89,7 +89,7 @@ def drill_reset_button_hole(part, geometry, config):
     )
 
 
-def calculate_geometry_from_switch_plate_inner(switch_plate_inner, config):
+def calculate_case_geometry_from_switch_plate_inner(switch_plate_inner, config):
     switch_plate_outline = switch_plate_inner.faces("front").wires(
         cq.selectors.AreaNthSelector(-1)
     )
@@ -386,7 +386,7 @@ def calculate_case_geometry_and_make_switch_plate_inner(config):
         ),
     ).center_on_2d_plane()
 
-    geometry = calculate_geometry_from_switch_plate_inner(
+    geometry = calculate_case_geometry_from_switch_plate_inner(
         switch_plate_inner, config
     )
 
