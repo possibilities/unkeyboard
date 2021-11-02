@@ -35,7 +35,31 @@ default_config = SimpleNamespace(
     }
 )
 
+presets = SimpleNamespace(
+    **{
+        "atreus_62": default_config,
+        "atreus_42": SimpleNamespace(
+            **{
+                **{"number_of_rows": 4, "number_of_columns": 5},
+                **default_config.__dict__,
+            },
+        ),
+        "atreus_44": SimpleNamespace(
+            **{
+                **{
+                    "number_of_rows": 5,
+                    "number_of_columns": 5,
+                    "has_double_inner_keys": True,
+                },
+                **default_config.__dict__,
+            },
+        ),
+    }
+)
+
+
 # View options
+
 explode_by = 12
 flatten = False
 
