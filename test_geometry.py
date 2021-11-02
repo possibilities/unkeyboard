@@ -1,6 +1,7 @@
 import pytest
 from keyboard import presets
 from keyboard import calculate_case_geometry_and_make_switch_plate_inner
+from types import SimpleNamespace
 
 
 def build_data_matrix(list_1, list_2):
@@ -30,6 +31,8 @@ def test_geometry_usb_rect(preset_name, geometry_name, snapshot):
     [
         geometry,
         switch_plate_inner,
-    ] = calculate_case_geometry_and_make_switch_plate_inner(preset)
+    ] = calculate_case_geometry_and_make_switch_plate_inner(
+        SimpleNamespace(**preset)
+    )
 
     assert geometry.__dict__[geometry_name] == snapshot

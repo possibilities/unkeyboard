@@ -1,4 +1,3 @@
-from pprint import pprint
 import math
 import cadquery as cq
 from timer import timer
@@ -37,23 +36,19 @@ default_config = SimpleNamespace(
 
 presets = SimpleNamespace(
     **{
-        "atreus_62": default_config,
-        "atreus_42": SimpleNamespace(
+        "atreus_62": default_config.__dict__,
+        "atreus_42": {
+            **default_config.__dict__,
+            **{"number_of_rows": 4, "number_of_columns": 5},
+        },
+        "atreus_44": {
+            **default_config.__dict__,
             **{
-                **{"number_of_rows": 4, "number_of_columns": 5},
-                **default_config.__dict__,
+                "number_of_rows": 4,
+                "number_of_columns": 5,
+                "has_double_inner_keys": True,
             },
-        ),
-        "atreus_44": SimpleNamespace(
-            **{
-                **{
-                    "number_of_rows": 5,
-                    "number_of_columns": 5,
-                    "has_double_inner_keys": True,
-                },
-                **default_config.__dict__,
-            },
-        ),
+        },
     }
 )
 
