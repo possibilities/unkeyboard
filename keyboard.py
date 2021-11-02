@@ -18,9 +18,6 @@ default_config = SimpleNamespace(
         "stagger_percent_for_single_inner_key": 8.5,
         "stagger_percent_for_double_inner_keys": 3.98,
         "column_stagger_percents": (-1, 4, 10, 5, 2, 2),
-        # View
-        "explode_by": 12,
-        "flatten": False,
         # Structural
         "base_layer_thickness": 3,
         "inner_frame_size": 2.1,
@@ -33,6 +30,13 @@ default_config = SimpleNamespace(
         "distance_between_switch_centers": 19,
         "usb_cutout_width": 4,
         "top_inside_screw_distance_from_usb": 11.25,
+    }
+)
+
+view_config = SimpleNamespace(
+    **{
+        "explode_by": 12,
+        "flatten": False,
     }
 )
 
@@ -447,7 +451,9 @@ def make_spacer(geometry, config):
     )
 
 
-def make_keyboard_parts(config):
+def make_keyboard_parts(user_config={}):
+    config = SimpleNamespace(**{**default_config.__dict__, **user_config})
+
     parts = []
 
     [time_elapsed, total_time] = timer()
@@ -487,11 +493,9 @@ def make_keyboard_parts(config):
 
 
 if "show_object" in globals():
-    keyboard_parts = make_keyboard_parts(default_config)
-    if not default_config.flatten:
-        keyboard_parts = explode_parts(
-            keyboard_parts, default_config.explode_by
-        )
+    keyboard_parts = make_keyboard_parts()
+    if not view_config.flatten:
+        keyboard_parts = explode_parts(keyboard_parts, view_config.explode_by)
 
     for layer_name_and_part in keyboard_parts:
         [layer_name, part] = layer_name_and_part
