@@ -277,8 +277,8 @@ def calculate_geometry_from_switch_plate_inner(switch_plate_inner, config):
     return geometry_points
 
 
-def make_switch_plate_inner(config):
-    switch_plate = cq.Workplane()
+def make_switch_plate_inner_and_calculate_case_geometry(config):
+    switch_plate_inner = cq.Workplane()
 
     widen_cutout_around_key_size = 1
 
@@ -303,8 +303,8 @@ def make_switch_plate_inner(config):
                 + row_offset
                 + stagger_offset
             )
-            switch_plate = (
-                switch_plate.moveTo(key_offset_x, key_offset_y)
+            switch_plate_inner = (
+                switch_plate_inner.moveTo(key_offset_x, key_offset_y)
                 .rect(
                     config.distance_between_switch_centers
                     + widen_cutout_around_key_size,
@@ -338,8 +338,8 @@ def make_switch_plate_inner(config):
         config.distance_between_switch_centers * inner_keys_unit_height
     ) + widen_cutout_around_inner_keys_size
 
-    switch_plate = (
-        switch_plate.moveTo(inner_key_offset_x, inner_key_offset_y)
+    switch_plate_inner = (
+        switch_plate_inner.moveTo(inner_key_offset_x, inner_key_offset_y)
         .rect(
             config.switch_plate_key_cutout_size,
             config.switch_plate_key_cutout_size,
@@ -353,8 +353,8 @@ def make_switch_plate_inner(config):
     )
 
     if config.has_double_inner_keys:
-        switch_plate = (
-            switch_plate.moveTo(
+        switch_plate_inner = (
+            switch_plate_inner.moveTo(
                 inner_key_offset_x,
                 inner_key_offset_y + config.distance_between_switch_centers,
             )
@@ -370,19 +370,26 @@ def make_switch_plate_inner(config):
             .extrude(config.base_layer_thickness)
         )
 
-    switch_plate = switch_plate.rotateAboutCenter([0, 0, 1], config.angle)
+    switch_plate_inner = switch_plate_inner.rotateAboutCenter(
+        [0, 0, 1], config.angle
+    )
 
-    inner_keys_top_left = switch_plate.vertices("<X").val().Center()
+    inner_keys_top_left = switch_plate_inner.vertices("<X").val().Center()
 
-    switch_plate = switch_plate.mirror(
+    switch_plate_inner = switch_plate_inner.mirror(
         mirrorPlane="YZ",
         union=True,
         basePointVector=(
             inner_keys_top_left.x + (widen_cutout_around_key_size / 2),
             inner_keys_top_left.y,
         ),
+    ).center_on_2d_plane()
+
+    geometry = calculate_geometry_from_switch_plate_inner(
+        switch_plate_inner, config
     )
-    return switch_plate
+
+    return [geometry, switch_plate_inner]
 
 
 def make_bottom_plate(geometry, config):
@@ -459,12 +466,11 @@ def make_keyboard_parts(user_config={}):
 
     [time_elapsed, total_time] = timer()
 
-    switch_plate_inner = make_switch_plate_inner(config).center_on_2d_plane()
+    [
+        geometry,
+        switch_plate_inner,
+    ] = make_switch_plate_inner_and_calculate_case_geometry(config)
     time_elapsed("Inner switch plate")
-
-    geometry = calculate_geometry_from_switch_plate_inner(
-        switch_plate_inner, config
-    )
 
     parts.append(("Top plate", make_top_plate(geometry, config)))
     time_elapsed("Top plate")
