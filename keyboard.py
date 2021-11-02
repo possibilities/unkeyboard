@@ -35,12 +35,9 @@ default_config = SimpleNamespace(
     }
 )
 
-view_config = SimpleNamespace(
-    **{
-        "explode_by": 12,
-        "flatten": False,
-    }
-)
+# View options
+explode_by = 12
+flatten = False
 
 
 def find_midpoint_between_two_points(vertice_1, vertice_2):
@@ -502,8 +499,8 @@ def make_keyboard_parts(user_config={}):
 
 if "show_object" in globals():
     keyboard_parts = make_keyboard_parts()
-    if not view_config.flatten:
-        keyboard_parts = explode_parts(keyboard_parts, view_config.explode_by)
+    if not flatten:
+        keyboard_parts = explode_parts(keyboard_parts, explode_by)
 
     for layer_name_and_part in keyboard_parts:
         [layer_name, part] = layer_name_and_part
