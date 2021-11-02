@@ -1,3 +1,4 @@
+from pprint import pprint
 import math
 import cadquery as cq
 from timer import timer
@@ -277,7 +278,7 @@ def calculate_geometry_from_switch_plate_inner(switch_plate_inner, config):
     return geometry_points
 
 
-def make_switch_plate_inner_and_calculate_case_geometry(config):
+def calculate_case_geometry_and_make_switch_plate_inner(config):
     switch_plate_inner = cq.Workplane()
 
     widen_cutout_around_key_size = 1
@@ -469,7 +470,7 @@ def make_keyboard_parts(user_config={}):
     [
         geometry,
         switch_plate_inner,
-    ] = make_switch_plate_inner_and_calculate_case_geometry(config)
+    ] = calculate_case_geometry_and_make_switch_plate_inner(config)
     time_elapsed("Inner switch plate")
 
     parts.append(("Top plate", make_top_plate(geometry, config)))
