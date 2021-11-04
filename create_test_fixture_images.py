@@ -11,7 +11,7 @@ token = secrets.token_urlsafe(8)
 preset_names = presets.__dict__.keys()
 
 try:
-    os.remove("__snapshots__/images")
+    os.remove("__fixtures__/images")
 except:
     pass
 
@@ -32,8 +32,8 @@ for preset_name in preset_names:
             },
         )
 
-        os.makedirs("__snapshots__/images", exist_ok=True)
+        os.makedirs("__fixtures__/images", exist_ok=True)
         svg2png(
             url=f"/tmp/{token}/{preset_name}-{slug}.svg",
-            write_to=f"__snapshots__/images/{preset_name}-{slug}.png",
+            write_to=f"__fixtures__/images/{preset_name}-{slug}.png",
         )

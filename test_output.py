@@ -9,11 +9,11 @@ from cairosvg import svg2png
 from pathlib import Path
 from PIL import Image, ImageStat, ImageChops
 
+delta: float = 0.0001
+
 
 def assert_images_equal(
-    actual: Image.Image,
-    expected: Image.Image,
-    delta: float = 0.0001,
+    actual: Image.Image, expected: Image.Image, preset, part_name
 ):
     assert (
         actual.size == expected.size
@@ -42,7 +42,7 @@ def assert_images_equal(
         diff.save(str(diff_path))
 
         pytest.fail(
-            f"images differ by {diff_ratio:.2f} (allowed={delta})\n"
+            f"{preset} {part_name}: images differ by {diff_ratio:.2f} (allowed={delta})\n"
             f"test images written to:\n"
             f"    actual: {actual_path}\n"
             f"    expected: {expected_path}\n"
@@ -54,11 +54,12 @@ test_data = presets.__dict__
 
 
 @pytest.mark.parametrize("preset_name", test_data)
-def test_output(preset_name, snapshot):
+def test_output(preset_name):
     token = secrets.token_urlsafe(8)
     os.makedirs(f"/tmp/{token}", exist_ok=True)
     preset = presets.__dict__[preset_name]
     parts = make_keyboard_parts(preset)
+    print(parts)
     for part_name_and_part in parts:
         [part_name, part] = part_name_and_part
         slug = slugify(part_name)
@@ -78,5 +79,7 @@ def test_output(preset_name, snapshot):
         )
         assert_images_equal(
             Image.open(f"/tmp/{token}/{preset_name}-{slug}.png"),
-            Image.open(f"__snapshots__/images/{preset_name}-{slug}.png"),
+            Image.open(f"__fixtures__/images/{preset_name}-{slug}.png"),
+            preset_name,
+            part_name,
         )

@@ -14,9 +14,10 @@ def explode_parts(parts, explode_by):
         exploded.append(
             (
                 layer_name,
-                part.translate([0, 0, total_thickness + (thickness / 2)]),
+                part.translate([0, 0, total_thickness]),
             )
         )
+
         total_thickness = total_thickness + thickness + explode_by
 
     return exploded
