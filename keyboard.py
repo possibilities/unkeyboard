@@ -389,7 +389,7 @@ def calculate_switch_outline_points(key_positions, config):
         switch_outline_points[-1][1],
     )
 
-    switch_outline_meta = SimpleNamespace(
+    named_points = SimpleNamespace(
         **{
             "start_of_bottom_row": start_of_bottom_row,
             "top_left_corner": top_left_corner,
@@ -401,39 +401,39 @@ def calculate_switch_outline_points(key_positions, config):
 
     return [
         switch_outline_points,
-        switch_outline_meta,
+        named_points,
     ]
 
 
-def calculate_case_outer_points(switch_outline_meta, outer_frame_size, config):
+def calculate_case_outer_points(named_points, outer_frame_size, config):
     return [
         (
-            switch_outline_meta.top_left_corner[0],
+            named_points.top_left_corner[0],
             find_point_for_angle(
-                switch_outline_meta.start_of_bottom_row,
+                named_points.start_of_bottom_row,
                 -outer_frame_size,
                 45 - config.angle,
             )[1],
         ),
         find_point_for_angle(
-            switch_outline_meta.start_of_bottom_row,
+            named_points.start_of_bottom_row,
             -outer_frame_size,
             45 - config.angle,
         ),
         find_point_for_angle(
-            switch_outline_meta.bottom_right_corner,
+            named_points.bottom_right_corner,
             -outer_frame_size,
             -45 - config.angle,
         ),
         find_point_for_angle(
-            switch_outline_meta.top_right_corner,
+            named_points.top_right_corner,
             outer_frame_size,
             45 - config.angle,
         ),
         (
-            switch_outline_meta.top_left_corner[0],
+            named_points.top_left_corner[0],
             find_point_for_angle(
-                switch_outline_meta.top_right_corner,
+                named_points.top_right_corner,
                 outer_frame_size,
                 45 - config.angle,
             )[1],
@@ -514,7 +514,7 @@ def calculate_case_geometry(config):
 
     [
         switch_outline_points,
-        switch_outline_meta,
+        named_points,
     ] = calculate_switch_outline_points(key_positions, config)
 
     outer_frame_size = (
@@ -524,7 +524,7 @@ def calculate_case_geometry(config):
     )
 
     case_outer_points = calculate_case_outer_points(
-        switch_outline_meta, outer_frame_size, config
+        named_points, outer_frame_size, config
     )
 
     outer_frame_size = (
@@ -559,7 +559,7 @@ def calculate_case_geometry(config):
             "thickness": config.base_layer_thickness,
             "switch_outline": switch_outline_points,
             "switch_cutouts": switch_cutout_points,
-            "mirror_base_point": switch_outline_meta.mirror_base_point,
+            "mirror_base_point": named_points.mirror_base_point,
         }
     )
 
