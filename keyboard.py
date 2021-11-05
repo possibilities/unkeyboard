@@ -109,7 +109,7 @@ def drill_holes(part, geometry, config):
 @cq_workplane_plugin
 def drill_reset_button_hole(part, geometry, config):
     return (
-        part.pushPoints([geometry.reset_button])
+        part.moveTo(*geometry.reset_button)
         .circle(config.reset_button_hole_radius)
         .cutBlind(geometry.thickness)
     )
