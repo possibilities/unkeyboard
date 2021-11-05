@@ -9,29 +9,27 @@ from types import SimpleNamespace
 
 # Defaults to an Atreus 64, with a wide bezel, and chicago bolts
 default_config = SimpleNamespace(
-    **{
-        # Configurable
-        "has_thicc_spacer": False,
-        "use_chicago_bolt": True,
-        "has_double_inner_keys": False,
-        "angle": 10,
-        "number_of_rows": 5,
-        "number_of_columns": 6,
-        "stagger_percent_for_single_inner_key": 8.5,
-        "stagger_percent_for_double_inner_keys": 3.98,
-        "column_stagger_percents": (-1, 4, 10, 5, 2, 2),
-        # Structural
-        "base_layer_thickness": 3,
-        "inner_frame_size": 2.1,
-        "outer_frame_size_for_chicago_bolt": 20,
-        "outer_frame_size_for_regular_screw": 16,
-        "screw_hole_radius_for_chicago_bolt": 2.5,
-        "screw_hole_radius_for_regular_screw": 1.5,
-        "switch_plate_key_cutout_size": 13.97,
-        "distance_between_switch_centers": 19,
-        "usb_cutout_width": 4,
-        "top_inside_screw_distance_from_usb": 5.50,
-    }
+    # Configurable
+    has_thicc_spacer=False,
+    use_chicago_bolt=True,
+    has_double_inner_keys=False,
+    angle=10,
+    number_of_rows=5,
+    number_of_columns=6,
+    stagger_percent_for_single_inner_key=8.5,
+    stagger_percent_for_double_inner_keys=3.98,
+    column_stagger_percents=(-1, 4, 10, 5, 2, 2),
+    # Structural
+    base_layer_thickness=3,
+    inner_frame_size=2.1,
+    outer_frame_size_for_chicago_bolt=20,
+    outer_frame_size_for_regular_screw=16,
+    screw_hole_radius_for_chicago_bolt=2.5,
+    screw_hole_radius_for_regular_screw=1.5,
+    switch_plate_key_cutout_size=13.97,
+    distance_between_switch_centers=19,
+    usb_cutout_width=4,
+    top_inside_screw_distance_from_usb=5.50,
 )
 
 # View options
@@ -371,13 +369,11 @@ def calculate_switch_outline_points(key_positions, config):
     )
 
     named_points = SimpleNamespace(
-        **{
-            "start_of_bottom_row": start_of_bottom_row,
-            "top_left_corner": top_left_corner,
-            "bottom_right_corner": bottom_right_corner,
-            "top_right_corner": top_right_corner,
-            "mirror_at_point": mirror_at_point,
-        }
+        start_of_bottom_row=start_of_bottom_row,
+        top_left_corner=top_left_corner,
+        bottom_right_corner=bottom_right_corner,
+        top_right_corner=top_right_corner,
+        mirror_at_point=mirror_at_point,
     )
 
     return [
@@ -538,63 +534,41 @@ def calculate_case_geometry(config):
     )
 
     return SimpleNamespace(
-        **{
-            "screws": SimpleNamespace(
-                **{
-                    "points": screw_points,
-                    "radius": screw_radius,
-                }
-            ),
-            "reset_button": SimpleNamespace(
-                **{
-                    "point": reset_button_point,
-                    "radius": reset_button_radius,
-                    "thickness": config.base_layer_thickness,
-                }
-            ),
-            "case_outer": SimpleNamespace(
-                **{
-                    "points": case_outer_points,
-                }
-            ),
-            "spacer": SimpleNamespace(
-                **{
-                    "points": spacer_points,
-                    "thickness": spacer_thickness,
-                }
-            ),
-            "switch_outline": SimpleNamespace(
-                **{
-                    "points": switch_outline_points,
-                    "thickness": config.base_layer_thickness,
-                }
-            ),
-            "top_plate": SimpleNamespace(
-                **{
-                    "thickness": config.base_layer_thickness,
-                }
-            ),
-            "bottom_plate": SimpleNamespace(
-                **{
-                    "thickness": config.base_layer_thickness,
-                }
-            ),
-            "switch_plate": SimpleNamespace(
-                **{
-                    "thickness": config.base_layer_thickness,
-                }
-            ),
-            "switch_cutouts": SimpleNamespace(
-                **{
-                    "points": switch_cutout_points,
-                }
-            ),
-            "mirror_at": SimpleNamespace(
-                **{
-                    "point": named_points.mirror_at_point,
-                }
-            ),
-        }
+        screws=SimpleNamespace(
+            points=screw_points,
+            radius=screw_radius,
+        ),
+        reset_button=SimpleNamespace(
+            point=reset_button_point,
+            radius=reset_button_radius,
+            thickness=config.base_layer_thickness,
+        ),
+        case_outer=SimpleNamespace(
+            points=case_outer_points,
+        ),
+        spacer=SimpleNamespace(
+            points=spacer_points,
+            thickness=spacer_thickness,
+        ),
+        switch_outline=SimpleNamespace(
+            points=switch_outline_points,
+            thickness=config.base_layer_thickness,
+        ),
+        top_plate=SimpleNamespace(
+            thickness=config.base_layer_thickness,
+        ),
+        bottom_plate=SimpleNamespace(
+            thickness=config.base_layer_thickness,
+        ),
+        switch_plate=SimpleNamespace(
+            thickness=config.base_layer_thickness,
+        ),
+        switch_cutouts=SimpleNamespace(
+            points=switch_cutout_points,
+        ),
+        mirror_at=SimpleNamespace(
+            point=named_points.mirror_at_point,
+        ),
     )
 
 
