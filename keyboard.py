@@ -133,7 +133,7 @@ def rotate(origin, point, angle):
     return (rotated_x, rotated_y)
 
 
-def rotate_key(key, angle):
+def rotate_about_center_of_plane(key, angle):
     return rotate((0, 0), key, angle)
 
 
@@ -216,7 +216,8 @@ def calculate_case_geometry(config):
                 rotated_switch_cutouts[column].append([])
 
             rotated_switch_cutouts[column][row] = [
-                rotate_key(vector, config.angle) for vector in switch_cutout
+                rotate_about_center_of_plane(vector, config.angle)
+                for vector in switch_cutout
             ]
 
     widen_cutout_around_key_size = 1
@@ -356,15 +357,25 @@ def calculate_case_geometry(config):
     )
 
     bottom_row_points = [
-        rotate_key(point, config.angle) for point in bottom_row_points
+        rotate_about_center_of_plane(point, config.angle)
+        for point in bottom_row_points
     ]
     top_row_points = [
-        rotate_key(point, config.angle) for point in top_row_points
+        rotate_about_center_of_plane(point, config.angle)
+        for point in top_row_points
     ]
-    bottom_left_corner = rotate_key(bottom_left_corner, config.angle)
-    bottom_right_corner = rotate_key(bottom_right_corner, config.angle)
-    top_right_corner = rotate_key(top_right_corner, config.angle)
-    top_left_corner = rotate_key(top_left_corner, config.angle)
+    bottom_left_corner = rotate_about_center_of_plane(
+        bottom_left_corner, config.angle
+    )
+    bottom_right_corner = rotate_about_center_of_plane(
+        bottom_right_corner, config.angle
+    )
+    top_right_corner = rotate_about_center_of_plane(
+        top_right_corner, config.angle
+    )
+    top_left_corner = rotate_about_center_of_plane(
+        top_left_corner, config.angle
+    )
     switch_outline_points = [
         bottom_left_corner,
         *bottom_row_points,
