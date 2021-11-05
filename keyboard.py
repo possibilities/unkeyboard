@@ -56,8 +56,8 @@ presets = SimpleNamespace(
 
 # View options
 
-explode_by = 12
-flatten_items = True
+explode_by = 20
+flatten_items = False
 
 
 def flatten_list(list):
