@@ -1,5 +1,5 @@
 import pytest
-from keyboard import presets
+from presets import presets
 from keyboard import calculate_case_geometry
 from types import SimpleNamespace
 

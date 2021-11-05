@@ -3,7 +3,7 @@ import secrets
 from slugify import slugify
 from cairosvg import svg2png
 from cadquery import exporters
-from keyboard import presets
+from presets import presets
 from keyboard import make_keyboard_parts
 
 token = secrets.token_urlsafe(8)

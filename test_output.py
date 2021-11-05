@@ -2,7 +2,7 @@ import os
 from slugify import slugify
 import pytest
 import secrets
-from keyboard import presets
+from presets import presets
 from keyboard import make_keyboard_parts
 from cadquery import exporters
 from cairosvg import svg2png
