@@ -59,7 +59,6 @@ def test_output(preset_name):
     os.makedirs(f"/tmp/{token}", exist_ok=True)
     preset = presets.__dict__[preset_name]
     parts = make_keyboard_parts(preset)
-    print(parts)
     for part_name_and_part in parts:
         [part_name, part] = part_name_and_part
         slug = slugify(part_name)

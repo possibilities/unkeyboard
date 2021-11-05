@@ -382,7 +382,7 @@ def calculate_switch_outline_points(key_positions, config):
         top_left_corner,
     ]
 
-    bottom_left = bottom_row_points[1]
+    start_of_bottom_row = bottom_row_points[1]
 
     mirror_base_point = (
         switch_outline_points[-1][0] + (widen_cutout_around_key_size / 2),
@@ -393,7 +393,7 @@ def calculate_switch_outline_points(key_positions, config):
         switch_outline_points,
         SimpleNamespace(
             **{
-                "bottom_left": bottom_left,
+                "start_of_bottom_row": start_of_bottom_row,
                 "top_left_corner": top_left_corner,
                 "bottom_right_corner": bottom_right_corner,
                 "top_right_corner": top_right_corner,
@@ -404,9 +404,10 @@ def calculate_switch_outline_points(key_positions, config):
 
 
 def calculate_case_geometry(config):
-
     key_positions = calculate_key_positions(config)
+
     switch_cutout_points = calculate_switch_cutout_points(key_positions, config)
+
     [
         switch_outline_points,
         switch_outline_meta,
@@ -421,13 +422,13 @@ def calculate_case_geometry(config):
         (
             switch_outline_meta.top_left_corner[0],
             find_point_for_angle(
-                switch_outline_meta.bottom_left,
+                switch_outline_meta.start_of_bottom_row,
                 -outer_frame_size,
                 45 - config.angle,
             )[1],
         ),
         find_point_for_angle(
-            switch_outline_meta.bottom_left,
+            switch_outline_meta.start_of_bottom_row,
             -outer_frame_size,
             45 - config.angle,
         ),
