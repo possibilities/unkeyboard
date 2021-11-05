@@ -216,10 +216,7 @@ def calculate_switch_cutout_points(key_positions, config):
     return flatten_list(switch_cutout_points)
 
 
-def calculate_case_geometry(config):
-    key_positions = calculate_key_positions(config)
-    switch_cutout_points = calculate_switch_cutout_points(key_positions, config)
-
+def calculate_switch_outline_points(key_positions, config):
     widen_cutout_around_key_size = 1
 
     widen_cutout_around_inner_keys_size = (
@@ -385,32 +382,71 @@ def calculate_case_geometry(config):
         top_left_corner,
     ]
 
+    bottom_left = bottom_row_points[1]
+
+    mirror_base_point = (
+        switch_outline_points[-1][0] + (widen_cutout_around_key_size / 2),
+        switch_outline_points[-1][1],
+    )
+
+    return [
+        switch_outline_points,
+        SimpleNamespace(
+            **{
+                "bottom_left": bottom_left,
+                "top_left_corner": top_left_corner,
+                "bottom_right_corner": bottom_right_corner,
+                "top_right_corner": top_right_corner,
+                "mirror_base_point": mirror_base_point,
+            }
+        ),
+    ]
+
+
+def calculate_case_geometry(config):
+
+    key_positions = calculate_key_positions(config)
+    switch_cutout_points = calculate_switch_cutout_points(key_positions, config)
+    [
+        switch_outline_points,
+        switch_outline_meta,
+    ] = calculate_switch_outline_points(key_positions, config)
+
     outer_frame_size = (
         config.outer_frame_size_for_chicago_bolt
         if config.use_chicago_bolt
         else config.outer_frame_size_for_regular_screw
     )
-
-    bottom_left = bottom_row_points[1]
-
     case_outer_points = [
         (
-            top_left_corner[0],
+            switch_outline_meta.top_left_corner[0],
             find_point_for_angle(
-                bottom_left, -outer_frame_size, 45 - config.angle
+                switch_outline_meta.bottom_left,
+                -outer_frame_size,
+                45 - config.angle,
             )[1],
         ),
-        find_point_for_angle(bottom_left, -outer_frame_size, 45 - config.angle),
         find_point_for_angle(
-            bottom_right_corner, -outer_frame_size, -45 - config.angle
+            switch_outline_meta.bottom_left,
+            -outer_frame_size,
+            45 - config.angle,
         ),
         find_point_for_angle(
-            top_right_corner, outer_frame_size, 45 - config.angle
+            switch_outline_meta.bottom_right_corner,
+            -outer_frame_size,
+            -45 - config.angle,
+        ),
+        find_point_for_angle(
+            switch_outline_meta.top_right_corner,
+            outer_frame_size,
+            45 - config.angle,
         ),
         (
-            top_left_corner[0],
+            switch_outline_meta.top_left_corner[0],
             find_point_for_angle(
-                top_right_corner, outer_frame_size, 45 - config.angle
+                switch_outline_meta.top_right_corner,
+                outer_frame_size,
+                45 - config.angle,
             )[1],
         ),
     ]
@@ -485,11 +521,6 @@ def calculate_case_geometry(config):
         else config.base_layer_thickness
     )
 
-    mirror_base_point = (
-        switch_outline_points[-1][0] + (widen_cutout_around_key_size / 2),
-        switch_outline_points[-1][1],
-    )
-
     return SimpleNamespace(
         **{
             "screws": screw_points,
@@ -500,7 +531,7 @@ def calculate_case_geometry(config):
             "thickness": config.base_layer_thickness,
             "switch_outline": switch_outline_points,
             "switch_cutouts": switch_cutout_points,
-            "mirror_base_point": mirror_base_point,
+            "mirror_base_point": switch_outline_meta.mirror_base_point,
         }
     )
 
