@@ -201,23 +201,9 @@ def calculate_case_geometry(config):
             if len(switch_cutouts[column]) <= row:
                 switch_cutouts[column].append([])
 
-            switch_cutouts[column][row] = coords
-
-    rotated_switch_cutouts = []
-    for column in range(config.number_of_columns + 1):
-        for row in range(config.number_of_rows):
-            if column == 0 and row > (1 if config.has_double_inner_keys else 0):
-                continue
-            switch_cutout = switch_cutouts[column][row]
-            if len(rotated_switch_cutouts) <= column:
-                rotated_switch_cutouts.append([])
-
-            if len(rotated_switch_cutouts[column]) <= row:
-                rotated_switch_cutouts[column].append([])
-
-            rotated_switch_cutouts[column][row] = [
+            switch_cutouts[column][row] = [
                 rotate_about_center_of_plane(vector, config.angle)
-                for vector in switch_cutout
+                for vector in coords
             ]
 
     widen_cutout_around_key_size = 1
@@ -499,7 +485,7 @@ def calculate_case_geometry(config):
             "spacer_thickness": spacer_thickness,
             "thickness": config.base_layer_thickness,
             "switch_outline": switch_outline_points,
-            "switch_cutouts": flatten_list(rotated_switch_cutouts),
+            "switch_cutouts": flatten_list(switch_cutouts),
             "mirror_base_point": mirror_base_point,
         }
     )
