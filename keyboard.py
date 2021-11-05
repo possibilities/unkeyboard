@@ -118,6 +118,13 @@ def rotate_about_center_of_plane(key, angle):
     return rotate((0, 0), key, angle)
 
 
+def has_reached_end_of_inner_keys_row(column, row, config):
+    if column == 0:
+        if row > (1 if config.has_double_inner_keys else 0):
+            return True
+    return False
+
+
 def calculate_key_positions(config):
     key_positions = []
 
@@ -132,7 +139,7 @@ def calculate_key_positions(config):
     for column in range(number_of_columns_including_inner_keys):
         key_positions.append([])
         for row in range(config.number_of_rows):
-            if column == 0 and row > (1 if config.has_double_inner_keys else 0):
+            if has_reached_end_of_inner_keys_row(column, row, config):
                 continue
 
             row_offset = config.distance_between_switch_centers * row
@@ -148,26 +155,19 @@ def calculate_key_positions(config):
                 config.distance_between_switch_centers * column_stagger_size
             )
 
-            key_offset_x = column_offset + (
+            key_position_x = column_offset + (
                 config.distance_between_switch_centers / 2
             )
 
-            key_offset_y = (
+            key_position_y = (
                 (config.distance_between_switch_centers / 2)
                 + row_offset
                 + stagger_offset
             )
 
-            key_positions[-1].append((key_offset_x, key_offset_y))
+            key_positions[-1].append((key_position_x, key_position_y))
 
     return key_positions
-
-
-def get_item_in_2d_array(arr, index1, index2):
-    try:
-        return arr[index1][index2]
-    except:
-        return None
 
 
 def calculate_switch_cutout_points(key_positions, config):
@@ -178,10 +178,10 @@ def calculate_switch_cutout_points(key_positions, config):
     for column in range(number_of_columns_including_inner_keys):
         switch_cutout_points.append([])
         for row in range(config.number_of_rows):
-            key_position = get_item_in_2d_array(key_positions, column, row)
-
-            if not key_position:
+            if has_reached_end_of_inner_keys_row(column, row, config):
                 continue
+
+            key_position = key_positions[column][row]
 
             switch_cutout_corner_points = find_rectangle_coords_around_point(
                 key_position,
@@ -397,38 +397,27 @@ def calculate_switch_outline_points(key_positions, config):
 
 
 def calculate_case_outer_points(named_points, outer_frame_size, config):
+    bottom_left_corner = find_point_for_angle(
+        named_points.start_of_bottom_row,
+        -outer_frame_size,
+        45 - config.angle,
+    )
+    bottom_right_corner = find_point_for_angle(
+        named_points.bottom_right_corner,
+        -outer_frame_size,
+        -45 - config.angle,
+    )
+    top_right_corner = find_point_for_angle(
+        named_points.top_right_corner,
+        outer_frame_size,
+        45 - config.angle,
+    )
     return [
-        (
-            named_points.top_left_corner[0],
-            find_point_for_angle(
-                named_points.start_of_bottom_row,
-                -outer_frame_size,
-                45 - config.angle,
-            )[1],
-        ),
-        find_point_for_angle(
-            named_points.start_of_bottom_row,
-            -outer_frame_size,
-            45 - config.angle,
-        ),
-        find_point_for_angle(
-            named_points.bottom_right_corner,
-            -outer_frame_size,
-            -45 - config.angle,
-        ),
-        find_point_for_angle(
-            named_points.top_right_corner,
-            outer_frame_size,
-            45 - config.angle,
-        ),
-        (
-            named_points.top_left_corner[0],
-            find_point_for_angle(
-                named_points.top_right_corner,
-                outer_frame_size,
-                45 - config.angle,
-            )[1],
-        ),
+        (named_points.top_left_corner[0], bottom_left_corner[1]),
+        bottom_left_corner,
+        bottom_right_corner,
+        top_right_corner,
+        (named_points.top_left_corner[0], top_right_corner[1]),
     ]
 
 
@@ -471,30 +460,38 @@ def calculate_screw_points(spacer_points, outer_frame_size, config):
         outer_frame_size - config.inner_frame_size
     ) / 2
 
+    spacer_top_right_corner = spacer_points[4]
+    spacer_bottom_left_corner = spacer_points[2]
+    spacer_bottom_right_corner = spacer_points[3]
+
+    screw_top_right_corner = find_point_for_angle(
+        spacer_top_right_corner,
+        screw_distance_from_inner_edge,
+        45 - config.angle,
+    )
+
+    screw_top_left_corner = (
+        config.top_inside_screw_distance_from_usb,
+        screw_top_right_corner[1],
+    )
+
+    screw_bottom_left_corner = find_point_for_angle(
+        spacer_bottom_left_corner,
+        -screw_distance_from_inner_edge,
+        45 - config.angle,
+    )
+
+    screw_bottom_right_corner = find_point_for_angle(
+        spacer_bottom_right_corner,
+        -screw_distance_from_inner_edge,
+        -45 - config.angle,
+    )
+
     return [
-        (
-            config.top_inside_screw_distance_from_usb,
-            find_point_for_angle(
-                spacer_points[4],
-                screw_distance_from_inner_edge,
-                45 - config.angle,
-            )[1],
-        ),
-        find_point_for_angle(
-            spacer_points[4],
-            screw_distance_from_inner_edge,
-            45 - config.angle,
-        ),
-        find_point_for_angle(
-            spacer_points[3],
-            -screw_distance_from_inner_edge,
-            -45 - config.angle,
-        ),
-        find_point_for_angle(
-            spacer_points[2],
-            -screw_distance_from_inner_edge,
-            45 - config.angle,
-        ),
+        screw_top_left_corner,
+        screw_top_right_corner,
+        screw_bottom_right_corner,
+        screw_bottom_left_corner,
     ]
 
 

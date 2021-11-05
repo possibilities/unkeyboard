@@ -1,15 +1,8 @@
 import pytest
+import itertools
 from presets import presets
 from keyboard import calculate_case_geometry
 from types import SimpleNamespace
-
-
-def build_data_matrix(list_1, list_2):
-    data = []
-    for item_1 in list_1:
-        for item_2 in list_2:
-            data.append((item_1, item_2))
-    return data
 
 
 geometry_keys = [
@@ -24,7 +17,7 @@ geometry_keys = [
     "mirror_base_point",
 ]
 
-test_data = build_data_matrix(presets.__dict__.keys(), geometry_keys)
+test_data = itertools.product(presets.__dict__.keys(), geometry_keys)
 
 
 def assert_all_geometry_under_test(geometry):
