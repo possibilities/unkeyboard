@@ -257,7 +257,7 @@ def calculate_switch_outline_points(key_positions, config):
             is_lower_than_next = next_key_position[1] > key_position[1]
             next_key_has_same_stagger = next_key_position[1] == key_position[1]
             if not next_key_has_same_stagger:
-                padding_y = (
+                inner_key_padding_y = (
                     (
                         inner_keys_height
                         - config.distance_between_switch_centers
@@ -271,12 +271,12 @@ def calculate_switch_outline_points(key_positions, config):
                     0,
                     (
                         next_key_position[0] - outline_size,
-                        key_position[1] + outline_size + padding_y,
+                        key_position[1] + outline_size + inner_key_padding_y,
                     )
                     if is_lower_than_next
                     else (
                         key_position[0] + outline_size,
-                        key_position[1] + outline_size + padding_y,
+                        key_position[1] + outline_size + inner_key_padding_y,
                     ),
                 )
                 top_row_points.insert(
@@ -299,7 +299,7 @@ def calculate_switch_outline_points(key_positions, config):
             is_lower_than_next = next_key_position[1] > key_position[1]
             next_key_has_same_stagger = next_key_position[1] == key_position[1]
             if not next_key_has_same_stagger:
-                padding_y = (
+                inner_key_padding_y = (
                     (
                         inner_keys_height
                         - config.distance_between_switch_centers
@@ -312,12 +312,12 @@ def calculate_switch_outline_points(key_positions, config):
                 bottom_row_points.append(
                     (
                         key_position[0] + outline_size,
-                        key_position[1] - outline_size - padding_y,
+                        key_position[1] - outline_size - inner_key_padding_y,
                     )
                     if is_lower_than_next
                     else (
                         next_key_position[0] - outline_size,
-                        key_position[1] - outline_size - padding_y,
+                        key_position[1] - outline_size - inner_key_padding_y,
                     )
                 )
                 bottom_row_points.append(
@@ -510,7 +510,10 @@ def calculate_screw_points(spacer_points, outer_frame_size, config):
 def calculate_case_geometry(config):
     key_positions = calculate_key_positions(config)
 
-    switch_cutout_points = calculate_switch_cutout_points(key_positions, config)
+    switch_cutout_points = calculate_switch_cutout_points(
+        key_positions,
+        config,
+    )
 
     [
         switch_outline_points,
