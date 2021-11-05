@@ -130,35 +130,35 @@ def calculate_key_positions(config):
     number_of_columns_including_inner_keys = config.number_of_columns + 1
 
     for column in range(number_of_columns_including_inner_keys):
+        key_positions.append([])
         for row in range(config.number_of_rows):
             if column == 0 and row > (1 if config.has_double_inner_keys else 0):
                 continue
+
             row_offset = config.distance_between_switch_centers * row
             column_offset = config.distance_between_switch_centers * column
+
             column_stagger_size = (
                 inner_keys_stagger_percent
                 if column == 0
                 else config.column_stagger_percents[column - 1]
             ) / config.distance_between_switch_centers
+
             stagger_offset = (
                 config.distance_between_switch_centers * column_stagger_size
             )
+
             key_offset_x = column_offset + (
                 config.distance_between_switch_centers / 2
             )
+
             key_offset_y = (
                 (config.distance_between_switch_centers / 2)
                 + row_offset
                 + stagger_offset
             )
 
-            if len(key_positions) <= column:
-                key_positions.append([])
-
-            if len(key_positions[column]) <= row:
-                key_positions[column].append([])
-
-            key_positions[column][row] = (key_offset_x, key_offset_y)
+            key_positions[-1].append((key_offset_x, key_offset_y))
 
     return key_positions
 
@@ -176,17 +176,12 @@ def calculate_switch_cutout_points(key_positions, config):
     number_of_columns_including_inner_keys = config.number_of_columns + 1
 
     for column in range(number_of_columns_including_inner_keys):
+        switch_cutout_points.append([])
         for row in range(config.number_of_rows):
             key_position = get_item_in_2d_array(key_positions, column, row)
 
             if not key_position:
                 continue
-
-            if len(switch_cutout_points) <= column:
-                switch_cutout_points.append([])
-
-            if len(switch_cutout_points[column]) <= row:
-                switch_cutout_points[column].append([])
 
             switch_cutout_corner_points = find_rectangle_coords_around_point(
                 key_position,
@@ -194,10 +189,12 @@ def calculate_switch_cutout_points(key_positions, config):
                 config.switch_plate_key_cutout_size,
             )
 
-            switch_cutout_points[column][row] = [
-                rotate_about_center_of_plane(cutout, config.angle)
-                for cutout in switch_cutout_corner_points
-            ]
+            switch_cutout_points[-1].append(
+                [
+                    rotate_about_center_of_plane(cutout, config.angle)
+                    for cutout in switch_cutout_corner_points
+                ]
+            )
 
     return flatten_list(switch_cutout_points)
 
