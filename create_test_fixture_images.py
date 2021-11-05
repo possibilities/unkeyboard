@@ -19,11 +19,12 @@ for preset_name in preset_names:
     config = presets.__dict__[preset_name]
     parts = make_keyboard_parts(config)
     for [part_name, part] in parts:
-        slug = slugify(part_name)
+        part_name_slug = slugify(part_name)
+        preset_name_slug = slugify(preset_name)
         os.makedirs(f"/tmp/{token}", exist_ok=True)
         exporters.export(
             part.faces("front").wires(),
-            f"/tmp/{token}/{preset_name}-{slug}.svg",
+            f"/tmp/{token}/{preset_name_slug}-{part_name_slug}.svg",
             opt={
                 "showAxes": False,
                 "projectionDir": (0.0, 0.0, 1),
@@ -34,6 +35,6 @@ for preset_name in preset_names:
 
         os.makedirs("__fixtures__/images", exist_ok=True)
         svg2png(
-            url=f"/tmp/{token}/{preset_name}-{slug}.svg",
-            write_to=f"__fixtures__/images/{preset_name}-{slug}.png",
+            url=f"/tmp/{token}/{preset_name_slug}-{part_name_slug}.svg",
+            write_to=f"__fixtures__/images/{preset_name_slug}-{part_name_slug}.png",
         )

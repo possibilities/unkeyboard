@@ -1,6 +1,7 @@
 import os
 from slugify import slugify
 import pytest
+import itertools
 import secrets
 from presets import presets
 from keyboard import make_keyboard_parts
@@ -50,35 +51,47 @@ def assert_images_equal(
         )
 
 
-test_data = presets.__dict__
+preset_names = presets.__dict__.keys()
+part_names = ["Bottom plate", "Top plate", "Spacer 1", "Switch plate"]
+test_data = itertools.product(preset_names, part_names)
 
 
-@pytest.mark.parametrize("preset_name", test_data)
-def test_output(preset_name):
+@pytest.mark.parametrize("preset_name,part_name", test_data)
+def test_output(preset_name, part_name):
     token = secrets.token_urlsafe(8)
     os.makedirs(f"/tmp/{token}", exist_ok=True)
     preset = presets.__dict__[preset_name]
     parts = make_keyboard_parts(preset)
+    test_has_run = False
     for part_name_and_part in parts:
-        [part_name, part] = part_name_and_part
-        slug = slugify(part_name)
-        exporters.export(
-            part.faces("front").wires(),
-            f"/tmp/{token}/{preset_name}-{slug}.svg",
-            opt={
-                "showAxes": False,
-                "projectionDir": (0.0, 0.0, 1),
-                "strokeWidth": 0.25,
-                "strokeColor": (255, 255, 255),
-            },
-        )
-        svg2png(
-            url=f"/tmp/{token}/{preset_name}-{slug}.svg",
-            write_to=f"/tmp/{token}/{preset_name}-{slug}.png",
-        )
-        assert_images_equal(
-            Image.open(f"/tmp/{token}/{preset_name}-{slug}.png"),
-            Image.open(f"__fixtures__/images/{preset_name}-{slug}.png"),
-            preset_name,
-            part_name,
-        )
+        [current_part_name, part] = part_name_and_part
+        if part_name == current_part_name:
+            test_has_run = True
+            part_name_slug = slugify(part_name)
+            preset_name_slug = slugify(preset_name)
+            exporters.export(
+                part.faces("front").wires(),
+                f"/tmp/{token}/{preset_name_slug}-{part_name_slug}.svg",
+                opt={
+                    "showAxes": False,
+                    "projectionDir": (0.0, 0.0, 1),
+                    "strokeWidth": 0.25,
+                    "strokeColor": (255, 255, 255),
+                },
+            )
+            svg2png(
+                url=f"/tmp/{token}/{preset_name_slug}-{part_name_slug}.svg",
+                write_to=f"/tmp/{token}/{preset_name_slug}-{part_name_slug}.png",
+            )
+            assert_images_equal(
+                Image.open(
+                    f"/tmp/{token}/{preset_name_slug}-{part_name_slug}.png"
+                ),
+                Image.open(
+                    f"__fixtures__/images/{preset_name_slug}-{part_name_slug}.png"
+                ),
+                preset_name,
+                part_name,
+            )
+    if not test_has_run:
+        assert False, f"No test was run for {preset_name} {part_name}"
