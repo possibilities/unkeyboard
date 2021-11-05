@@ -180,31 +180,45 @@ def calculate_key_positions(config):
     return key_positions
 
 
-def calculate_case_geometry(config):
-    key_positions = calculate_key_positions(config)
+def get_item_in_2d_array(arr, index1, index2):
+    try:
+        return arr[index1][index2]
+    except:
+        return None
 
-    switch_cutouts = []
+
+def calculate_switch_cutout_points(key_positions, config):
+    switch_cutout_points = []
     for column in range(config.number_of_columns + 1):
         for row in range(config.number_of_rows):
-            if column == 0 and row > (1 if config.has_double_inner_keys else 0):
+            key_position = get_item_in_2d_array(key_positions, column, row)
+
+            if not key_position:
                 continue
-            key_position = key_positions[column][row]
-            coords = find_rectangle_coords_around_point(
+
+            switch_cutout_corner_points = find_rectangle_coords_around_point(
                 key_position,
                 config.switch_plate_key_cutout_size,
                 config.switch_plate_key_cutout_size,
             )
 
-            if len(switch_cutouts) <= column:
-                switch_cutouts.append([])
+            if len(switch_cutout_points) <= column:
+                switch_cutout_points.append([])
 
-            if len(switch_cutouts[column]) <= row:
-                switch_cutouts[column].append([])
+            if len(switch_cutout_points[column]) <= row:
+                switch_cutout_points[column].append([])
 
-            switch_cutouts[column][row] = [
-                rotate_about_center_of_plane(vector, config.angle)
-                for vector in coords
+            switch_cutout_points[column][row] = [
+                rotate_about_center_of_plane(cutout, config.angle)
+                for cutout in switch_cutout_corner_points
             ]
+
+    return flatten_list(switch_cutout_points)
+
+
+def calculate_case_geometry(config):
+    key_positions = calculate_key_positions(config)
+    switch_cutout_points = calculate_switch_cutout_points(key_positions, config)
 
     widen_cutout_around_key_size = 1
 
@@ -485,7 +499,7 @@ def calculate_case_geometry(config):
             "spacer_thickness": spacer_thickness,
             "thickness": config.base_layer_thickness,
             "switch_outline": switch_outline_points,
-            "switch_cutouts": flatten_list(switch_cutouts),
+            "switch_cutouts": switch_cutout_points,
             "mirror_base_point": mirror_base_point,
         }
     )
