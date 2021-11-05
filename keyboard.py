@@ -127,7 +127,9 @@ def calculate_key_positions(config):
         else config.stagger_percent_for_single_inner_key
     )
 
-    for column in range(config.number_of_columns + 1):
+    number_of_columns_including_inner_keys = config.number_of_columns + 1
+
+    for column in range(number_of_columns_including_inner_keys):
         for row in range(config.number_of_rows):
             if column == 0 and row > (1 if config.has_double_inner_keys else 0):
                 continue
@@ -170,24 +172,27 @@ def get_item_in_2d_array(arr, index1, index2):
 
 def calculate_switch_cutout_points(key_positions, config):
     switch_cutout_points = []
-    for column in range(config.number_of_columns + 1):
+
+    number_of_columns_including_inner_keys = config.number_of_columns + 1
+
+    for column in range(number_of_columns_including_inner_keys):
         for row in range(config.number_of_rows):
             key_position = get_item_in_2d_array(key_positions, column, row)
 
             if not key_position:
                 continue
 
-            switch_cutout_corner_points = find_rectangle_coords_around_point(
-                key_position,
-                config.switch_plate_key_cutout_size,
-                config.switch_plate_key_cutout_size,
-            )
-
             if len(switch_cutout_points) <= column:
                 switch_cutout_points.append([])
 
             if len(switch_cutout_points[column]) <= row:
                 switch_cutout_points[column].append([])
+
+            switch_cutout_corner_points = find_rectangle_coords_around_point(
+                key_position,
+                config.switch_plate_key_cutout_size,
+                config.switch_plate_key_cutout_size,
+            )
 
             switch_cutout_points[column][row] = [
                 rotate_about_center_of_plane(cutout, config.angle)
@@ -248,8 +253,8 @@ def calculate_switch_outline_points(key_positions, config):
                     if index == 0
                     else 0
                 )
-                top_row_points.insert(
-                    0,
+
+                left_point = (
                     (
                         next_key_position[0] - outline_size,
                         key_position[1] + outline_size + inner_key_padding_y,
@@ -258,10 +263,10 @@ def calculate_switch_outline_points(key_positions, config):
                     else (
                         key_position[0] + outline_size,
                         key_position[1] + outline_size + inner_key_padding_y,
-                    ),
+                    )
                 )
-                top_row_points.insert(
-                    0,
+
+                right_point = (
                     (
                         next_key_position[0] - outline_size,
                         next_key_position[1] + outline_size,
@@ -270,8 +275,11 @@ def calculate_switch_outline_points(key_positions, config):
                     else (
                         key_position[0] + outline_size,
                         next_key_position[1] + outline_size,
-                    ),
+                    )
                 )
+
+                top_row_points.insert(0, left_point)
+                top_row_points.insert(0, right_point)
 
     bottom_row_points = []
     for index, key_position in enumerate(bottom_row):
@@ -290,7 +298,8 @@ def calculate_switch_outline_points(key_positions, config):
                     if index == 0
                     else 0
                 )
-                bottom_row_points.append(
+
+                left_point = (
                     (
                         key_position[0] + outline_size,
                         key_position[1] - outline_size - inner_key_padding_y,
@@ -301,7 +310,8 @@ def calculate_switch_outline_points(key_positions, config):
                         key_position[1] - outline_size - inner_key_padding_y,
                     )
                 )
-                bottom_row_points.append(
+
+                right_point = (
                     (
                         key_position[0] + outline_size,
                         next_key_position[1] - outline_size,
@@ -312,6 +322,9 @@ def calculate_switch_outline_points(key_positions, config):
                         next_key_position[1] - outline_size,
                     )
                 )
+
+                bottom_row_points.append(left_point)
+                bottom_row_points.append(right_point)
 
     inner_keys_height = (
         config.distance_between_switch_centers * inner_keys_unit_height
