@@ -27,7 +27,6 @@ default_config = SimpleNamespace(
         "outer_frame_size_for_regular_screw": 16,
         "screw_hole_radius_for_chicago_bolt": 2.5,
         "screw_hole_radius_for_regular_screw": 1.5,
-        "reset_button_hole_radius": 1.5,
         "switch_plate_key_cutout_size": 13.97,
         "distance_between_switch_centers": 19,
         "usb_cutout_width": 4,
@@ -88,11 +87,11 @@ def drill_holes(part, geometry, config):
 
 
 @cq_workplane_plugin
-def drill_reset_button_hole(part, geometry, config):
+def drill_reset_button_hole(part, geometry):
     return (
-        part.moveTo(*geometry.reset_button)
-        .circle(config.reset_button_hole_radius)
-        .cutBlind(geometry.thickness)
+        part.moveTo(*geometry.reset_button.point)
+        .circle(geometry.reset_button.radius)
+        .cutBlind(geometry.reset_button.thickness)
     )
 
 
@@ -532,6 +531,7 @@ def calculate_case_geometry(config):
         spacer_points, outer_frame_size, config
     )
 
+    reset_button_radius = 1.5
     reset_button_point = (-30, 101)
 
     spacer_thickness = (
@@ -543,7 +543,13 @@ def calculate_case_geometry(config):
     return SimpleNamespace(
         **{
             "screws": screw_points,
-            "reset_button": reset_button_point,
+            "reset_button": SimpleNamespace(
+                **{
+                    "point": reset_button_point,
+                    "radius": reset_button_radius,
+                    "thickness": config.base_layer_thickness,
+                }
+            ),
             "case_outer": case_outer_points,
             "spacer": spacer_points,
             "spacer_thickness": spacer_thickness,
@@ -563,7 +569,7 @@ def make_bottom_plate(geometry, config):
         .extrude(geometry.thickness)
         .drill_holes(geometry, config)
         .mirror_layer(geometry)
-        .drill_reset_button_hole(geometry, config)
+        .drill_reset_button_hole(geometry)
     )
 
 

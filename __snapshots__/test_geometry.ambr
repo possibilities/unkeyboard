@@ -29,10 +29,7 @@
   )
 ---
 # name: test_geometry[atreus_42-reset_button]
-  <class 'tuple'> (
-    -30,
-    101,
-  )
+  namespace(point=(-30, 101), radius=1.5, thickness=3)
 ---
 # name: test_geometry[atreus_42-screws]
   <class 'list'> [
@@ -617,10 +614,7 @@
   )
 ---
 # name: test_geometry[atreus_44-reset_button]
-  <class 'tuple'> (
-    -30,
-    101,
-  )
+  namespace(point=(-30, 101), radius=1.5, thickness=3)
 ---
 # name: test_geometry[atreus_44-screws]
   <class 'list'> [
@@ -1223,10 +1217,7 @@
   )
 ---
 # name: test_geometry[atreus_62-reset_button]
-  <class 'tuple'> (
-    -30,
-    101,
-  )
+  namespace(point=(-30, 101), radius=1.5, thickness=3)
 ---
 # name: test_geometry[atreus_62-screws]
   <class 'list'> [
