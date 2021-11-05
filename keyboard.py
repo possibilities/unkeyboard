@@ -403,13 +403,7 @@ def calculate_switch_outline_points(key_positions, config):
     ]
 
 
-def calculate_case_outer_points(switch_outline_meta, config):
-    outer_frame_size = (
-        config.outer_frame_size_for_chicago_bolt
-        if config.use_chicago_bolt
-        else config.outer_frame_size_for_regular_screw
-    )
-
+def calculate_case_outer_points(switch_outline_meta, outer_frame_size, config):
     return [
         (
             switch_outline_meta.top_left_corner[0],
@@ -455,17 +449,21 @@ def calculate_case_geometry(config):
         switch_outline_meta,
     ] = calculate_switch_outline_points(key_positions, config)
 
-    case_outer_points = calculate_case_outer_points(switch_outline_meta, config)
-
     outer_frame_size = (
         config.outer_frame_size_for_chicago_bolt
         if config.use_chicago_bolt
         else config.outer_frame_size_for_regular_screw
     )
 
-    screw_distance_from_inner_edge = (
-        outer_frame_size - config.inner_frame_size
-    ) / 2
+    case_outer_points = calculate_case_outer_points(
+        switch_outline_meta, outer_frame_size, config
+    )
+
+    outer_frame_size = (
+        config.outer_frame_size_for_chicago_bolt
+        if config.use_chicago_bolt
+        else config.outer_frame_size_for_regular_screw
+    )
 
     spacer_points = [
         case_outer_points[0],
@@ -498,6 +496,10 @@ def calculate_case_geometry(config):
         case_outer_points[2],
         case_outer_points[1],
     ]
+
+    screw_distance_from_inner_edge = (
+        outer_frame_size - config.inner_frame_size
+    ) / 2
 
     screw_points = [
         (
