@@ -389,17 +389,19 @@ def calculate_switch_outline_points(key_positions, config):
         switch_outline_points[-1][1],
     )
 
+    switch_outline_meta = SimpleNamespace(
+        **{
+            "start_of_bottom_row": start_of_bottom_row,
+            "top_left_corner": top_left_corner,
+            "bottom_right_corner": bottom_right_corner,
+            "top_right_corner": top_right_corner,
+            "mirror_base_point": mirror_base_point,
+        }
+    )
+
     return [
         switch_outline_points,
-        SimpleNamespace(
-            **{
-                "start_of_bottom_row": start_of_bottom_row,
-                "top_left_corner": top_left_corner,
-                "bottom_right_corner": bottom_right_corner,
-                "top_right_corner": top_right_corner,
-                "mirror_base_point": mirror_base_point,
-            }
-        ),
+        switch_outline_meta,
     ]
 
 
