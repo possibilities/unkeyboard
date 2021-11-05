@@ -10,11 +10,12 @@ geometry_keys = [
     "reset_button",
     "case_outer",
     "spacer",
-    "spacer_thickness",
-    "thickness",
     "switch_outline",
+    "top_plate",
+    "bottom_plate",
+    "switch_plate",
     "switch_cutouts",
-    "mirror_base_point",
+    "mirror_at",
 ]
 
 test_data = itertools.product(presets.__dict__.keys(), geometry_keys)
@@ -22,9 +23,9 @@ test_data = itertools.product(presets.__dict__.keys(), geometry_keys)
 
 def assert_all_geometry_under_test(geometry):
     if len(geometry.__dict__.keys()) != len(geometry_keys):
-        assert fail(
-            "When adding a new key to geometry it must also be added in `test_geometry.py`."
-        )
+        assert (
+            False
+        ), "When adding a new key to geometry it must also be added in `test_geometry.py`."
 
 
 @pytest.mark.parametrize("preset_name,geometry_name", test_data)

@@ -64,26 +64,17 @@ def find_point_for_angle(vertice, distance, angel):
 
 
 @cq_workplane_plugin
-def mirror_layer(self, geometry):
+def mirror_layer(self, mirror_at_point):
     return self.mirror(
         mirrorPlane="YZ",
         union=True,
-        basePointVector=(geometry.mirror_base_point),
+        basePointVector=(mirror_at_point),
     )
 
 
 @cq_workplane_plugin
-def drill_holes(part, geometry, config):
-    screw_hole_radius = (
-        config.screw_hole_radius_for_chicago_bolt
-        if config.use_chicago_bolt
-        else config.screw_hole_radius_for_regular_screw
-    )
-    return (
-        part.pushPoints(geometry.screws)
-        .circle(screw_hole_radius)
-        .cutBlind(geometry.thickness)
-    )
+def drill_holes(part, points, radius, thickness):
+    return part.pushPoints(points).circle(radius).cutBlind(thickness)
 
 
 @cq_workplane_plugin
@@ -374,7 +365,7 @@ def calculate_switch_outline_points(key_positions, config):
 
     start_of_bottom_row = bottom_row_points[1]
 
-    mirror_base_point = (
+    mirror_at_point = (
         switch_outline_points[-1][0] + (widen_cutout_around_key_size / 2),
         switch_outline_points[-1][1],
     )
@@ -385,7 +376,7 @@ def calculate_switch_outline_points(key_positions, config):
             "top_left_corner": top_left_corner,
             "bottom_right_corner": bottom_right_corner,
             "top_right_corner": top_right_corner,
-            "mirror_base_point": mirror_base_point,
+            "mirror_at_point": mirror_at_point,
         }
     )
 
@@ -531,6 +522,12 @@ def calculate_case_geometry(config):
         spacer_points, outer_frame_size, config
     )
 
+    screw_radius = (
+        config.screw_hole_radius_for_chicago_bolt
+        if config.use_chicago_bolt
+        else config.screw_hole_radius_for_regular_screw
+    )
+
     reset_button_radius = 1.5
     reset_button_point = (-30, 101)
 
@@ -542,7 +539,12 @@ def calculate_case_geometry(config):
 
     return SimpleNamespace(
         **{
-            "screws": screw_points,
+            "screws": SimpleNamespace(
+                **{
+                    "points": screw_points,
+                    "radius": screw_radius,
+                }
+            ),
             "reset_button": SimpleNamespace(
                 **{
                     "point": reset_button_point,
@@ -550,71 +552,122 @@ def calculate_case_geometry(config):
                     "thickness": config.base_layer_thickness,
                 }
             ),
-            "case_outer": case_outer_points,
-            "spacer": spacer_points,
-            "spacer_thickness": spacer_thickness,
-            "thickness": config.base_layer_thickness,
-            "switch_outline": switch_outline_points,
-            "switch_cutouts": switch_cutout_points,
-            "mirror_base_point": named_points.mirror_base_point,
+            "case_outer": SimpleNamespace(
+                **{
+                    "points": case_outer_points,
+                }
+            ),
+            "spacer": SimpleNamespace(
+                **{
+                    "points": spacer_points,
+                    "thickness": spacer_thickness,
+                }
+            ),
+            "switch_outline": SimpleNamespace(
+                **{
+                    "points": switch_outline_points,
+                    "thickness": config.base_layer_thickness,
+                }
+            ),
+            "top_plate": SimpleNamespace(
+                **{
+                    "thickness": config.base_layer_thickness,
+                }
+            ),
+            "bottom_plate": SimpleNamespace(
+                **{
+                    "thickness": config.base_layer_thickness,
+                }
+            ),
+            "switch_plate": SimpleNamespace(
+                **{
+                    "thickness": config.base_layer_thickness,
+                }
+            ),
+            "switch_cutouts": SimpleNamespace(
+                **{
+                    "points": switch_cutout_points,
+                }
+            ),
+            "mirror_at": SimpleNamespace(
+                **{
+                    "point": named_points.mirror_at_point,
+                }
+            ),
         }
     )
 
 
-def make_bottom_plate(geometry, config):
+def make_bottom_plate(geometry):
     return (
         cq.Workplane()
-        .polyline(geometry.case_outer)
+        .polyline(geometry.case_outer.points)
         .close()
-        .extrude(geometry.thickness)
-        .drill_holes(geometry, config)
-        .mirror_layer(geometry)
+        .extrude(geometry.bottom_plate.thickness)
+        .drill_holes(
+            geometry.screws.points,
+            geometry.screws.radius,
+            geometry.bottom_plate.thickness,
+        )
+        .mirror_layer(geometry.mirror_at.point)
         .drill_reset_button_hole(geometry)
     )
 
 
-def make_top_plate(geometry, config):
+def make_top_plate(geometry):
     cutout = (
         cq.Workplane()
-        .polyline(geometry.switch_outline)
+        .polyline(geometry.switch_outline.points)
         .close()
-        .extrude(geometry.thickness)
-        .mirror_layer(geometry)
+        .extrude(geometry.top_plate.thickness)
+        .mirror_layer(geometry.mirror_at.point)
     )
     return (
         cq.Workplane()
-        .polyline(geometry.case_outer)
+        .polyline(geometry.case_outer.points)
         .close()
-        .extrude(geometry.thickness)
-        .drill_holes(geometry, config)
-        .mirror_layer(geometry)
+        .extrude(geometry.top_plate.thickness)
+        .drill_holes(
+            geometry.screws.points,
+            geometry.screws.radius,
+            geometry.top_plate.thickness,
+        )
+        .mirror_layer(geometry.mirror_at.point)
         .cut(cutout)
     )
 
 
-def make_switch_plate(geometry, config):
+def make_switch_plate(geometry):
     switch_plate = cq.Workplane()
 
-    for switch_cutout in geometry.switch_cutouts:
+    for switch_cutout in geometry.switch_cutouts.points:
         switch_plate = switch_plate.polyline(switch_cutout).close()
 
     return (
-        switch_plate.polyline(geometry.case_outer)
+        switch_plate.polyline(geometry.case_outer.points)
         .close()
-        .extrude(geometry.thickness)
-        .drill_holes(geometry, config)
-        .mirror_layer(geometry)
+        .extrude(geometry.switch_plate.thickness)
+        .drill_holes(
+            geometry.screws.points,
+            geometry.screws.radius,
+            geometry.switch_plate.thickness,
+        )
+        .mirror_layer(geometry.mirror_at.point)
     )
 
 
-def make_spacer(geometry, config):
+def make_spacer(geometry):
     return (
         cq.Workplane()
-        .polyline(geometry.spacer)
+        .polyline(geometry.spacer.points)
         .close()
-        .extrude(geometry.spacer_thickness)
-        .drill_holes(geometry, config)
-        .mirror_layer(geometry)
+        .extrude(geometry.spacer.thickness)
+        .drill_holes(
+            geometry.screws.points,
+            geometry.screws.radius,
+            geometry.spacer.thickness,
+        )
+        .mirror_layer(geometry.mirror_at.point)
     )
 
 
@@ -628,21 +681,21 @@ def make_keyboard_parts(user_config={}):
     geometry = calculate_case_geometry(config)
     time_elapsed("Case geometry")
 
-    parts.append(("Top plate", make_top_plate(geometry, config)))
+    parts.append(("Top plate", make_top_plate(geometry)))
     time_elapsed("Top plate")
 
-    parts.append(("Switch plate", make_switch_plate(geometry, config)))
+    parts.append(("Switch plate", make_switch_plate(geometry)))
     time_elapsed("Switch plate")
 
     if config.has_thicc_spacer:
-        parts.append(("Spacer", make_spacer(geometry, config)))
+        parts.append(("Spacer", make_spacer(geometry)))
         time_elapsed("Spacer")
     else:
-        parts.append(("Spacer 1", make_spacer(geometry, config)))
-        parts.append(("Spacer 2", make_spacer(geometry, config)))
+        parts.append(("Spacer 1", make_spacer(geometry)))
+        parts.append(("Spacer 2", make_spacer(geometry)))
         time_elapsed("Spacers")
 
-    parts.append(("Bottom plate", make_bottom_plate(geometry, config)))
+    parts.append(("Bottom plate", make_bottom_plate(geometry)))
     time_elapsed("Bottom plate")
 
     total_time()
