@@ -473,6 +473,38 @@ def calculate_spacer_points(case_outer_points, outer_frame_size, config):
     ]
 
 
+def calculate_screw_points(spacer_points, outer_frame_size, config):
+    screw_distance_from_inner_edge = (
+        outer_frame_size - config.inner_frame_size
+    ) / 2
+
+    return [
+        (
+            config.top_inside_screw_distance_from_usb,
+            find_point_for_angle(
+                spacer_points[4],
+                screw_distance_from_inner_edge,
+                45 - config.angle,
+            )[1],
+        ),
+        find_point_for_angle(
+            spacer_points[4],
+            screw_distance_from_inner_edge,
+            45 - config.angle,
+        ),
+        find_point_for_angle(
+            spacer_points[3],
+            -screw_distance_from_inner_edge,
+            -45 - config.angle,
+        ),
+        find_point_for_angle(
+            spacer_points[2],
+            -screw_distance_from_inner_edge,
+            45 - config.angle,
+        ),
+    ]
+
+
 def calculate_case_geometry(config):
     key_positions = calculate_key_positions(config)
 
@@ -503,35 +535,9 @@ def calculate_case_geometry(config):
         case_outer_points, outer_frame_size, config
     )
 
-    screw_distance_from_inner_edge = (
-        outer_frame_size - config.inner_frame_size
-    ) / 2
-
-    screw_points = [
-        (
-            config.top_inside_screw_distance_from_usb,
-            find_point_for_angle(
-                spacer_points[4],
-                screw_distance_from_inner_edge,
-                45 - config.angle,
-            )[1],
-        ),
-        find_point_for_angle(
-            spacer_points[4],
-            screw_distance_from_inner_edge,
-            45 - config.angle,
-        ),
-        find_point_for_angle(
-            spacer_points[3],
-            -screw_distance_from_inner_edge,
-            -45 - config.angle,
-        ),
-        find_point_for_angle(
-            spacer_points[2],
-            -screw_distance_from_inner_edge,
-            45 - config.angle,
-        ),
-    ]
+    screw_points = calculate_screw_points(
+        spacer_points, outer_frame_size, config
+    )
 
     reset_button_point = (-30, 101)
 
