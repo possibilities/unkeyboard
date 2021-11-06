@@ -1,10 +1,14 @@
 import math
 import cadquery as cq
 from timer import timer
+from types import SimpleNamespace
 from fuse_parts import fuse_parts
 from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
-from types import SimpleNamespace
+from flatten_list import flatten_list
+from find_point_for_angle import find_point_for_angle
+from find_rectangle_corners import find_rectangle_corners
+from rotate_about_center_2d import rotate_about_center_2d
 
 
 # Defaults to an Atreus 64, with a wide bezel, and chicago bolts
@@ -38,29 +42,6 @@ explode_by = 20
 flatten_items = False
 
 
-def flatten_list(list):
-    return [item for sublist in list for item in sublist]
-
-
-def find_rectangle_coords_around_point(point, width, height):
-    offset = cq.Vector(*point)
-    points = [
-        cq.Vector(width / -2.0, height / -2.0, 0),
-        cq.Vector(width / 2.0, height / -2.0, 0),
-        cq.Vector(width / 2.0, height / 2.0, 0),
-        cq.Vector(width / -2.0, height / 2.0, 0),
-    ]
-    return [((point + offset).x, (point + offset).y) for point in points]
-
-
-def find_point_for_angle(vertice, distance, angel):
-    angle_radian = math.pi / 2 - math.radians(angel)
-    return (
-        vertice[0] + distance * math.cos(angle_radian),
-        vertice[1] + distance * math.sin(angle_radian),
-    )
-
-
 @cq_workplane_plugin
 def mirror_layer(self, mirror_at_point):
     return self.mirror(
@@ -82,28 +63,6 @@ def drill_reset_button_hole(part, geometry):
         .circle(geometry.reset_button.radius)
         .cutBlind(geometry.reset_button.thickness)
     )
-
-
-def rotate(origin, point, angle):
-    angle_radian = math.radians(angle)
-    [origin_x, origin_y] = origin
-    [point_x, point_y] = point
-
-    rotated_x = (
-        origin_x
-        + math.cos(angle_radian) * (point_x - origin_x)
-        - math.sin(angle_radian) * (point_y - origin_y)
-    )
-    rotated_y = (
-        origin_y
-        + math.sin(angle_radian) * (point_x - origin_x)
-        + math.cos(angle_radian) * (point_y - origin_y)
-    )
-    return (rotated_x, rotated_y)
-
-
-def rotate_about_center_2d(key, angle):
-    return rotate((0, 0), key, angle)
 
 
 def has_reached_end_of_inside_keys_row(column, row, config):
@@ -173,7 +132,7 @@ def calculate_switch_cutout_points(key_positions, config):
 
             key_position = key_positions[column][row]
 
-            switch_cutout_corner_points = find_rectangle_coords_around_point(
+            switch_cutout_corner_points = find_rectangle_corners(
                 key_position,
                 config.switch_plate_key_cutout_size,
                 config.switch_plate_key_cutout_size,
