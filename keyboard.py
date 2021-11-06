@@ -9,8 +9,9 @@ from calculate_point_for_angle import calculate_point_for_angle
 from calculate_rectangle_corners import calculate_rectangle_corners
 from rotate_2d import rotate_2d
 
+explode_by = 20
+flatten_items = False
 
-# Defaults to an Atreus 64, with a wide bezel, and chicago bolts
 default_config = SimpleNamespace(
     # Configurable
     has_thicc_spacer=False,
@@ -34,11 +35,6 @@ default_config = SimpleNamespace(
     usb_cutout_width=4,
     top_inside_screw_distance_from_usb=5.50,
 )
-
-# View options
-
-explode_by = 20
-flatten_items = False
 
 
 @cq_workplane_plugin
