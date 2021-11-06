@@ -8,7 +8,7 @@ from explode_parts import explode_parts
 from flatten_list import flatten_list
 from find_point_for_angle import find_point_for_angle
 from find_rectangle_corners import find_rectangle_corners
-from rotate_about_center_2d import rotate_about_center_2d
+from rotate_2d import rotate_2d
 
 
 # Defaults to an Atreus 64, with a wide bezel, and chicago bolts
@@ -140,7 +140,7 @@ def calculate_switch_cutout_points(key_positions, config):
 
             switch_cutout_points[-1].append(
                 [
-                    rotate_about_center_2d(cutout, config.angle)
+                    rotate_2d((0, 0), cutout, config.angle)
                     for cutout in switch_cutout_corner_points
                 ]
             )
@@ -294,20 +294,15 @@ def calculate_switch_outline_points(key_positions, config):
     )
 
     bottom_row_points = [
-        rotate_about_center_2d(point, config.angle)
-        for point in bottom_row_points
+        rotate_2d((0, 0), point, config.angle) for point in bottom_row_points
     ]
     top_row_points = [
-        rotate_about_center_2d(point, config.angle) for point in top_row_points
+        rotate_2d((0, 0), point, config.angle) for point in top_row_points
     ]
-    bottom_left_corner = rotate_about_center_2d(
-        bottom_left_corner, config.angle
-    )
-    bottom_right_corner = rotate_about_center_2d(
-        bottom_right_corner, config.angle
-    )
-    top_right_corner = rotate_about_center_2d(top_right_corner, config.angle)
-    top_left_corner = rotate_about_center_2d(top_left_corner, config.angle)
+    bottom_left_corner = rotate_2d((0, 0), bottom_left_corner, config.angle)
+    bottom_right_corner = rotate_2d((0, 0), bottom_right_corner, config.angle)
+    top_right_corner = rotate_2d((0, 0), top_right_corner, config.angle)
+    top_left_corner = rotate_2d((0, 0), top_left_corner, config.angle)
 
     switch_outline_points = [
         bottom_left_corner,

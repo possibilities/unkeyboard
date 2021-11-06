@@ -17,7 +17,3 @@ def rotate_2d(origin, point, angle):
         + math.cos(angle_radian) * (point_y - origin_y)
     )
     return (rotated_x, rotated_y)
-
-
-def rotate_about_center_2d(key, angle):
-    return rotate_2d((0, 0), key, angle)
