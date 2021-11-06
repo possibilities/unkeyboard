@@ -1,6 +1,5 @@
 import math
 import cadquery as cq
-from timer import timer
 from types import SimpleNamespace
 from fuse_parts import fuse_parts
 from cq_workplane_plugin import cq_workplane_plugin
@@ -616,29 +615,18 @@ def make_keyboard_parts(user_config={}):
 
     parts = []
 
-    [time_elapsed, total_time] = timer()
-
     geometry = calculate_case_geometry(config)
-    time_elapsed("Case geometry")
 
     parts.append(("Top plate", make_top_plate(geometry)))
-    time_elapsed("Top plate")
-
     parts.append(("Switch plate", make_switch_plate(geometry)))
-    time_elapsed("Switch plate")
 
     if config.has_thicc_spacer:
         parts.append(("Spacer", make_spacer(geometry)))
-        time_elapsed("Spacer")
     else:
         parts.append(("Spacer 1", make_spacer(geometry)))
         parts.append(("Spacer 2", make_spacer(geometry)))
-        time_elapsed("Spacers")
 
     parts.append(("Bottom plate", make_bottom_plate(geometry)))
-    time_elapsed("Bottom plate")
-
-    total_time()
 
     return parts
 
