@@ -16,12 +16,12 @@ default_config = SimpleNamespace(
     # Configurable
     has_thicc_spacer=False,
     use_chicago_bolt=True,
-    has_two_inner_keys=False,
+    has_two_inner_switches=False,
     angle=10,
     number_of_rows=5,
     number_of_columns=6,
-    stagger_percent_for_single_inside_key=8.5,
-    stagger_percent_for_double_inside_keys=3.98,
+    stagger_percent_for_single_inside_switch=8.5,
+    stagger_percent_for_double_inside_switches=3.98,
     column_stagger_percents=(-1, 4, 10, 5, 2, 2),
     # Structural
     base_layer_thickness=3,
@@ -30,7 +30,7 @@ default_config = SimpleNamespace(
     outside_frame_size_for_regular_screw=16,
     screw_hole_radius_for_chicago_bolt=2.5,
     screw_hole_radius_for_regular_screw=1.5,
-    switch_plate_key_cutout_size=13.97,
+    switch_plate_cutout_size=13.97,
     distance_between_switch_centers=19,
     usb_cutout_width=4,
     top_inside_screw_distance_from_usb=5.50,
@@ -65,37 +65,37 @@ def drill_reset_button_hole(part, geometry):
     )
 
 
-def has_reached_end_of_inside_keys_row(column, row, config):
+def has_reached_end_of_inside_switches_row(column, row, config):
     has_reached_end_column = column == 0
     if has_reached_end_column:
-        has_reached_end_row = row > (1 if config.has_two_inner_keys else 0)
+        has_reached_end_row = row > (1 if config.has_two_inner_switches else 0)
         if has_reached_end_row:
             return True
     return False
 
 
-def calculate_key_positions(config):
-    key_positions = []
+def calculate_switch_positions(config):
+    switch_positions = []
 
-    inside_keys_stagger_percent = (
-        config.stagger_percent_for_double_inside_keys
-        if config.has_two_inner_keys
-        else config.stagger_percent_for_single_inside_key
+    inside_switches_stagger_percent = (
+        config.stagger_percent_for_double_inside_switches
+        if config.has_two_inner_switches
+        else config.stagger_percent_for_single_inside_switch
     )
 
-    number_of_columns_including_inside_keys = config.number_of_columns + 1
+    number_of_columns_including_inside_switches = config.number_of_columns + 1
 
-    for column in range(number_of_columns_including_inside_keys):
-        key_positions.append([])
+    for column in range(number_of_columns_including_inside_switches):
+        switch_positions.append([])
         for row in range(config.number_of_rows):
-            if has_reached_end_of_inside_keys_row(column, row, config):
+            if has_reached_end_of_inside_switches_row(column, row, config):
                 continue
 
             row_offset = config.distance_between_switch_centers * row
             column_offset = config.distance_between_switch_centers * column
 
             column_stagger_size = (
-                inside_keys_stagger_percent
+                inside_switches_stagger_percent
                 if column == 0
                 else config.column_stagger_percents[column - 1]
             ) / config.distance_between_switch_centers
@@ -104,38 +104,38 @@ def calculate_key_positions(config):
                 config.distance_between_switch_centers * column_stagger_size
             )
 
-            key_position_x = column_offset + (
+            switch_position_x = column_offset + (
                 config.distance_between_switch_centers / 2
             )
 
-            key_position_y = (
+            switch_position_y = (
                 (config.distance_between_switch_centers / 2)
                 + row_offset
                 + stagger_offset
             )
 
-            key_positions[-1].append((key_position_x, key_position_y))
+            switch_positions[-1].append((switch_position_x, switch_position_y))
 
-    return key_positions
+    return switch_positions
 
 
-def calculate_switch_cutout_points(key_positions, config):
+def calculate_switch_cutout_points(switch_positions, config):
     switch_cutout_points = []
 
-    number_of_columns_including_inside_keys = config.number_of_columns + 1
+    number_of_columns_including_inside_switches = config.number_of_columns + 1
 
-    for column in range(number_of_columns_including_inside_keys):
+    for column in range(number_of_columns_including_inside_switches):
         switch_cutout_points.append([])
         for row in range(config.number_of_rows):
-            if has_reached_end_of_inside_keys_row(column, row, config):
+            if has_reached_end_of_inside_switches_row(column, row, config):
                 continue
 
-            key_position = key_positions[column][row]
+            switch_position = switch_positions[column][row]
 
             switch_cutout_corner_points = find_rectangle_corners(
-                key_position,
-                config.switch_plate_key_cutout_size,
-                config.switch_plate_key_cutout_size,
+                switch_position,
+                config.switch_plate_cutout_size,
+                config.switch_plate_cutout_size,
             )
 
             switch_cutout_points[-1].append(
@@ -148,52 +148,54 @@ def calculate_switch_cutout_points(key_positions, config):
     return flatten_list(switch_cutout_points)
 
 
-def calculate_switch_outline_points(key_positions, config):
-    widen_cutout_around_key_size = 1
+def calculate_switch_outline_points(switch_positions, config):
+    widen_cutout_around_switch_size = 1
 
-    widen_cutout_around_inside_keys_size = (
-        0 if config.has_two_inner_keys else 1.5
+    widen_cutout_around_inside_switches_size = (
+        0 if config.has_two_inner_switches else 1.5
     )
-    inside_keys_unit_height = 1 if config.has_two_inner_keys else 1.5
+    inside_switches_unit_height = 1 if config.has_two_inner_switches else 1.5
 
-    inside_keys_height = (
-        config.distance_between_switch_centers * inside_keys_unit_height
-    ) + widen_cutout_around_inside_keys_size
+    inside_switches_height = (
+        config.distance_between_switch_centers * inside_switches_unit_height
+    ) + widen_cutout_around_inside_switches_size
 
-    outline_size_per_key = (
-        config.distance_between_switch_centers + widen_cutout_around_key_size
+    outline_size_per_switch = (
+        config.distance_between_switch_centers + widen_cutout_around_switch_size
     )
 
-    inside_key_padding_y = (
-        inside_keys_height - config.distance_between_switch_centers
+    inside_switch_padding_y = (
+        inside_switches_height - config.distance_between_switch_centers
     ) / 2
-    outline_size = outline_size_per_key / 2
-    top_left_key = (
-        key_positions[0][-1][0],
-        key_positions[0][-1][1] + inside_key_padding_y,
+    outline_size = outline_size_per_switch / 2
+    top_left_switch = (
+        switch_positions[0][-1][0],
+        switch_positions[0][-1][1] + inside_switch_padding_y,
     )
-    top_right_key = key_positions[-1][-1]
-    bottom_left_key = (
-        key_positions[0][0][0],
-        key_positions[0][0][1] - inside_key_padding_y,
+    top_right_switch = switch_positions[-1][-1]
+    bottom_left_switch = (
+        switch_positions[0][0][0],
+        switch_positions[0][0][1] - inside_switch_padding_y,
     )
-    bottom_right_key = key_positions[-1][0]
+    bottom_right_switch = switch_positions[-1][0]
 
-    top_row = [column[-1] for column in key_positions]
-    bottom_row = [column[0] for column in key_positions]
+    top_row = [column[-1] for column in switch_positions]
+    bottom_row = [column[0] for column in switch_positions]
 
     top_row_points = []
-    for index, key_position in enumerate(top_row):
+    for index, switch_position in enumerate(top_row):
         if index != len(top_row) - 1:
-            next_key_position = top_row[index + 1]
-            is_lower_than_next = next_key_position[1] > key_position[1]
-            next_key_has_same_stagger = next_key_position[1] == key_position[1]
-            if not next_key_has_same_stagger:
-                inside_key_padding_y = (
+            next_switch_position = top_row[index + 1]
+            is_lower_than_next = next_switch_position[1] > switch_position[1]
+            next_switch_has_same_stagger = (
+                next_switch_position[1] == switch_position[1]
+            )
+            if not next_switch_has_same_stagger:
+                inside_switch_padding_y = (
                     (
-                        inside_keys_height
+                        inside_switches_height
                         - config.distance_between_switch_centers
-                        - widen_cutout_around_key_size
+                        - widen_cutout_around_switch_size
                     )
                     / 2
                     if index == 0
@@ -202,25 +204,29 @@ def calculate_switch_outline_points(key_positions, config):
 
                 left_point = (
                     (
-                        next_key_position[0] - outline_size,
-                        key_position[1] + outline_size + inside_key_padding_y,
+                        next_switch_position[0] - outline_size,
+                        switch_position[1]
+                        + outline_size
+                        + inside_switch_padding_y,
                     )
                     if is_lower_than_next
                     else (
-                        key_position[0] + outline_size,
-                        key_position[1] + outline_size + inside_key_padding_y,
+                        switch_position[0] + outline_size,
+                        switch_position[1]
+                        + outline_size
+                        + inside_switch_padding_y,
                     )
                 )
 
                 right_point = (
                     (
-                        next_key_position[0] - outline_size,
-                        next_key_position[1] + outline_size,
+                        next_switch_position[0] - outline_size,
+                        next_switch_position[1] + outline_size,
                     )
                     if is_lower_than_next
                     else (
-                        key_position[0] + outline_size,
-                        next_key_position[1] + outline_size,
+                        switch_position[0] + outline_size,
+                        next_switch_position[1] + outline_size,
                     )
                 )
 
@@ -228,17 +234,19 @@ def calculate_switch_outline_points(key_positions, config):
                 top_row_points.insert(0, right_point)
 
     bottom_row_points = []
-    for index, key_position in enumerate(bottom_row):
+    for index, switch_position in enumerate(bottom_row):
         if index != len(bottom_row) - 1:
-            next_key_position = bottom_row[index + 1]
-            is_lower_than_next = next_key_position[1] > key_position[1]
-            next_key_has_same_stagger = next_key_position[1] == key_position[1]
-            if not next_key_has_same_stagger:
-                inside_key_padding_y = (
+            next_switch_position = bottom_row[index + 1]
+            is_lower_than_next = next_switch_position[1] > switch_position[1]
+            next_switch_has_same_stagger = (
+                next_switch_position[1] == switch_position[1]
+            )
+            if not next_switch_has_same_stagger:
+                inside_switch_padding_y = (
                     (
-                        inside_keys_height
+                        inside_switches_height
                         - config.distance_between_switch_centers
-                        - widen_cutout_around_key_size
+                        - widen_cutout_around_switch_size
                     )
                     / 2
                     if index == 0
@@ -247,50 +255,58 @@ def calculate_switch_outline_points(key_positions, config):
 
                 left_point = (
                     (
-                        key_position[0] + outline_size,
-                        key_position[1] - outline_size - inside_key_padding_y,
+                        switch_position[0] + outline_size,
+                        switch_position[1]
+                        - outline_size
+                        - inside_switch_padding_y,
                     )
                     if is_lower_than_next
                     else (
-                        next_key_position[0] - outline_size,
-                        key_position[1] - outline_size - inside_key_padding_y,
+                        next_switch_position[0] - outline_size,
+                        switch_position[1]
+                        - outline_size
+                        - inside_switch_padding_y,
                     )
                 )
 
                 right_point = (
                     (
-                        key_position[0] + outline_size,
-                        next_key_position[1] - outline_size,
+                        switch_position[0] + outline_size,
+                        next_switch_position[1] - outline_size,
                     )
                     if is_lower_than_next
                     else (
-                        next_key_position[0] - outline_size,
-                        next_key_position[1] - outline_size,
+                        next_switch_position[0] - outline_size,
+                        next_switch_position[1] - outline_size,
                     )
                 )
 
                 bottom_row_points.append(left_point)
                 bottom_row_points.append(right_point)
 
-    inside_keys_height = (
-        config.distance_between_switch_centers * inside_keys_unit_height
-    ) + widen_cutout_around_inside_keys_size
+    inside_switches_height = (
+        config.distance_between_switch_centers * inside_switches_unit_height
+    ) + widen_cutout_around_inside_switches_size
 
     bottom_left_corner = (
-        bottom_left_key[0] - outline_size,
-        bottom_left_key[1] - outline_size + (widen_cutout_around_key_size / 2),
+        bottom_left_switch[0] - outline_size,
+        bottom_left_switch[1]
+        - outline_size
+        + (widen_cutout_around_switch_size / 2),
     )
     bottom_right_corner = (
-        bottom_right_key[0] + outline_size,
-        bottom_right_key[1] - outline_size,
+        bottom_right_switch[0] + outline_size,
+        bottom_right_switch[1] - outline_size,
     )
     top_right_corner = (
-        top_right_key[0] + outline_size,
-        top_right_key[1] + outline_size,
+        top_right_switch[0] + outline_size,
+        top_right_switch[1] + outline_size,
     )
     top_left_corner = (
-        top_left_key[0] - outline_size,
-        top_left_key[1] + outline_size - (widen_cutout_around_key_size / 2),
+        top_left_switch[0] - outline_size,
+        top_left_switch[1]
+        + outline_size
+        - (widen_cutout_around_switch_size / 2),
     )
 
     bottom_row_points = [
@@ -316,7 +332,7 @@ def calculate_switch_outline_points(key_positions, config):
     start_of_bottom_row = bottom_row_points[1]
 
     mirror_at_point = (
-        switch_outline_points[-1][0] + (widen_cutout_around_key_size / 2),
+        switch_outline_points[-1][0] + (widen_cutout_around_switch_size / 2),
         switch_outline_points[-1][1],
     )
 
@@ -434,17 +450,17 @@ def calculate_screw_points(spacer_points, outside_frame_size, config):
 
 
 def calculate_case_geometry(config):
-    key_positions = calculate_key_positions(config)
+    switch_positions = calculate_switch_positions(config)
 
     switch_cutout_points = calculate_switch_cutout_points(
-        key_positions,
+        switch_positions,
         config,
     )
 
     [
         switch_outline_points,
         named_points,
-    ] = calculate_switch_outline_points(key_positions, config)
+    ] = calculate_switch_outline_points(switch_positions, config)
 
     outside_frame_size = (
         config.outside_frame_size_for_chicago_bolt
