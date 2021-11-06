@@ -74,47 +74,43 @@ def has_reached_end_of_inside_switches_row(column, row, config):
     return False
 
 
-def calculate_switch_positions(config):
-    switch_positions = []
-
+def calculate_column_stagger_percent(column, config):
     inside_switches_stagger_percent = (
         config.stagger_percent_for_double_inside_switches
         if config.has_two_inner_switches
         else config.stagger_percent_for_single_inside_switch
     )
 
-    number_of_columns_including_inside_switches = config.number_of_columns + 1
+    return (
+        inside_switches_stagger_percent
+        if column == 0
+        else config.column_stagger_percents[column - 1]
+    ) / config.distance_between_switch_centers
 
-    for column in range(number_of_columns_including_inside_switches):
+
+def calculate_switch_positions(config):
+    switch_positions = []
+
+    number_of_inside_columns = 1
+    total_number_of_columns = (
+        config.number_of_columns + number_of_inside_columns
+    )
+
+    for column in range(total_number_of_columns):
         switch_positions.append([])
         for row in range(config.number_of_rows):
-            if has_reached_end_of_inside_switches_row(column, row, config):
-                continue
+            if not has_reached_end_of_inside_switches_row(column, row, config):
+                switch_position_x = config.distance_between_switch_centers * (
+                    column + 0.5
+                )
 
-            row_offset = config.distance_between_switch_centers * row
-            column_offset = config.distance_between_switch_centers * column
+                switch_position_y = config.distance_between_switch_centers * (
+                    row + 0.5 + calculate_column_stagger_percent(column, config)
+                )
 
-            column_stagger_size = (
-                inside_switches_stagger_percent
-                if column == 0
-                else config.column_stagger_percents[column - 1]
-            ) / config.distance_between_switch_centers
-
-            stagger_offset = (
-                config.distance_between_switch_centers * column_stagger_size
-            )
-
-            switch_position_x = column_offset + (
-                config.distance_between_switch_centers / 2
-            )
-
-            switch_position_y = (
-                (config.distance_between_switch_centers / 2)
-                + row_offset
-                + stagger_offset
-            )
-
-            switch_positions[-1].append((switch_position_x, switch_position_y))
+                switch_positions[-1].append(
+                    (switch_position_x, switch_position_y)
+                )
 
     return switch_positions
 
@@ -122,28 +118,31 @@ def calculate_switch_positions(config):
 def calculate_switch_cutout_points(switch_positions, config):
     switch_cutout_points = []
 
-    number_of_columns_including_inside_switches = config.number_of_columns + 1
+    number_of_inside_columns = 1
+    total_number_of_columns = (
+        config.number_of_columns + number_of_inside_columns
+    )
 
-    for column in range(number_of_columns_including_inside_switches):
+    for column in range(total_number_of_columns):
         switch_cutout_points.append([])
         for row in range(config.number_of_rows):
-            if has_reached_end_of_inside_switches_row(column, row, config):
-                continue
+            if not has_reached_end_of_inside_switches_row(column, row, config):
+                switch_position = switch_positions[column][row]
 
-            switch_position = switch_positions[column][row]
+                switch_cutout_corner_points = find_rectangle_corners(
+                    switch_position,
+                    config.switch_plate_cutout_size,
+                    config.switch_plate_cutout_size,
+                )
 
-            switch_cutout_corner_points = find_rectangle_corners(
-                switch_position,
-                config.switch_plate_cutout_size,
-                config.switch_plate_cutout_size,
-            )
-
-            switch_cutout_points[-1].append(
-                [
+                rotated_switch_cutout_corner_points = [
                     rotate_2d((0, 0), cutout, config.angle)
                     for cutout in switch_cutout_corner_points
                 ]
-            )
+
+                switch_cutout_points[-1].append(
+                    rotated_switch_cutout_corner_points
+                )
 
     return flatten_list(switch_cutout_points)
 
@@ -184,7 +183,8 @@ def calculate_switch_outline_points(switch_positions, config):
 
     top_row_points = []
     for index, switch_position in enumerate(top_row):
-        if index != len(top_row) - 1:
+        is_last_column_of_top_row = index == len(top_row) - 1
+        if not is_last_column_of_top_row:
             next_switch_position = top_row[index + 1]
             is_lower_than_next = next_switch_position[1] > switch_position[1]
             next_switch_has_same_stagger = (
@@ -235,7 +235,8 @@ def calculate_switch_outline_points(switch_positions, config):
 
     bottom_row_points = []
     for index, switch_position in enumerate(bottom_row):
-        if index != len(bottom_row) - 1:
+        is_last_column_of_bottom_row = index == len(bottom_row) - 1
+        if not is_last_column_of_bottom_row:
             next_switch_position = bottom_row[index + 1]
             is_lower_than_next = next_switch_position[1] > switch_position[1]
             next_switch_has_same_stagger = (
@@ -344,10 +345,7 @@ def calculate_switch_outline_points(switch_positions, config):
         mirror_at_point=mirror_at_point,
     )
 
-    return [
-        switch_outline_points,
-        named_points,
-    ]
+    return [switch_outline_points, named_points]
 
 
 def calculate_case_outside_points(named_points, outside_frame_size, config):
