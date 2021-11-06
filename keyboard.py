@@ -12,18 +12,18 @@ default_config = SimpleNamespace(
     # Configurable
     has_thicc_spacer=False,
     use_chicago_bolt=True,
-    has_double_inner_keys=False,
+    has_two_inner_keys=False,
     angle=10,
     number_of_rows=5,
     number_of_columns=6,
-    stagger_percent_for_single_inner_key=8.5,
-    stagger_percent_for_double_inner_keys=3.98,
+    stagger_percent_for_single_inside_key=8.5,
+    stagger_percent_for_double_inside_keys=3.98,
     column_stagger_percents=(-1, 4, 10, 5, 2, 2),
     # Structural
     base_layer_thickness=3,
-    inner_frame_size=2.1,
-    outer_frame_size_for_chicago_bolt=20,
-    outer_frame_size_for_regular_screw=16,
+    inside_frame_size=2.1,
+    outside_frame_size_for_chicago_bolt=20,
+    outside_frame_size_for_regular_screw=16,
     screw_hole_radius_for_chicago_bolt=2.5,
     screw_hole_radius_for_regular_screw=1.5,
     switch_plate_key_cutout_size=13.97,
@@ -102,13 +102,15 @@ def rotate(origin, point, angle):
     return (rotated_x, rotated_y)
 
 
-def rotate_about_center_of_plane(key, angle):
+def rotate_about_center_2d(key, angle):
     return rotate((0, 0), key, angle)
 
 
-def has_reached_end_of_inner_keys_row(column, row, config):
-    if column == 0:
-        if row > (1 if config.has_double_inner_keys else 0):
+def has_reached_end_of_inside_keys_row(column, row, config):
+    has_reached_end_column = column == 0
+    if has_reached_end_column:
+        has_reached_end_row = row > (1 if config.has_two_inner_keys else 0)
+        if has_reached_end_row:
             return True
     return False
 
@@ -116,25 +118,25 @@ def has_reached_end_of_inner_keys_row(column, row, config):
 def calculate_key_positions(config):
     key_positions = []
 
-    inner_keys_stagger_percent = (
-        config.stagger_percent_for_double_inner_keys
-        if config.has_double_inner_keys
-        else config.stagger_percent_for_single_inner_key
+    inside_keys_stagger_percent = (
+        config.stagger_percent_for_double_inside_keys
+        if config.has_two_inner_keys
+        else config.stagger_percent_for_single_inside_key
     )
 
-    number_of_columns_including_inner_keys = config.number_of_columns + 1
+    number_of_columns_including_inside_keys = config.number_of_columns + 1
 
-    for column in range(number_of_columns_including_inner_keys):
+    for column in range(number_of_columns_including_inside_keys):
         key_positions.append([])
         for row in range(config.number_of_rows):
-            if has_reached_end_of_inner_keys_row(column, row, config):
+            if has_reached_end_of_inside_keys_row(column, row, config):
                 continue
 
             row_offset = config.distance_between_switch_centers * row
             column_offset = config.distance_between_switch_centers * column
 
             column_stagger_size = (
-                inner_keys_stagger_percent
+                inside_keys_stagger_percent
                 if column == 0
                 else config.column_stagger_percents[column - 1]
             ) / config.distance_between_switch_centers
@@ -161,12 +163,12 @@ def calculate_key_positions(config):
 def calculate_switch_cutout_points(key_positions, config):
     switch_cutout_points = []
 
-    number_of_columns_including_inner_keys = config.number_of_columns + 1
+    number_of_columns_including_inside_keys = config.number_of_columns + 1
 
-    for column in range(number_of_columns_including_inner_keys):
+    for column in range(number_of_columns_including_inside_keys):
         switch_cutout_points.append([])
         for row in range(config.number_of_rows):
-            if has_reached_end_of_inner_keys_row(column, row, config):
+            if has_reached_end_of_inside_keys_row(column, row, config):
                 continue
 
             key_position = key_positions[column][row]
@@ -179,7 +181,7 @@ def calculate_switch_cutout_points(key_positions, config):
 
             switch_cutout_points[-1].append(
                 [
-                    rotate_about_center_of_plane(cutout, config.angle)
+                    rotate_about_center_2d(cutout, config.angle)
                     for cutout in switch_cutout_corner_points
                 ]
             )
@@ -190,31 +192,31 @@ def calculate_switch_cutout_points(key_positions, config):
 def calculate_switch_outline_points(key_positions, config):
     widen_cutout_around_key_size = 1
 
-    widen_cutout_around_inner_keys_size = (
-        0 if config.has_double_inner_keys else 1.5
+    widen_cutout_around_inside_keys_size = (
+        0 if config.has_two_inner_keys else 1.5
     )
-    inner_keys_unit_height = 1 if config.has_double_inner_keys else 1.5
+    inside_keys_unit_height = 1 if config.has_two_inner_keys else 1.5
 
-    inner_keys_height = (
-        config.distance_between_switch_centers * inner_keys_unit_height
-    ) + widen_cutout_around_inner_keys_size
+    inside_keys_height = (
+        config.distance_between_switch_centers * inside_keys_unit_height
+    ) + widen_cutout_around_inside_keys_size
 
     outline_size_per_key = (
         config.distance_between_switch_centers + widen_cutout_around_key_size
     )
 
-    inner_key_padding_y = (
-        inner_keys_height - config.distance_between_switch_centers
+    inside_key_padding_y = (
+        inside_keys_height - config.distance_between_switch_centers
     ) / 2
     outline_size = outline_size_per_key / 2
     top_left_key = (
         key_positions[0][-1][0],
-        key_positions[0][-1][1] + inner_key_padding_y,
+        key_positions[0][-1][1] + inside_key_padding_y,
     )
     top_right_key = key_positions[-1][-1]
     bottom_left_key = (
         key_positions[0][0][0],
-        key_positions[0][0][1] - inner_key_padding_y,
+        key_positions[0][0][1] - inside_key_padding_y,
     )
     bottom_right_key = key_positions[-1][0]
 
@@ -228,9 +230,9 @@ def calculate_switch_outline_points(key_positions, config):
             is_lower_than_next = next_key_position[1] > key_position[1]
             next_key_has_same_stagger = next_key_position[1] == key_position[1]
             if not next_key_has_same_stagger:
-                inner_key_padding_y = (
+                inside_key_padding_y = (
                     (
-                        inner_keys_height
+                        inside_keys_height
                         - config.distance_between_switch_centers
                         - widen_cutout_around_key_size
                     )
@@ -242,12 +244,12 @@ def calculate_switch_outline_points(key_positions, config):
                 left_point = (
                     (
                         next_key_position[0] - outline_size,
-                        key_position[1] + outline_size + inner_key_padding_y,
+                        key_position[1] + outline_size + inside_key_padding_y,
                     )
                     if is_lower_than_next
                     else (
                         key_position[0] + outline_size,
-                        key_position[1] + outline_size + inner_key_padding_y,
+                        key_position[1] + outline_size + inside_key_padding_y,
                     )
                 )
 
@@ -273,9 +275,9 @@ def calculate_switch_outline_points(key_positions, config):
             is_lower_than_next = next_key_position[1] > key_position[1]
             next_key_has_same_stagger = next_key_position[1] == key_position[1]
             if not next_key_has_same_stagger:
-                inner_key_padding_y = (
+                inside_key_padding_y = (
                     (
-                        inner_keys_height
+                        inside_keys_height
                         - config.distance_between_switch_centers
                         - widen_cutout_around_key_size
                     )
@@ -287,12 +289,12 @@ def calculate_switch_outline_points(key_positions, config):
                 left_point = (
                     (
                         key_position[0] + outline_size,
-                        key_position[1] - outline_size - inner_key_padding_y,
+                        key_position[1] - outline_size - inside_key_padding_y,
                     )
                     if is_lower_than_next
                     else (
                         next_key_position[0] - outline_size,
-                        key_position[1] - outline_size - inner_key_padding_y,
+                        key_position[1] - outline_size - inside_key_padding_y,
                     )
                 )
 
@@ -311,9 +313,9 @@ def calculate_switch_outline_points(key_positions, config):
                 bottom_row_points.append(left_point)
                 bottom_row_points.append(right_point)
 
-    inner_keys_height = (
-        config.distance_between_switch_centers * inner_keys_unit_height
-    ) + widen_cutout_around_inner_keys_size
+    inside_keys_height = (
+        config.distance_between_switch_centers * inside_keys_unit_height
+    ) + widen_cutout_around_inside_keys_size
 
     bottom_left_corner = (
         bottom_left_key[0] - outline_size,
@@ -333,25 +335,21 @@ def calculate_switch_outline_points(key_positions, config):
     )
 
     bottom_row_points = [
-        rotate_about_center_of_plane(point, config.angle)
+        rotate_about_center_2d(point, config.angle)
         for point in bottom_row_points
     ]
     top_row_points = [
-        rotate_about_center_of_plane(point, config.angle)
-        for point in top_row_points
+        rotate_about_center_2d(point, config.angle) for point in top_row_points
     ]
-    bottom_left_corner = rotate_about_center_of_plane(
+    bottom_left_corner = rotate_about_center_2d(
         bottom_left_corner, config.angle
     )
-    bottom_right_corner = rotate_about_center_of_plane(
+    bottom_right_corner = rotate_about_center_2d(
         bottom_right_corner, config.angle
     )
-    top_right_corner = rotate_about_center_of_plane(
-        top_right_corner, config.angle
-    )
-    top_left_corner = rotate_about_center_of_plane(
-        top_left_corner, config.angle
-    )
+    top_right_corner = rotate_about_center_2d(top_right_corner, config.angle)
+    top_left_corner = rotate_about_center_2d(top_left_corner, config.angle)
+
     switch_outline_points = [
         bottom_left_corner,
         *bottom_row_points,
@@ -382,20 +380,20 @@ def calculate_switch_outline_points(key_positions, config):
     ]
 
 
-def calculate_case_outer_points(named_points, outer_frame_size, config):
+def calculate_case_outside_points(named_points, outside_frame_size, config):
     bottom_left_corner = find_point_for_angle(
         named_points.start_of_bottom_row,
-        -outer_frame_size,
+        -outside_frame_size,
         45 - config.angle,
     )
     bottom_right_corner = find_point_for_angle(
         named_points.bottom_right_corner,
-        -outer_frame_size,
+        -outside_frame_size,
         -45 - config.angle,
     )
     top_right_corner = find_point_for_angle(
         named_points.top_right_corner,
-        outer_frame_size,
+        outside_frame_size,
         45 - config.angle,
     )
     return [
@@ -407,43 +405,43 @@ def calculate_case_outer_points(named_points, outer_frame_size, config):
     ]
 
 
-def calculate_spacer_points(case_outer_points, outer_frame_size, config):
+def calculate_spacer_points(case_outside_points, outside_frame_size, config):
     return [
-        case_outer_points[0],
+        case_outside_points[0],
         (
-            case_outer_points[0][0],
+            case_outside_points[0][0],
             find_point_for_angle(
-                case_outer_points[1], outer_frame_size, 45 - config.angle
+                case_outside_points[1], outside_frame_size, 45 - config.angle
             )[1],
         ),
         find_point_for_angle(
-            case_outer_points[1], outer_frame_size, 45 - config.angle
+            case_outside_points[1], outside_frame_size, 45 - config.angle
         ),
         find_point_for_angle(
-            case_outer_points[2], outer_frame_size, -45 - config.angle
+            case_outside_points[2], outside_frame_size, -45 - config.angle
         ),
         find_point_for_angle(
-            case_outer_points[3], -outer_frame_size, 45 - config.angle
+            case_outside_points[3], -outside_frame_size, 45 - config.angle
         ),
         (
-            case_outer_points[4][0] + (config.usb_cutout_width / 2),
+            case_outside_points[4][0] + (config.usb_cutout_width / 2),
             find_point_for_angle(
-                case_outer_points[3], -outer_frame_size, 45 - config.angle
+                case_outside_points[3], -outside_frame_size, 45 - config.angle
             )[1],
         ),
         (
-            case_outer_points[4][0] + (config.usb_cutout_width / 2),
-            case_outer_points[4][1],
+            case_outside_points[4][0] + (config.usb_cutout_width / 2),
+            case_outside_points[4][1],
         ),
-        case_outer_points[3],
-        case_outer_points[2],
-        case_outer_points[1],
+        case_outside_points[3],
+        case_outside_points[2],
+        case_outside_points[1],
     ]
 
 
-def calculate_screw_points(spacer_points, outer_frame_size, config):
-    screw_distance_from_inner_edge = (
-        outer_frame_size - config.inner_frame_size
+def calculate_screw_points(spacer_points, outside_frame_size, config):
+    screw_distance_from_inside_edge = (
+        outside_frame_size - config.inside_frame_size
     ) / 2
 
     spacer_top_right_corner = spacer_points[4]
@@ -452,7 +450,7 @@ def calculate_screw_points(spacer_points, outer_frame_size, config):
 
     screw_top_right_corner = find_point_for_angle(
         spacer_top_right_corner,
-        screw_distance_from_inner_edge,
+        screw_distance_from_inside_edge,
         45 - config.angle,
     )
 
@@ -463,13 +461,13 @@ def calculate_screw_points(spacer_points, outer_frame_size, config):
 
     screw_bottom_left_corner = find_point_for_angle(
         spacer_bottom_left_corner,
-        -screw_distance_from_inner_edge,
+        -screw_distance_from_inside_edge,
         45 - config.angle,
     )
 
     screw_bottom_right_corner = find_point_for_angle(
         spacer_bottom_right_corner,
-        -screw_distance_from_inner_edge,
+        -screw_distance_from_inside_edge,
         -45 - config.angle,
     )
 
@@ -494,28 +492,28 @@ def calculate_case_geometry(config):
         named_points,
     ] = calculate_switch_outline_points(key_positions, config)
 
-    outer_frame_size = (
-        config.outer_frame_size_for_chicago_bolt
+    outside_frame_size = (
+        config.outside_frame_size_for_chicago_bolt
         if config.use_chicago_bolt
-        else config.outer_frame_size_for_regular_screw
+        else config.outside_frame_size_for_regular_screw
     )
 
-    case_outer_points = calculate_case_outer_points(
-        named_points, outer_frame_size, config
+    case_outside_points = calculate_case_outside_points(
+        named_points, outside_frame_size, config
     )
 
-    outer_frame_size = (
-        config.outer_frame_size_for_chicago_bolt
+    outside_frame_size = (
+        config.outside_frame_size_for_chicago_bolt
         if config.use_chicago_bolt
-        else config.outer_frame_size_for_regular_screw
+        else config.outside_frame_size_for_regular_screw
     )
 
     spacer_points = calculate_spacer_points(
-        case_outer_points, outer_frame_size, config
+        case_outside_points, outside_frame_size, config
     )
 
     screw_points = calculate_screw_points(
-        spacer_points, outer_frame_size, config
+        spacer_points, outside_frame_size, config
     )
 
     screw_radius = (
@@ -543,8 +541,8 @@ def calculate_case_geometry(config):
             radius=reset_button_radius,
             thickness=config.base_layer_thickness,
         ),
-        case_outer=SimpleNamespace(
-            points=case_outer_points,
+        case_outside=SimpleNamespace(
+            points=case_outside_points,
         ),
         spacer=SimpleNamespace(
             points=spacer_points,
@@ -575,7 +573,7 @@ def calculate_case_geometry(config):
 def make_bottom_plate(geometry):
     return (
         cq.Workplane()
-        .polyline(geometry.case_outer.points)
+        .polyline(geometry.case_outside.points)
         .close()
         .extrude(geometry.bottom_plate.thickness)
         .drill_holes(
@@ -598,7 +596,7 @@ def make_top_plate(geometry):
     )
     return (
         cq.Workplane()
-        .polyline(geometry.case_outer.points)
+        .polyline(geometry.case_outside.points)
         .close()
         .extrude(geometry.top_plate.thickness)
         .drill_holes(
@@ -618,7 +616,7 @@ def make_switch_plate(geometry):
         switch_plate = switch_plate.polyline(switch_cutout).close()
 
     return (
-        switch_plate.polyline(geometry.case_outer.points)
+        switch_plate.polyline(geometry.case_outside.points)
         .close()
         .extrude(geometry.switch_plate.thickness)
         .drill_holes(

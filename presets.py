@@ -15,7 +15,7 @@ presets = SimpleNamespace(
         **SimpleNamespace(
             number_of_rows=4,
             number_of_columns=5,
-            has_double_inner_keys=True,
+            has_two_inner_keys=True,
         ).__dict__,
     },
 )
