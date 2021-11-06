@@ -5,8 +5,8 @@ from fuse_parts import fuse_parts
 from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
 from flatten_list import flatten_list
-from find_point_for_angle import find_point_for_angle
-from find_rectangle_corners import find_rectangle_corners
+from calculate_point_for_angle import calculate_point_for_angle
+from calculate_rectangle_corners import calculate_rectangle_corners
 from rotate_2d import rotate_2d
 
 
@@ -128,7 +128,7 @@ def calculate_switch_cutout_points(switch_positions, config):
             if not has_reached_end_of_inside_switches_row(column, row, config):
                 switch_position = switch_positions[column][row]
 
-                switch_cutout_corner_points = find_rectangle_corners(
+                switch_cutout_corner_points = calculate_rectangle_corners(
                     switch_position,
                     config.switch_plate_cutout_size,
                     config.switch_plate_cutout_size,
@@ -348,17 +348,17 @@ def calculate_switch_outline_points(switch_positions, config):
 
 
 def calculate_case_outside_points(named_points, outside_frame_size, config):
-    bottom_left_corner = find_point_for_angle(
+    bottom_left_corner = calculate_point_for_angle(
         named_points.start_of_bottom_row,
         -outside_frame_size,
         45 - config.angle,
     )
-    bottom_right_corner = find_point_for_angle(
+    bottom_right_corner = calculate_point_for_angle(
         named_points.bottom_right_corner,
         -outside_frame_size,
         -45 - config.angle,
     )
-    top_right_corner = find_point_for_angle(
+    top_right_corner = calculate_point_for_angle(
         named_points.top_right_corner,
         outside_frame_size,
         45 - config.angle,
@@ -377,22 +377,22 @@ def calculate_spacer_points(case_outside_points, outside_frame_size, config):
         case_outside_points[0],
         (
             case_outside_points[0][0],
-            find_point_for_angle(
+            calculate_point_for_angle(
                 case_outside_points[1], outside_frame_size, 45 - config.angle
             )[1],
         ),
-        find_point_for_angle(
+        calculate_point_for_angle(
             case_outside_points[1], outside_frame_size, 45 - config.angle
         ),
-        find_point_for_angle(
+        calculate_point_for_angle(
             case_outside_points[2], outside_frame_size, -45 - config.angle
         ),
-        find_point_for_angle(
+        calculate_point_for_angle(
             case_outside_points[3], -outside_frame_size, 45 - config.angle
         ),
         (
             case_outside_points[4][0] + (config.usb_cutout_width / 2),
-            find_point_for_angle(
+            calculate_point_for_angle(
                 case_outside_points[3], -outside_frame_size, 45 - config.angle
             )[1],
         ),
@@ -415,7 +415,7 @@ def calculate_screw_points(spacer_points, outside_frame_size, config):
     spacer_bottom_left_corner = spacer_points[2]
     spacer_bottom_right_corner = spacer_points[3]
 
-    screw_top_right_corner = find_point_for_angle(
+    screw_top_right_corner = calculate_point_for_angle(
         spacer_top_right_corner,
         screw_distance_from_inside_edge,
         45 - config.angle,
@@ -426,13 +426,13 @@ def calculate_screw_points(spacer_points, outside_frame_size, config):
         screw_top_right_corner[1],
     )
 
-    screw_bottom_left_corner = find_point_for_angle(
+    screw_bottom_left_corner = calculate_point_for_angle(
         spacer_bottom_left_corner,
         -screw_distance_from_inside_edge,
         45 - config.angle,
     )
 
-    screw_bottom_right_corner = find_point_for_angle(
+    screw_bottom_right_corner = calculate_point_for_angle(
         spacer_bottom_right_corner,
         -screw_distance_from_inside_edge,
         -45 - config.angle,
