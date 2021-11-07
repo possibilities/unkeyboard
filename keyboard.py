@@ -16,7 +16,7 @@ default_config = SimpleNamespace(
     # Configurable
     has_thicc_spacer=False,
     use_chicago_bolt=True,
-    has_two_inner_switches=False,
+    has_two_inside_switches=False,
     angle=10,
     number_of_rows=5,
     number_of_columns=6,
@@ -63,7 +63,7 @@ def drill_reset_button_hole(part, geometry):
 def has_reached_end_of_inside_switches_row(column, row, config):
     has_reached_end_column = column == 0
     if has_reached_end_column:
-        has_reached_end_row = row > (1 if config.has_two_inner_switches else 0)
+        has_reached_end_row = row > (1 if config.has_two_inside_switches else 0)
         if has_reached_end_row:
             return True
     return False
@@ -72,7 +72,7 @@ def has_reached_end_of_inside_switches_row(column, row, config):
 def calculate_column_stagger_percent(column, config):
     inside_switches_stagger_percent = (
         config.stagger_percent_for_double_inside_switches
-        if config.has_two_inner_switches
+        if config.has_two_inside_switches
         else config.stagger_percent_for_single_inside_switch
     )
 
@@ -146,9 +146,9 @@ def calculate_switch_outline_points(switch_positions, config):
     widen_cutout_around_switch_size = 1
 
     widen_cutout_around_inside_switches_size = (
-        0 if config.has_two_inner_switches else 1.5
+        0 if config.has_two_inside_switches else 1.5
     )
-    inside_switches_unit_height = 1 if config.has_two_inner_switches else 1.5
+    inside_switches_unit_height = 1 if config.has_two_inside_switches else 1.5
 
     inside_switches_height = (
         config.distance_between_switch_centers * inside_switches_unit_height
