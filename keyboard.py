@@ -110,8 +110,8 @@ def calculate_switch_positions(config):
     return switch_positions
 
 
-def calculate_switch_cutout_points(switch_positions, config):
-    switch_cutout_points = []
+def calculate_switch_plate_points(switch_positions, config):
+    switch_plate_points = []
 
     number_of_inside_columns = 1
     total_number_of_columns = (
@@ -119,7 +119,7 @@ def calculate_switch_cutout_points(switch_positions, config):
     )
 
     for column in range(total_number_of_columns):
-        switch_cutout_points.append([])
+        switch_plate_points.append([])
         for row in range(config.number_of_rows):
             if not has_reached_end_of_inside_switches_row(column, row, config):
                 switch_position = switch_positions[column][row]
@@ -135,14 +135,14 @@ def calculate_switch_cutout_points(switch_positions, config):
                     for cutout in switch_cutout_corner_points
                 ]
 
-                switch_cutout_points[-1].append(
+                switch_plate_points[-1].append(
                     rotated_switch_cutout_corner_points
                 )
 
-    return flatten_list(switch_cutout_points)
+    return flatten_list(switch_plate_points)
 
 
-def calculate_switch_outline_points(switch_positions, config):
+def calculate_switch_plate_outline_points(switch_positions, config):
     widen_cutout_around_switch_size = 1
 
     widen_cutout_around_inside_switches_size = (
@@ -316,7 +316,7 @@ def calculate_switch_outline_points(switch_positions, config):
     top_right_corner = rotate_2d((0, 0), top_right_corner, config.angle)
     top_left_corner = rotate_2d((0, 0), top_left_corner, config.angle)
 
-    switch_outline_points = [
+    switch_plate_outline_points = [
         bottom_left_corner,
         *bottom_row_points,
         bottom_right_corner,
@@ -328,8 +328,9 @@ def calculate_switch_outline_points(switch_positions, config):
     start_of_bottom_row = bottom_row_points[1]
 
     mirror_at_point = (
-        switch_outline_points[-1][0] + (widen_cutout_around_switch_size / 2),
-        switch_outline_points[-1][1],
+        switch_plate_outline_points[-1][0]
+        + (widen_cutout_around_switch_size / 2),
+        switch_plate_outline_points[-1][1],
     )
 
     named_points = SimpleNamespace(
@@ -340,7 +341,7 @@ def calculate_switch_outline_points(switch_positions, config):
         mirror_at_point=mirror_at_point,
     )
 
-    return [switch_outline_points, named_points]
+    return [switch_plate_outline_points, named_points]
 
 
 def calculate_case_outside_points(named_points, outside_frame_size, config):
@@ -445,15 +446,15 @@ def calculate_screw_points(spacer_points, outside_frame_size, config):
 def calculate_case_geometry(config):
     switch_positions = calculate_switch_positions(config)
 
-    switch_cutout_points = calculate_switch_cutout_points(
+    switch_plate_points = calculate_switch_plate_points(
         switch_positions,
         config,
     )
 
     [
-        switch_outline_points,
+        switch_plate_outline_points,
         named_points,
-    ] = calculate_switch_outline_points(switch_positions, config)
+    ] = calculate_switch_plate_outline_points(switch_positions, config)
 
     outside_frame_size = (
         config.outside_frame_size_for_chicago_bolt
@@ -512,7 +513,7 @@ def calculate_case_geometry(config):
             thickness=spacer_thickness,
         ),
         switch_outline=SimpleNamespace(
-            points=switch_outline_points,
+            points=switch_plate_outline_points,
             thickness=config.base_layer_thickness,
         ),
         top_plate=SimpleNamespace(
@@ -522,10 +523,8 @@ def calculate_case_geometry(config):
             thickness=config.base_layer_thickness,
         ),
         switch_plate=SimpleNamespace(
+            points=switch_plate_points,
             thickness=config.base_layer_thickness,
-        ),
-        switch_cutouts=SimpleNamespace(
-            points=switch_cutout_points,
         ),
         mirror_at=SimpleNamespace(
             point=named_points.mirror_at_point,
@@ -575,8 +574,8 @@ def make_top_plate(geometry):
 def make_switch_plate(geometry):
     switch_plate = cq.Workplane()
 
-    for switch_cutout in geometry.switch_cutouts.points:
-        switch_plate = switch_plate.polyline(switch_cutout).close()
+    for switch_cutout_points in geometry.switch_plate.points:
+        switch_plate = switch_plate.polyline(switch_cutout_points).close()
 
     return (
         switch_plate.polyline(geometry.case_outside.points)
