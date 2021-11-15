@@ -1,7 +1,6 @@
 import math
 import cadquery as cq
 from types import SimpleNamespace
-from fuse_parts import fuse_parts
 from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
 from flatten_list import flatten_list
