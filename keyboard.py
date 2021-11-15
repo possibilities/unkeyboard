@@ -7,7 +7,9 @@ from explode_parts import explode_parts
 from flatten_list import flatten_list
 from calculate_point_for_angle import calculate_point_for_angle
 from calculate_rectangle_corners import calculate_rectangle_corners
+from calculate_intersection_of_points import calculate_intersection_of_points
 from rotate_2d import rotate_2d
+from mirror_points import mirror_points
 
 explode_by = 20
 flatten_items = False
@@ -35,15 +37,6 @@ default_config = SimpleNamespace(
     usb_cutout_width=4,
     top_inside_screw_distance_from_usb=5.50,
 )
-
-
-@cq_workplane_plugin
-def mirror_layer(self, mirror_at_point):
-    return self.mirror(
-        mirrorPlane="YZ",
-        union=True,
-        basePointVector=(mirror_at_point),
-    )
 
 
 @cq_workplane_plugin
@@ -110,7 +103,7 @@ def calculate_switch_positions(config):
     return switch_positions
 
 
-def calculate_switch_plate_points(switch_positions, config):
+def calculate_switch_plate_points(named_points, switch_positions, config):
     switch_plate_points = []
 
     number_of_inside_columns = 1
@@ -139,7 +132,14 @@ def calculate_switch_plate_points(switch_positions, config):
                     rotated_switch_cutout_corner_points
                 )
 
-    return flatten_list(switch_plate_points)
+    flattened_switch_plate_points = flatten_list(switch_plate_points)
+
+    mirrored_switch_plate_points = [
+        mirror_points(corner, named_points.mirror_at_point, combine=False)
+        for corner in flattened_switch_plate_points
+    ]
+
+    return [*mirrored_switch_plate_points, *flattened_switch_plate_points]
 
 
 def calculate_switch_plate_outline_points(switch_positions, config):
@@ -335,13 +335,38 @@ def calculate_switch_plate_outline_points(switch_positions, config):
 
     named_points = SimpleNamespace(
         start_of_bottom_row=start_of_bottom_row,
-        top_left_corner=top_left_corner,
         bottom_right_corner=bottom_right_corner,
         top_right_corner=top_right_corner,
         mirror_at_point=mirror_at_point,
     )
 
-    return [switch_plate_outline_points, named_points]
+    mirrored_switch_plate_outline_points = mirror_points(
+        [
+            calculate_intersection_of_points(
+                switch_plate_outline_points[0],
+                90 - config.angle,
+                mirror_at_point,
+                90,
+            ),
+            *switch_plate_outline_points[0:-1],
+            calculate_intersection_of_points(
+                switch_plate_outline_points[-2],
+                -config.angle,
+                mirror_at_point,
+                90,
+            ),
+        ],
+        mirror_at_point,
+        combine=False,
+    )
+
+    return [
+        [
+            *switch_plate_outline_points[0:-1],
+            *mirrored_switch_plate_outline_points,
+        ],
+        named_points,
+    ]
 
 
 def calculate_case_outside_points(named_points, outside_frame_size, config):
@@ -360,57 +385,39 @@ def calculate_case_outside_points(named_points, outside_frame_size, config):
         outside_frame_size,
         45 - config.angle,
     )
-    return [
-        (named_points.top_left_corner[0], bottom_left_corner[1]),
-        bottom_left_corner,
-        bottom_right_corner,
-        top_right_corner,
-        (named_points.top_left_corner[0], top_right_corner[1]),
+    return mirror_points(
+        [bottom_left_corner, bottom_right_corner, top_right_corner],
+        named_points.mirror_at_point,
+    )
+
+
+def calculate_spacer_inside_points(
+    named_points, case_outside_points, outside_frame_size, config
+):
+    points = [
+        calculate_point_for_angle(
+            case_outside_points[0], outside_frame_size, 45 - config.angle
+        ),
+        calculate_point_for_angle(
+            case_outside_points[1], outside_frame_size, -45 - config.angle
+        ),
+        calculate_point_for_angle(
+            case_outside_points[2], -outside_frame_size, 45 - config.angle
+        ),
     ]
+    return mirror_points(points, named_points.mirror_at_point)
 
 
-def calculate_spacer_points(case_outside_points, outside_frame_size, config):
-    return [
-        case_outside_points[0],
-        (
-            case_outside_points[0][0],
-            calculate_point_for_angle(
-                case_outside_points[1], outside_frame_size, 45 - config.angle
-            )[1],
-        ),
-        calculate_point_for_angle(
-            case_outside_points[1], outside_frame_size, 45 - config.angle
-        ),
-        calculate_point_for_angle(
-            case_outside_points[2], outside_frame_size, -45 - config.angle
-        ),
-        calculate_point_for_angle(
-            case_outside_points[3], -outside_frame_size, 45 - config.angle
-        ),
-        (
-            case_outside_points[4][0] + (config.usb_cutout_width / 2),
-            calculate_point_for_angle(
-                case_outside_points[3], -outside_frame_size, 45 - config.angle
-            )[1],
-        ),
-        (
-            case_outside_points[4][0] + (config.usb_cutout_width / 2),
-            case_outside_points[4][1],
-        ),
-        case_outside_points[3],
-        case_outside_points[2],
-        case_outside_points[1],
-    ]
-
-
-def calculate_screw_points(spacer_points, outside_frame_size, config):
+def calculate_screw_points(
+    spacer_inside_points, outside_frame_size, mirror_at_point, config
+):
     screw_distance_from_inside_edge = (
         outside_frame_size - config.inside_frame_size
     ) / 2
 
-    spacer_top_right_corner = spacer_points[4]
-    spacer_bottom_left_corner = spacer_points[2]
-    spacer_bottom_right_corner = spacer_points[3]
+    spacer_bottom_left_corner = spacer_inside_points[0]
+    spacer_bottom_right_corner = spacer_inside_points[1]
+    spacer_top_right_corner = spacer_inside_points[2]
 
     screw_top_right_corner = calculate_point_for_angle(
         spacer_top_right_corner,
@@ -435,26 +442,29 @@ def calculate_screw_points(spacer_points, outside_frame_size, config):
         -45 - config.angle,
     )
 
-    return [
+    screw_points = [
         screw_top_left_corner,
         screw_top_right_corner,
         screw_bottom_right_corner,
         screw_bottom_left_corner,
     ]
 
+    return mirror_points(screw_points, mirror_at_point)
+
 
 def calculate_case_geometry(config):
     switch_positions = calculate_switch_positions(config)
-
-    switch_plate_points = calculate_switch_plate_points(
-        switch_positions,
-        config,
-    )
 
     [
         switch_plate_outline_points,
         named_points,
     ] = calculate_switch_plate_outline_points(switch_positions, config)
+
+    switch_plate_points = calculate_switch_plate_points(
+        named_points,
+        switch_positions,
+        config,
+    )
 
     outside_frame_size = (
         config.outside_frame_size_for_chicago_bolt
@@ -472,12 +482,15 @@ def calculate_case_geometry(config):
         else config.outside_frame_size_for_regular_screw
     )
 
-    spacer_points = calculate_spacer_points(
-        case_outside_points, outside_frame_size, config
+    spacer_inside_points = calculate_spacer_inside_points(
+        named_points, case_outside_points, outside_frame_size, config
     )
 
     screw_points = calculate_screw_points(
-        spacer_points, outside_frame_size, config
+        spacer_inside_points,
+        outside_frame_size,
+        named_points.mirror_at_point,
+        config,
     )
 
     screw_radius = (
@@ -495,6 +508,25 @@ def calculate_case_geometry(config):
         else config.base_layer_thickness
     )
 
+    spacer_usb_cutout_points = [
+        (
+            named_points.mirror_at_point[0] + config.usb_cutout_width / 2,
+            case_outside_points[2][1],
+        ),
+        (
+            named_points.mirror_at_point[0] + config.usb_cutout_width / 2,
+            2,
+        ),
+        (
+            named_points.mirror_at_point[0] - config.usb_cutout_width / 2,
+            2,
+        ),
+        (
+            named_points.mirror_at_point[0] - config.usb_cutout_width / 2,
+            case_outside_points[2][1],
+        ),
+    ]
+
     return SimpleNamespace(
         screws=SimpleNamespace(
             points=screw_points,
@@ -508,8 +540,11 @@ def calculate_case_geometry(config):
         case_outside=SimpleNamespace(
             points=case_outside_points,
         ),
+        spacer_inside=SimpleNamespace(
+            points=spacer_inside_points,
+        ),
+        spacer_usb_cutout=SimpleNamespace(points=spacer_usb_cutout_points),
         spacer=SimpleNamespace(
-            points=spacer_points,
             thickness=spacer_thickness,
         ),
         switch_outline=SimpleNamespace(
@@ -543,7 +578,6 @@ def make_bottom_plate(geometry):
             geometry.screws.radius,
             geometry.bottom_plate.thickness,
         )
-        .mirror_layer(geometry.mirror_at.point)
         .drill_reset_button_hole(geometry)
     )
 
@@ -554,7 +588,6 @@ def make_top_plate(geometry):
         .polyline(geometry.switch_outline.points)
         .close()
         .extrude(geometry.top_plate.thickness)
-        .mirror_layer(geometry.mirror_at.point)
     )
     return (
         cq.Workplane()
@@ -566,7 +599,6 @@ def make_top_plate(geometry):
             geometry.screws.radius,
             geometry.top_plate.thickness,
         )
-        .mirror_layer(geometry.mirror_at.point)
         .cut(cutout)
     )
 
@@ -586,22 +618,36 @@ def make_switch_plate(geometry):
             geometry.screws.radius,
             geometry.switch_plate.thickness,
         )
-        .mirror_layer(geometry.mirror_at.point)
     )
 
 
 def make_spacer(geometry):
-    return (
+    inside_cutout = (
         cq.Workplane()
-        .polyline(geometry.spacer.points)
+        .polyline(geometry.spacer_inside.points)
         .close()
         .extrude(geometry.spacer.thickness)
+    )
+
+    usb_cutout = (
+        cq.Workplane()
+        .polyline(geometry.spacer_usb_cutout.points)
+        .close()
+        .extrude(geometry.spacer.thickness)
+    )
+
+    return (
+        cq.Workplane()
+        .polyline(geometry.case_outside.points)
+        .close()
+        .extrude(geometry.spacer.thickness)
+        .cut(inside_cutout)
+        .cut(usb_cutout)
         .drill_holes(
             geometry.screws.points,
             geometry.screws.radius,
             geometry.spacer.thickness,
         )
-        .mirror_layer(geometry.mirror_at.point)
     )
 
 
