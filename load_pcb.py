@@ -257,7 +257,9 @@ def rotate_footprint_child_position(footprint, child, x_key, y_key):
     (rotated_x, rotated_y) = rotate_2d(
         (footprint["position_x"], footprint["position_y"]),
         (child[x_key], child[y_key]),
-        footprint_rotate,
+        # Rotate in the opposite direction in prepation for flipping
+        # over the x axis later
+        -footprint_rotate,
     )
     return {"x": rotated_x, "y": rotated_y}
 
