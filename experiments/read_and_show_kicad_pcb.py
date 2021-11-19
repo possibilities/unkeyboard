@@ -17,8 +17,6 @@ from load_pcb import load_pcb
 from cq_workplane_plugin import cq_workplane_plugin
 from calculate_rectangle_corners import calculate_rectangle_corners
 
-board_data = load_pcb("/home/mike/src/atreus62/pcb/Atreus62.kicad_pcb")
-
 
 def find_next_pcb_line(line, lines):
     for next_line in lines:
@@ -41,11 +39,6 @@ def pcb_lines_to_polyline(lines):
             break
 
     return [(line["start_x"], line["start_y"]) for line in ordered_lines]
-
-
-edge_cut_lines = [
-    line for line in board_data["gr_lines"] if line["layer"] == "Edge.Cuts"
-]
 
 
 def make_via_pads(vias, thickness):
@@ -155,18 +148,30 @@ def drill_holes_for_vias(self, vias, thickness):
     return self
 
 
-board = (
-    cq.Workplane()
-    .polyline(pcb_lines_to_polyline(edge_cut_lines))
-    .close()
-    .extrude(board_data["general"]["thickness"])
-    .drill_holes_for_thru_hole_pads(
-        board_data["footprints"], board_data["general"]["thickness"]
+def make_board(board_data):
+    edge_cut_lines = [
+        line for line in board_data["gr_lines"] if line["layer"] == "Edge.Cuts"
+    ]
+
+    board = (
+        cq.Workplane()
+        .polyline(pcb_lines_to_polyline(edge_cut_lines))
+        .close()
+        .extrude(board_data["general"]["thickness"])
+        .drill_holes_for_thru_hole_pads(
+            board_data["footprints"], board_data["general"]["thickness"]
+        )
+        .drill_holes_for_vias(
+            board_data["vias"], board_data["general"]["thickness"]
+        )
     )
-    .drill_holes_for_vias(
-        board_data["vias"], board_data["general"]["thickness"]
-    )
-)
+
+    return board
+
+
+board_data = load_pcb("/home/mike/src/atreus62/pcb/Atreus62.kicad_pcb")
+
+board = make_board(board_data)
 
 thru_hole_pads = make_thru_hole_pads(
     board_data["footprints"], board_data["general"]["thickness"]
