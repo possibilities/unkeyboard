@@ -16,7 +16,7 @@ def parse_attributes(values):
             continue
 
         [key, *val] = value
-        if str(key) in ["drill", "size", "net", "layer", "width", "thickness"]:
+        if str(key) in ["drill", "net", "layer", "width", "thickness"]:
             parsed[str(key)] = val[0]
         elif str(key) in ["tstamp", "attr", "descr"]:
             parsed[str(key)] = str(val[0])
