@@ -142,7 +142,13 @@ def convert_positions_to_negative_y_plane(pcb):
             pairs = to_pairs(item)
             updated_pairs = []
             for pair in pairs:
-                updated_pairs.append((pair[0], run(pair[1])))
+                if pair[0].endswith("_y"):
+                    [flipped_x, flipped_y] = mirror_point(
+                        (0, pair[1]), (0, 0), axis="X"
+                    )
+                    updated_pairs.append((pair[0], flipped_y))
+                else:
+                    updated_pairs.append((pair[0], run(pair[1])))
             dictionary = from_pairs(updated_pairs)
             return dictionary
         elif isinstance(item, list) or isinstance(item, tuple):
