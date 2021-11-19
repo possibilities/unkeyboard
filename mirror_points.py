@@ -1,7 +1,9 @@
-def mirror_points(points, mirror_at_point, combine=True):
+from mirror_point import mirror_point
+
+
+def mirror_points(points, mirror_at_point, combine=True, axis="Y"):
     mirrored_points = [
-        (mirror_at_point[0] - (point[0] - mirror_at_point[0]), point[1])
-        for point in points
+        mirror_point(point, mirror_at_point, axis=axis) for point in points
     ]
     mirrored_points.reverse()
     if combine:
