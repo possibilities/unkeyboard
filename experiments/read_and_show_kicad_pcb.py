@@ -4,9 +4,6 @@ import os
 import sys
 import inspect
 
-pad_thickness = 0.075
-via_channel_thickness = 0.08
-
 currentdir = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe()))
 )
@@ -16,6 +13,9 @@ sys.path.insert(0, parentdir)
 from load_pcb import load_pcb
 from cq_workplane_plugin import cq_workplane_plugin
 from calculate_rectangle_corners import calculate_rectangle_corners
+
+pad_thickness = 0.075
+thru_hole_channel_thickness = 0.08
 
 
 def find_next_pcb_line(line, lines):
@@ -41,17 +41,6 @@ def pcb_lines_to_polyline(lines):
     return [(line["start_x"], line["start_y"]) for line in ordered_lines]
 
 
-def make_via_pads(vias, thickness):
-    pads = cq.Workplane()
-    for via in vias:
-        pads = (
-            pads.moveTo(via["position_x"], via["position_y"])
-            .circle(via["drill"] / 2)
-            .circle((via["drill"] - via_channel_thickness) / 2)
-        )
-    return pads.extrude(thickness)
-
-
 def make_thru_hole_pads(footprints, thickness):
     circular_positions = []
     for footprint in footprints:
@@ -66,19 +55,38 @@ def make_thru_hole_pads(footprints, thickness):
                 rectangular_positions.append(pad)
 
     pads = cq.Workplane()
+
     for position in circular_positions:
         pads = (
             pads.moveTo(position["position_x"], position["position_y"])
             .circle(position["drill"] / 2)
             .circle(position["size"][0] / 2)
         )
+
     for position in rectangular_positions:
         pads = (
             pads.moveTo(position["position_x"], position["position_y"])
             .circle(position["drill"] / 2)
             .rect(position["size"][0], position["size"][1])
         )
-    return pads.extrude(-pad_thickness)
+
+    return pads.extrude((pad_thickness * 2) + thickness).translate(
+        [0, 0, -pad_thickness]
+    )
+
+
+def make_via_pads(vias, thickness):
+    pads = cq.Workplane()
+    for via in vias:
+        pads = (
+            pads.moveTo(via["position_x"], via["position_y"])
+            .circle(via["drill"] / 2)
+            .circle(via["size"][0] / 2)
+        )
+
+    return pads.extrude(pad_thickness + thickness).translate(
+        [0, 0, -pad_thickness / 2]
+    )
 
 
 def make_surface_mount_pads(footprints, thickness):
@@ -97,29 +105,47 @@ def make_surface_mount_pads(footprints, thickness):
                 )
 
     pads = cq.Workplane()
+
     for position in positions:
         pads = pads.polyline(position).close()
-    return pads.extrude(-pad_thickness)
+
+    return pads.extrude(pad_thickness * 2).translate([0, 0, -pad_thickness])
 
 
 @cq_workplane_plugin
 def drill_holes_for_thru_hole_pads(self, footprints, thickness):
-    holes_by_size = {}
+    circular_holes_by_size = {}
+    rectangular_holes_by_size = {}
 
     for footprint in footprints:
         for pad in footprint["pads"]:
             if pad["type"] in ["thru_hole", "np_thru_hole"]:
-                if not pad["drill"] in holes_by_size:
-                    holes_by_size[pad["drill"]] = []
-                holes_by_size[pad["drill"]].append(
-                    (pad["position_x"], pad["position_y"])
-                )
+                if pad["shape"] == "circle":
+                    if not pad["size"][0] in circular_holes_by_size:
+                        circular_holes_by_size[pad["size"][0]] = []
+                    circular_holes_by_size[pad["size"][0]].append(
+                        (pad["position_x"], pad["position_y"])
+                    )
+                elif pad["shape"] == "rect":
+                    if not pad["size"][0] in rectangular_holes_by_size:
+                        rectangular_holes_by_size[pad["size"][0]] = []
+                    rectangular_holes_by_size[pad["size"][0]].append(
+                        (pad["position_x"], pad["position_y"])
+                    )
 
-    for size, positions in holes_by_size.items():
+    for size, positions in circular_holes_by_size.items():
         self = (
             self.faces("front")
             .pushPoints(positions)
             .circle(size / 2)
+            .cutBlind(thickness)
+        )
+
+    for size, positions in rectangular_holes_by_size.items():
+        self = (
+            self.faces("front")
+            .pushPoints(positions)
+            .rect(size, size)
             .cutBlind(thickness)
         )
 
