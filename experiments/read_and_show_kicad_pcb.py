@@ -15,7 +15,6 @@ from cq_workplane_plugin import cq_workplane_plugin
 from calculate_rectangle_corners import calculate_rectangle_corners
 
 pad_thickness = 0.075
-thru_hole_channel_thickness = 0.08
 
 
 def find_next_pcb_line(line, lines):
