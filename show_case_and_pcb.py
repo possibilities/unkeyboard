@@ -44,7 +44,7 @@ if "show_object" in globals():
     )
     x_offset = midpoint_of_pbc[0] - geometry.mirror_at.point[0]
 
-    keyboard_parts = explode_parts(keyboard_parts, 10)
+    keyboard_parts = explode_parts(keyboard_parts, 25)
 
     for layer_name_part_and_options in keyboard_parts:
         [layer_name, part, options] = layer_name_part_and_options
@@ -53,7 +53,7 @@ if "show_object" in globals():
     for layer_name_part_and_options in pcb_parts:
         [layer_name, part, options] = layer_name_part_and_options
         show_object(
-            part.translate([-x_offset, -y_offset, -10]),
+            part.translate([-x_offset, -y_offset, 70]),
             name=layer_name,
             options=options,
         )
