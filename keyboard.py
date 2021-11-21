@@ -657,16 +657,16 @@ def make_keyboard_parts(user_config={}):
 
     geometry = calculate_case_geometry(config)
 
-    parts.append(("Top plate", make_top_plate(geometry)))
-    parts.append(("Switch plate", make_switch_plate(geometry)))
+    parts.append(("Top plate", make_top_plate(geometry), {}))
+    parts.append(("Switch plate", make_switch_plate(geometry), {}))
 
     if config.has_thicc_spacer:
-        parts.append(("Spacer", make_spacer(geometry)))
+        parts.append(("Spacer", make_spacer(geometry), {}))
     else:
-        parts.append(("Spacer 1", make_spacer(geometry)))
-        parts.append(("Spacer 2", make_spacer(geometry)))
+        parts.append(("Spacer 1", make_spacer(geometry), {}))
+        parts.append(("Spacer 2", make_spacer(geometry), {}))
 
-    parts.append(("Bottom plate", make_bottom_plate(geometry)))
+    parts.append(("Bottom plate", make_bottom_plate(geometry), {}))
 
     return parts
 
@@ -677,6 +677,6 @@ if "show_object" in globals():
     if not flatten_items:
         keyboard_parts = explode_parts(keyboard_parts, explode_by)
 
-    for layer_name_and_part in keyboard_parts:
-        [layer_name, part] = layer_name_and_part
-        show_object(part, name=layer_name)
+    for layer_name_part_and_options in keyboard_parts:
+        [layer_name, part, options] = layer_name_part_and_options
+        show_object(part, name=layer_name, options=options)

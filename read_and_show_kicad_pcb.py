@@ -4,13 +4,6 @@ import os
 import sys
 import inspect
 from fuse_parts import fuse_parts
-
-currentdir = os.path.dirname(
-    os.path.abspath(inspect.getfile(inspect.currentframe()))
-)
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
-
 from load_pcb import load_pcb
 from cq_workplane_plugin import cq_workplane_plugin
 from calculate_rectangle_corners import calculate_rectangle_corners
@@ -41,7 +34,10 @@ def pcb_lines_to_polyline(lines):
     return [(line["start_x"], line["start_y"]) for line in ordered_lines]
 
 
-def make_thru_hole_pads(footprints, thickness):
+def make_thru_hole_pads(board_data):
+    footprints = board_data["footprints"]
+    thickness = board_data["general"]["thickness"]
+
     circular_positions = []
     for footprint in footprints:
         for pad in footprint["pads"]:
@@ -75,7 +71,10 @@ def make_thru_hole_pads(footprints, thickness):
     )
 
 
-def make_via_pads(vias, thickness):
+def make_via_pads(board_data):
+    vias = board_data["vias"]
+    thickness = board_data["general"]["thickness"]
+
     pads = cq.Workplane()
     for via in vias:
         pads = (
@@ -89,7 +88,9 @@ def make_via_pads(vias, thickness):
     )
 
 
-def make_surface_mount_pads(footprints, thickness):
+def make_surface_mount_pads(board_data):
+    footprints = board_data["footprints"]
+    thickness = board_data["general"]["thickness"]
     positions = []
     for footprint in footprints:
         for pad in footprint["pads"]:
@@ -195,7 +196,9 @@ def make_board(board_data):
     return board
 
 
-def make_footprint_lines(footprints, layer):
+def make_footprint_lines(board_data, layer):
+    footprints = board_data["footprints"]
+
     footprint_lines = []
 
     for footprint in footprints:
@@ -221,7 +224,9 @@ def make_footprint_lines(footprints, layer):
     )
 
 
-def make_segments(board_segments, layer):
+def make_segments(board_data, layer):
+    board_segments = board_data["segments"]
+
     layer_segments = [
         segment for segment in board_segments if segment["layer"] == layer
     ]
@@ -244,33 +249,41 @@ def make_segments(board_segments, layer):
     )
 
 
-board_data = load_pcb("/home/mike/src/atreus62/pcb/Atreus62.kicad_pcb")
+def make_pcb_parts():
+    board_data = load_pcb("/home/mike/src/atreus62/pcb/Atreus62.kicad_pcb")
 
-board = make_board(board_data)
+    parts = []
 
-thru_hole_pads = make_thru_hole_pads(
-    board_data["footprints"], board_data["general"]["thickness"]
-)
+    board = make_board(board_data)
 
-via_pads = make_via_pads(board_data["vias"], board_data["general"]["thickness"])
+    thru_hole_pads = make_thru_hole_pads(board_data)
 
-surface_mount_pads = make_surface_mount_pads(
-    board_data["footprints"], board_data["general"]["thickness"]
-)
+    via_pads = make_via_pads(board_data)
 
+    surface_mount_pads = make_surface_mount_pads(board_data)
 
-front_silkscreens = make_footprint_lines(board_data["footprints"], "F.SilkS")
-back_silkscreens = make_footprint_lines(board_data["footprints"], "B.SilkS")
-front_segments = make_segments(board_data["segments"], "F.Cu")
-back_segments = make_segments(board_data["segments"], "B.Cu")
+    front_silkscreens = make_footprint_lines(board_data, "F.SilkS")
+    back_silkscreens = make_footprint_lines(board_data, "B.SilkS")
+    front_segments = make_segments(board_data, "F.Cu")
+    back_segments = make_segments(board_data, "B.Cu")
+
+    parts.append(("Board", board, {"color": (0, 51, 25), "alpha": 0}))
+    parts.append(("Thru hold pads", thru_hole_pads, {"color": (204, 204, 0)}))
+    parts.append(("Via pads", via_pads, {"color": (204, 204, 0)}))
+    parts.append(
+        ("Surface mount pads", surface_mount_pads, {"color": (204, 204, 0)})
+    )
+    parts.append(("Front silkscreens", front_silkscreens, {"color": "white"}))
+    parts.append(("Back silkscreens", back_silkscreens, {"color": "white"}))
+    parts.append(("Front segments", front_segments, {"color": "red"}))
+    parts.append(("Back segments", back_segments, {"color": "blue"}))
+
+    return parts
 
 
 if "show_object" in globals():
-    show_object(board, options={"color": (0, 51, 25), "alpha": 0})
-    show_object(front_silkscreens, options={"color": "white"})
-    show_object(back_silkscreens, options={"color": "white"})
-    show_object(front_segments, options={"color": "red"})
-    show_object(back_segments, options={"color": "blue"})
-    show_object(via_pads, options={"color": (204, 204, 0)})
-    show_object(thru_hole_pads, options={"color": (204, 204, 0)})
-    show_object(surface_mount_pads, options={"color": (204, 204, 0)})
+    pcb_parts = make_pcb_parts()
+
+    for layer_name_part_and_options in pcb_parts:
+        [layer_name, part, options] = layer_name_part_and_options
+        show_object(part, name=layer_name, options=options)

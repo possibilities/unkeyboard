@@ -64,7 +64,7 @@ def test_output(preset_name, part_name):
     parts = make_keyboard_parts(preset)
     test_has_run = False
     for part_name_and_part in parts:
-        [current_part_name, part] = part_name_and_part
+        [current_part_name, part] = part_name_and_part[0:2]
         if part_name == current_part_name:
             test_has_run = True
             part_name_slug = slugify(part_name)

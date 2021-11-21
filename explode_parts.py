@@ -3,8 +3,8 @@ def explode_parts(parts, explode_by):
     parts.reverse()
 
     total_thickness = 0
-    for index, layer_name_and_part in enumerate(parts):
-        [layer_name, part] = layer_name_and_part
+    for index, layer_name_part_and_options in enumerate(parts):
+        [layer_name, part, options] = layer_name_part_and_options
 
         thickness = (
             part.vertices("front").val().Center().z
@@ -12,10 +12,7 @@ def explode_parts(parts, explode_by):
         )
 
         exploded.append(
-            (
-                layer_name,
-                part.translate([0, 0, total_thickness]),
-            )
+            (layer_name, part.translate([0, 0, total_thickness]), options)
         )
 
         total_thickness = total_thickness + thickness + explode_by
