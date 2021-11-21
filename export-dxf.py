@@ -183,10 +183,11 @@ def export_layered_dxf(file_name):
     [parts, geometry] = make_keyboard_parts()
 
     dxf = ezdxf.new(setup=True, units=units.MM)
+    dxf = ezdxf.new(setup=True)
     msp = dxf.modelspace()
 
     for layer_name_and_part in parts:
-        [layer_name, part] = layer_name_and_part
+        [layer_name, part, options] = layer_name_and_part
         thickness = (
             part.vertices("front").val().Center().z
             - part.vertices("back").val().Center().z

@@ -12,8 +12,8 @@ def main():
 
     [parts, geometry] = make_keyboard_parts()
 
-    for layer_name_and_part in parts:
-        [part_name, part] = layer_name_and_part
+    for layer_name_part_and_options in parts:
+        [part_name, part, options] = layer_name_part_and_options
 
         part_name_slug = slugify(part_name)
 
