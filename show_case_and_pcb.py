@@ -17,7 +17,15 @@ if "show_object" in globals():
     )
 
     [pcb_parts, board_data] = make_pcb_parts()
-    pprint(board_data["footprints"][0])
+
+    edge_cut_lines = [
+        line for line in board_data["gr_lines"] if line["layer"] == "Edge.Cuts"
+    ]
+
+    midpoint_of_pbc = midpoint(
+        (edge_cut_lines[5]["start_x"], edge_cut_lines[5]["start_y"]),
+        (edge_cut_lines[14]["start_x"], edge_cut_lines[14]["start_y"]),
+    )
 
     switch_footprints = [
         footprint
@@ -31,23 +39,10 @@ if "show_object" in globals():
         upper_right_hand_footprint["position_y"],
     )
 
-    show_object(
-        cq.Workplane()
-        .moveTo(*upper_right_hand_footprint_center)
-        .circle(1)
-        .extrude(100)
-        .moveTo(*upper_right_hand_switch_center)
-        .circle(1)
-        .extrude(100)
-    )
-
-    x_offset = (
-        upper_right_hand_footprint_center[0] - upper_right_hand_switch_center[0]
-    )
-
     y_offset = (
         upper_right_hand_footprint_center[1] - upper_right_hand_switch_center[1]
     )
+    x_offset = midpoint_of_pbc[0] - geometry.mirror_at.point[0]
 
     keyboard_parts = explode_parts(keyboard_parts, 10)
 
