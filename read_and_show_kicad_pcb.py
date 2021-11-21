@@ -267,11 +267,13 @@ def make_pcb_parts():
     front_segments = make_segments(board_data, "F.Cu")
     back_segments = make_segments(board_data, "B.Cu")
 
+    pad_yellow = (204, 204, 0)
+
     parts.append(("Board", board, {"color": (0, 51, 25), "alpha": 0}))
-    parts.append(("Thru hold pads", thru_hole_pads, {"color": (204, 204, 0)}))
-    parts.append(("Via pads", via_pads, {"color": (204, 204, 0)}))
+    parts.append(("Thru hold pads", thru_hole_pads, {"color": pad_yellow}))
+    parts.append(("Via pads", via_pads, {"color": pad_yellow}))
     parts.append(
-        ("Surface mount pads", surface_mount_pads, {"color": (204, 204, 0)})
+        ("Surface mount pads", surface_mount_pads, {"color": pad_yellow})
     )
     parts.append(("Front silkscreens", front_silkscreens, {"color": "white"}))
     parts.append(("Back silkscreens", back_silkscreens, {"color": "white"}))
