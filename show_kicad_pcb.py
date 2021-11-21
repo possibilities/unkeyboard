@@ -4,7 +4,7 @@ import os
 import sys
 import inspect
 from fuse_parts import fuse_parts
-from load_pcb import load_pcb
+from load_kicad_pcb import load_kicad_pcb
 from cq_workplane_plugin import cq_workplane_plugin
 from calculate_rectangle_corners import calculate_rectangle_corners
 
@@ -250,7 +250,9 @@ def make_segments(board_data, layer):
 
 
 def make_pcb_parts():
-    board_data = load_pcb("/home/mike/src/atreus62/pcb/Atreus62.kicad_pcb")
+    board_data = load_kicad_pcb(
+        "/home/mike/src/atreus62/pcb/Atreus62.kicad_pcb"
+    )
 
     parts = []
 

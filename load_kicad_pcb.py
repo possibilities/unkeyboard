@@ -352,7 +352,7 @@ prepare_pcb = flow(
 )
 
 
-def load_pcb(path):
+def load_kicad_pcb(path):
     with open(path) as f:
         pcb_data = loads(f.read())
     pcb = parse_pcb(pcb_data)

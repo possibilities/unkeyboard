@@ -1,6 +1,6 @@
 from pprint import pprint
 from keyboard import make_keyboard_parts
-from read_and_show_kicad_pcb import make_pcb_parts
+from show_kicad_pcb import make_pcb_parts
 from explode_parts import explode_parts
 
 
