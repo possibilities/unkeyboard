@@ -3,6 +3,7 @@ from pprint import pprint
 import os
 import sys
 import inspect
+from fuse_parts import fuse_parts
 
 currentdir = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe()))
@@ -208,8 +209,38 @@ surface_mount_pads = make_surface_mount_pads(
     board_data["footprints"], board_data["general"]["thickness"]
 )
 
+
+def make_segments(board_segments, layer):
+    layer_segments = [
+        segment for segment in board_segments if segment["layer"] == layer
+    ]
+
+    lines = []
+
+    for layer_segment in layer_segments:
+        segment = cq.Workplane()
+        segment = segment.moveTo(
+            layer_segment["start_x"], layer_segment["start_y"]
+        ).lineTo(layer_segment["end_x"], layer_segment["end_y"])
+        lines.append(segment)
+
+    return fuse_parts(lines).translate(
+        [
+            0,
+            0,
+            board_data["general"]["thickness"] if layer == "F.Cu" else 0,
+        ]
+    )
+
+
+front_segments = make_segments(board_data["segments"], "F.Cu")
+back_segments = make_segments(board_data["segments"], "B.Cu")
+
+
 if "show_object" in globals():
-    show_object(board, options={"color": (0, 51, 25)})
+    show_object(board, options={"color": (0, 51, 25), "alpha": 0.7})
+    show_object(front_segments, options={"color": "red"})
+    show_object(back_segments, options={"color": "blue"})
     show_object(via_pads, options={"color": (204, 204, 0)})
     show_object(thru_hole_pads, options={"color": (204, 204, 0)})
     show_object(surface_mount_pads, options={"color": (204, 204, 0)})
