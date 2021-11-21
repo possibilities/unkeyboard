@@ -668,11 +668,11 @@ def make_keyboard_parts(user_config={}):
 
     parts.append(("Bottom plate", make_bottom_plate(geometry), {}))
 
-    return parts
+    return [parts, geometry]
 
 
 if "show_object" in globals():
-    keyboard_parts = make_keyboard_parts()
+    [keyboard_parts, geometry] = make_keyboard_parts()
 
     if not flatten_items:
         keyboard_parts = explode_parts(keyboard_parts, explode_by)

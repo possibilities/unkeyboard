@@ -61,7 +61,7 @@ def test_output(preset_name, part_name):
     token = secrets.token_urlsafe(8)
     os.makedirs(f"/tmp/{token}", exist_ok=True)
     preset = presets.__dict__[preset_name]
-    parts = make_keyboard_parts(preset)
+    [parts, geometry] = make_keyboard_parts(preset)
     test_has_run = False
     for part_name_and_part in parts:
         [current_part_name, part] = part_name_and_part[0:2]

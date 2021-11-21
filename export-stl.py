@@ -10,7 +10,7 @@ def main():
     except:
         pass
 
-    parts = make_keyboard_parts()
+    [parts, geometry] = make_keyboard_parts()
 
     for layer_name_and_part in parts:
         [part_name, part] = layer_name_and_part

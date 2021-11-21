@@ -136,7 +136,7 @@ def export_flat_dxf(file_name):
     offset_y = 0
     offset_x = 0
 
-    parts = make_keyboard_parts()
+    [parts, geometry] = make_keyboard_parts()
 
     dxf = ezdxf.new(setup=True, units=units.MM)
     msp = dxf.modelspace()
@@ -180,7 +180,7 @@ def export_flat_dxf(file_name):
 
 
 def export_layered_dxf(file_name):
-    parts = make_keyboard_parts()
+    [parts, geometry] = make_keyboard_parts()
 
     dxf = ezdxf.new(setup=True, units=units.MM)
     msp = dxf.modelspace()

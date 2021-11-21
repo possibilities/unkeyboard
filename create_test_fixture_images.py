@@ -17,7 +17,7 @@ except:
 
 for preset_name in preset_names:
     config = presets.__dict__[preset_name]
-    parts = make_keyboard_parts(config)
+    [parts, geometry] = make_keyboard_parts(config)
     for [part_name, part] in parts:
         part_name_slug = slugify(part_name)
         preset_name_slug = slugify(preset_name)
