@@ -195,19 +195,30 @@ def make_board(board_data):
     return board
 
 
-board_data = load_pcb("/home/mike/src/atreus62/pcb/Atreus62.kicad_pcb")
+def make_footprint_lines(footprints, layer):
+    footprint_lines = []
 
-board = make_board(board_data)
+    for footprint in footprints:
+        layer_lines = [
+            line for line in footprint["fp_lines"] if line["layer"] == layer
+        ]
+        footprint_lines = [*footprint_lines, *layer_lines]
 
-thru_hole_pads = make_thru_hole_pads(
-    board_data["footprints"], board_data["general"]["thickness"]
-)
+    lines = []
+    for footprint_line in footprint_lines:
+        line = cq.Workplane()
+        line = line.moveTo(
+            footprint_line["start_x"], footprint_line["start_y"]
+        ).lineTo(footprint_line["end_x"], footprint_line["end_y"])
+        lines.append(line)
 
-via_pads = make_via_pads(board_data["vias"], board_data["general"]["thickness"])
-
-surface_mount_pads = make_surface_mount_pads(
-    board_data["footprints"], board_data["general"]["thickness"]
-)
+    return fuse_parts(lines).translate(
+        [
+            0,
+            0,
+            board_data["general"]["thickness"] if layer.startswith("F.") else 0,
+        ]
+    )
 
 
 def make_segments(board_segments, layer):
@@ -228,17 +239,36 @@ def make_segments(board_segments, layer):
         [
             0,
             0,
-            board_data["general"]["thickness"] if layer == "F.Cu" else 0,
+            board_data["general"]["thickness"] if layer.startswith("F.") else 0,
         ]
     )
 
 
+board_data = load_pcb("/home/mike/src/atreus62/pcb/Atreus62.kicad_pcb")
+
+board = make_board(board_data)
+
+thru_hole_pads = make_thru_hole_pads(
+    board_data["footprints"], board_data["general"]["thickness"]
+)
+
+via_pads = make_via_pads(board_data["vias"], board_data["general"]["thickness"])
+
+surface_mount_pads = make_surface_mount_pads(
+    board_data["footprints"], board_data["general"]["thickness"]
+)
+
+
+front_silkscreens = make_footprint_lines(board_data["footprints"], "F.SilkS")
+back_silkscreens = make_footprint_lines(board_data["footprints"], "B.SilkS")
 front_segments = make_segments(board_data["segments"], "F.Cu")
 back_segments = make_segments(board_data["segments"], "B.Cu")
 
 
 if "show_object" in globals():
-    show_object(board, options={"color": (0, 51, 25), "alpha": 0.7})
+    show_object(board, options={"color": (0, 51, 25), "alpha": 0})
+    show_object(front_silkscreens, options={"color": "white"})
+    show_object(back_silkscreens, options={"color": "white"})
     show_object(front_segments, options={"color": "red"})
     show_object(back_segments, options={"color": "blue"})
     show_object(via_pads, options={"color": (204, 204, 0)})
