@@ -269,16 +269,18 @@ def make_pcb_parts():
 
     pad_yellow = (204, 204, 0)
 
-    parts.append(("Board", board, {"color": (0, 51, 25), "alpha": 0}))
-    parts.append(("Thru hold pads", thru_hole_pads, {"color": pad_yellow}))
-    parts.append(("Via pads", via_pads, {"color": pad_yellow}))
+    parts.append(("PCB board", board, {"color": (0, 51, 25), "alpha": 0}))
+    parts.append(("PCB thru hold pads", thru_hole_pads, {"color": pad_yellow}))
+    parts.append(("PCB via pads", via_pads, {"color": pad_yellow}))
     parts.append(
-        ("Surface mount pads", surface_mount_pads, {"color": pad_yellow})
+        ("PCB surface mount pads", surface_mount_pads, {"color": pad_yellow})
     )
-    parts.append(("Front silkscreens", front_silkscreens, {"color": "white"}))
-    parts.append(("Back silkscreens", back_silkscreens, {"color": "white"}))
-    parts.append(("Front segments", front_segments, {"color": "red"}))
-    parts.append(("Back segments", back_segments, {"color": "blue"}))
+    parts.append(
+        ("PCB front silkscreens", front_silkscreens, {"color": "white"})
+    )
+    parts.append(("PCB back silkscreens", back_silkscreens, {"color": "white"}))
+    parts.append(("PCB front segments", front_segments, {"color": "red"}))
+    parts.append(("PCB back segments", back_segments, {"color": "blue"}))
 
     return [parts, board_data]
 

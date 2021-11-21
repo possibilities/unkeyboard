@@ -18,7 +18,7 @@ except:
 for preset_name in preset_names:
     config = presets.__dict__[preset_name]
     [parts, geometry] = make_keyboard_parts(config)
-    for [part_name, part] in parts:
+    for [part_name, part, options] in parts:
         part_name_slug = slugify(part_name)
         preset_name_slug = slugify(preset_name)
         os.makedirs(f"/tmp/{token}", exist_ok=True)

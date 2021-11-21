@@ -52,7 +52,12 @@ def assert_images_equal(
 
 
 preset_names = presets.__dict__.keys()
-part_names = ["Bottom plate", "Top plate", "Spacer 1", "Switch plate"]
+part_names = [
+    "Case bottom plate",
+    "Case top plate",
+    "Case spacer 1",
+    "Case switch plate",
+]
 test_data = itertools.product(preset_names, part_names)
 
 
