@@ -257,9 +257,7 @@ def make_pcb_parts():
     board = make_board(board_data)
 
     thru_hole_pads = make_thru_hole_pads(board_data)
-
     via_pads = make_via_pads(board_data)
-
     surface_mount_pads = make_surface_mount_pads(board_data)
 
     front_silkscreens = make_footprint_lines(board_data, "F.SilkS")
@@ -280,11 +278,11 @@ def make_pcb_parts():
     parts.append(("Front segments", front_segments, {"color": "red"}))
     parts.append(("Back segments", back_segments, {"color": "blue"}))
 
-    return parts
+    return [parts, board_data]
 
 
 if "show_object" in globals():
-    pcb_parts = make_pcb_parts()
+    [pcb_parts, board_data] = make_pcb_parts()
 
     for layer_name_part_and_options in pcb_parts:
         [layer_name, part, options] = layer_name_part_and_options
