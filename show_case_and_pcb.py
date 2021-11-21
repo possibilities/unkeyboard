@@ -2,10 +2,7 @@ from pprint import pprint
 from keyboard import make_keyboard_parts
 from show_kicad_pcb import make_pcb_parts
 from explode_parts import explode_parts
-
-
-def midpoint(p1, p2):
-    return ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
+from midpoint import midpoint
 
 
 def calculate_position_of_pcb(board_data):
