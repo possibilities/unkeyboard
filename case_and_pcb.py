@@ -5,7 +5,7 @@ from explode_parts import explode_parts
 from midpoint import midpoint
 
 
-def calculate_position_of_pcb(board_data):
+def calculate_position_of_atreus_62_pcb(board_data):
     edge_cut_lines = [
         line for line in board_data["gr_lines"] if line["layer"] == "Edge.Cuts"
     ]
@@ -43,9 +43,11 @@ def calculate_position_of_pcb(board_data):
 if "show_object" in globals():
     [keyboard_parts, geometry] = make_keyboard_parts()
 
-    [pcb_parts, board_data] = make_atreus_62_pcb_parts()
+    [atreus_62_pcb_parts, atreus_62_board_data] = make_atreus_62_pcb_parts()
 
-    position_of_pcb = calculate_position_of_pcb(board_data)
+    position_of_atreus_62_pcb = calculate_position_of_atreus_62_pcb(
+        atreus_62_board_data
+    )
 
     keyboard_parts = explode_parts(keyboard_parts, 25)
 
@@ -53,10 +55,10 @@ if "show_object" in globals():
         [layer_name, part, options] = layer_name_part_and_options
         show_object(part, name=layer_name, options=options)
 
-    for layer_name_part_and_options in pcb_parts:
+    for layer_name_part_and_options in atreus_62_pcb_parts:
         [layer_name, part, options] = layer_name_part_and_options
         show_object(
-            part.translate(position_of_pcb),
+            part.translate(position_of_atreus_62_pcb),
             name=layer_name,
             options=options,
         )
