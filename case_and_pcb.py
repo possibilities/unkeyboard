@@ -27,6 +27,11 @@ def calculate_position_of_pcb(board_data):
         upper_right_hand_footprint["position_y"],
     )
 
+    upper_right_hand_switch_center = midpoint(
+        geometry.switch_plate.points[-1][0],
+        geometry.switch_plate.points[-1][2],
+    )
+
     y_offset = (
         upper_right_hand_footprint_center[1] - upper_right_hand_switch_center[1]
     )
@@ -37,11 +42,6 @@ def calculate_position_of_pcb(board_data):
 
 if "show_object" in globals():
     [keyboard_parts, geometry] = make_keyboard_parts()
-
-    upper_right_hand_switch_center = midpoint(
-        geometry.switch_plate.points[-1][0],
-        geometry.switch_plate.points[-1][2],
-    )
 
     [pcb_parts, board_data] = make_atreus_62_pcb_parts()
 
