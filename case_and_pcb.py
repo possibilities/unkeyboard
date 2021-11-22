@@ -1,11 +1,12 @@
 from pprint import pprint
 from keyboard import make_keyboard_parts
-from atreus_62_pcb import make_atreus_62_pcb_parts
+from pcb import load_pcb, make_pcb_parts
 from explode_parts import explode_parts
 from midpoint import midpoint
+from pcb import calculate_position_of_atreus_62_pcb
 
 
-def calculate_position_of_atreus_62_pcb(board_data):
+def calculate_position_of_atreus_62_pcb(geometry, board_data):
     edge_cut_lines = [
         line for line in board_data["gr_lines"] if line["layer"] == "Edge.Cuts"
     ]
@@ -43,22 +44,31 @@ def calculate_position_of_atreus_62_pcb(board_data):
 if "show_object" in globals():
     [keyboard_parts, geometry] = make_keyboard_parts()
 
-    [atreus_62_pcb_parts, atreus_62_board_data] = make_atreus_62_pcb_parts()
+    #     atreus_62_path = "./atreus_62.kicad_pcb"
+    #     [atreus_62_pcb_parts, atreus_62_board_data] = make_pcb_parts(
+    #         atreus_62_path
+    #     )
 
-    position_of_atreus_62_pcb = calculate_position_of_atreus_62_pcb(
-        atreus_62_board_data
-    )
+    #     position_of_atreus_62_pcb = calculate_position_of_atreus_62_pcb(
+    #         geometry,
+    #         atreus_62_board_data
+    #     )
 
-    keyboard_parts = explode_parts(keyboard_parts, 25)
+    blank_pcb_path = "./blank.kicad_pcb"
+    blank_board_data = load_pcb(blank_pcb_path)
+    make_pcb_parts(blank_board_data)
+    # [pcb_parts, board_data] = make_pcb_parts(blank_pcb_path)
 
-    for layer_name_part_and_options in keyboard_parts:
-        [layer_name, part, options] = layer_name_part_and_options
-        show_object(part, name=layer_name, options=options)
+    # keyboard_parts = explode_parts(keyboard_parts, 25)
 
-    for layer_name_part_and_options in atreus_62_pcb_parts:
-        [layer_name, part, options] = layer_name_part_and_options
-        show_object(
-            part.translate(position_of_atreus_62_pcb),
-            name=layer_name,
-            options=options,
-        )
+    # for layer_name_part_and_options in keyboard_parts:
+    #     [layer_name, part, options] = layer_name_part_and_options
+    #     show_object(part, name=layer_name, options=options)
+
+    # for layer_name_part_and_options in atreus_62_pcb_parts:
+    #     [layer_name, part, options] = layer_name_part_and_options
+    #     show_object(
+    #         part.translate(position_of_atreus_62_pcb),
+    #         name=layer_name,
+    #         options=options,
+    #     )

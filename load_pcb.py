@@ -352,7 +352,7 @@ prepare_pcb = flow(
 )
 
 
-def load_atreus_62_pcb(path):
+def load_pcb(path):
     with open(path) as f:
         pcb_data = loads(f.read())
     pcb = parse_pcb(pcb_data)

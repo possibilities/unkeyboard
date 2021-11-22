@@ -1,5 +1,6 @@
 import math
 import cadquery as cq
+from pprint import pprint
 from types import SimpleNamespace
 from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
