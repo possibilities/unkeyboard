@@ -1,6 +1,6 @@
 from pprint import pprint
 from keyboard import make_keyboard_parts
-from show_kicad_pcb import make_pcb_parts
+from atreus_62_pcb import make_atreus_62_pcb_parts
 from explode_parts import explode_parts
 from midpoint import midpoint
 
@@ -43,7 +43,7 @@ if "show_object" in globals():
         geometry.switch_plate.points[-1][2],
     )
 
-    [pcb_parts, board_data] = make_pcb_parts()
+    [pcb_parts, board_data] = make_atreus_62_pcb_parts()
 
     position_of_pcb = calculate_position_of_pcb(board_data)
 
