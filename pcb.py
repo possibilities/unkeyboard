@@ -155,7 +155,7 @@ def make_surface_mount_pads(board_data):
                     (pad["position_x"], pad["position_y"]),
                     pad["size"][0],
                     pad["size"][1],
-                    angle=pad["position_rotate"],
+                    angle=pad["rotation"],
                 )
                 positions.append(
                     corners,

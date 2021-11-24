@@ -163,7 +163,7 @@ def add_position_attributes(pcb):
                     updated_pairs.append(("position_y", pair[1][1]))
                     updated_pairs.append(
                         (
-                            "position_rotate",
+                            "rotation",
                             pair[1][2] if len(pair[1]) >= 3 else 0,
                         )
                     )
@@ -245,9 +245,7 @@ def make_footprints_child_positions_absolute(pcb):
 
 
 def rotate_footprint_child_position(footprint, child, x_key, y_key):
-    footprint_rotate = (
-        footprint["position_rotate"] if "position_rotate" in footprint else 0
-    )
+    footprint_rotate = footprint["rotation"] if "rotation" in footprint else 0
     (rotated_x, rotated_y) = rotate_2d(
         (footprint["position_x"], footprint["position_y"]),
         (child[x_key], child[y_key]),
