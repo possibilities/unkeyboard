@@ -30,25 +30,29 @@ def parse_net(net):
     return {"id": id, "name": name}
 
 
-def parse_footprint(label, footprint_data):
-    footprint = {
-        "label": label,
-        "fp_lines": [],
-        "fp_circles": [],
-        "fp_texts": [],
-        "pads": [],
-    }
+def ensure_default(obj, key, val):
+    if not key in obj:
+        obj[key] = val
+    return obj
+
+
+def parse_footprint(footprint_data):
+    footprint = {}
+
     for symbol_and_values in footprint_data:
         [symbol, *values] = symbol_and_values
         name = str(symbol)
 
         if str(name) == "fp_line":
+            footprint = ensure_default(footprint, "fp_lines", [])
             footprint["fp_lines"].append(parse_attributes(values))
 
         elif str(name) == "fp_circle":
+            footprint = ensure_default(footprint, "fp_circles", [])
             footprint["fp_circles"].append(parse_attributes(values))
 
         elif str(name) == "pad":
+            footprint = ensure_default(footprint, "pads", [])
             [label, type, shape, state, *pad_values] = values
             footprint["pads"].append(
                 {
@@ -61,6 +65,7 @@ def parse_footprint(label, footprint_data):
             )
 
         elif str(name) == "fp_text":
+            footprint = ensure_default(footprint, "fp_texts", [])
             footprint["fp_texts"].append(parse_attributes(values))
 
         elif str(name) in ["attr", "layer", "descr"]:
@@ -70,12 +75,6 @@ def parse_footprint(label, footprint_data):
             footprint[str(name)] = values
 
     return footprint
-
-
-def ensure_default(obj, key, val):
-    if not key in obj:
-        obj[key] = val
-    return obj
 
 
 def parse_pcb(pcb_data):
@@ -95,7 +94,9 @@ def parse_pcb(pcb_data):
         elif str(name) == "footprint":
             board = ensure_default(board, "footprints", [])
             [label, *footprint_values] = values
-            board["footprints"].append(parse_footprint(label, footprint_values))
+            board["footprints"].append(
+                {"label": label, **parse_footprint(footprint_values)}
+            )
 
         elif str(name) == "via":
             board = ensure_default(board, "vias", [])
@@ -202,7 +203,7 @@ def add_position_attributes(pcb):
 def make_footprint_child_positions_absolute(footprint):
     pads = footprint["pads"]
     fp_lines = footprint["fp_lines"]
-    fp_circles = footprint["fp_circles"]
+    fp_circles = footprint["fp_circles"] if "fp_circles" in footprint else []
     fp_texts = footprint["fp_texts"]
     pads = footprint["pads"]
 
