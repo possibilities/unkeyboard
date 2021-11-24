@@ -79,7 +79,6 @@ def parse_footprint(footprint_data):
 
 def parse_pcb(pcb_data):
     board = {}
-
     for symbol_and_values in pcb_data[1:]:
         [symbol, *values] = symbol_and_values
         name = str(symbol)
@@ -95,7 +94,7 @@ def parse_pcb(pcb_data):
             board = ensure_default(board, "footprints", [])
             [label, *footprint_values] = values
             board["footprints"].append(
-                {"label": label, **parse_footprint(footprint_values)}
+                {"label": label, **parse_pcb(footprint_values)}
             )
 
         elif str(name) == "via":
@@ -135,6 +134,34 @@ def parse_pcb(pcb_data):
 
         elif str(name) == "setup":
             board["setup"] = parse_attributes(values)
+
+        elif str(name) == "fp_line":
+            board = ensure_default(board, "fp_lines", [])
+            board["fp_lines"].append(parse_attributes(values))
+
+        elif str(name) == "fp_circle":
+            board = ensure_default(board, "fp_circles", [])
+            board["fp_circles"].append(parse_attributes(values))
+
+        elif str(name) == "pad":
+            board = ensure_default(board, "pads", [])
+            [label, type, shape, state, *pad_values] = values
+            board["pads"].append(
+                {
+                    **parse_attributes(pad_values),
+                    "label": label,
+                    "type": str(type),
+                    "state": str(state),
+                    "shape": str(shape),
+                }
+            )
+
+        elif str(name) == "fp_text":
+            board = ensure_default(board, "fp_texts", [])
+            board["fp_texts"].append(parse_attributes(values))
+
+        elif str(name) in ["attr", "layer", "descr"]:
+            board[str(name)] = str(values[0])
 
         else:
             board[str(name)] = values
