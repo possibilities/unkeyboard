@@ -72,9 +72,14 @@ def parse_footprint(label, footprint_data):
     return footprint
 
 
+def set_default(obj, key, val):
+    if not key in obj:
+        obj[key] = val
+    return obj
+
+
 def parse_pcb(pcb_data):
     board = {
-        "nets": [],
         "footprints": [],
         "vias": [],
         "gr_texts": [],
@@ -91,6 +96,7 @@ def parse_pcb(pcb_data):
             board["general"] = parse_attributes(values)
 
         elif str(name) == "net":
+            board = set_default(board, "nets", [])
             board["nets"].append(parse_net(values))
 
         elif str(name) == "footprint":
