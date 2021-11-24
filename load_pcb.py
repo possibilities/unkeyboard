@@ -131,7 +131,7 @@ def parse_pcb(pcb_data):
             board["setup"] = parse_attributes(values)
 
         else:
-            board[str(name)] = values[0]
+            board[str(name)] = values
 
     return board
 
