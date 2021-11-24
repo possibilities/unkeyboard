@@ -15,6 +15,9 @@ pad_thickness = 0.075
 
 
 def calculate_position_of_atreus_62_pcb(geometry, board_data):
+    if not "gr_lines" in board_data:
+        return [0, 0]
+
     edge_cut_lines = [
         line for line in board_data["gr_lines"] if line["layer"] == "Edge.Cuts"
     ]
@@ -233,12 +236,12 @@ def drill_holes_for_vias(self, vias, thickness):
 
 
 def make_board(board_data):
+    if not "gr_lines" in board_data:
+        return None
+
     edge_cut_lines = [
         line for line in board_data["gr_lines"] if line["layer"] == "Edge.Cuts"
     ]
-
-    if not len(edge_cut_lines):
-        return None
 
     board = (
         cq.Workplane()
@@ -293,6 +296,9 @@ def make_footprint_lines(board_data, layer):
 
 
 def make_segments(board_data, layer):
+    if not "segments" in board_data:
+        return cq.Workplane()
+
     board_segments = board_data["segments"]
 
     layer_segments = [
@@ -300,9 +306,6 @@ def make_segments(board_data, layer):
     ]
 
     lines = []
-
-    if not len(layer_segments):
-        return cq.Workplane()
 
     for layer_segment in layer_segments:
         segment = cq.Workplane()

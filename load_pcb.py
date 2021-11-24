@@ -79,12 +79,7 @@ def ensure_default(obj, key, val):
 
 
 def parse_pcb(pcb_data):
-    board = {
-        "gr_texts": [],
-        "gr_lines": [],
-        "segments": [],
-        "layers": [],
-    }
+    board = {}
 
     for symbol_and_values in pcb_data[1:]:
         [symbol, *values] = symbol_and_values
@@ -107,15 +102,19 @@ def parse_pcb(pcb_data):
             board["vias"].append(parse_attributes(values))
 
         elif str(name) == "gr_text":
+            board = ensure_default(board, "gr_texts", [])
             board["gr_texts"].append(parse_attributes(values))
 
         elif str(name) == "gr_line":
+            board = ensure_default(board, "gr_lines", [])
             board["gr_lines"].append(parse_attributes(values))
 
         elif str(name) == "segment":
+            board = ensure_default(board, "segments", [])
             board["segments"].append(parse_attributes(values))
 
         elif str(name) == "layers":
+            board = ensure_default(board, "layers", [])
             for layer in values:
                 if len(layer) == 3:
                     [id, name, type] = layer
