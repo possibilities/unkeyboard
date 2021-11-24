@@ -90,6 +90,9 @@ def make_thru_hole_pads(board_data):
 
     pads = cq.Workplane()
 
+    if not len(circular_positions) and not len(rectangular_positions):
+        return pads
+
     for position in circular_positions:
         pads = (
             pads.moveTo(position["position_x"], position["position_y"])
@@ -114,6 +117,10 @@ def make_via_pads(board_data):
     thickness = board_data["general"]["thickness"]
 
     pads = cq.Workplane()
+
+    if not len(vias):
+        return pads
+
     for via in vias:
         pads = (
             pads.moveTo(via["position_x"], via["position_y"])
@@ -144,6 +151,9 @@ def make_surface_mount_pads(board_data):
                 )
 
     pads = cq.Workplane()
+
+    if not len(positions):
+        return pads
 
     for position in positions:
         pads = pads.polyline(position).close()
@@ -248,6 +258,9 @@ def make_footprint_lines(board_data, layer):
         ]
         footprint_lines = [*footprint_lines, *layer_lines]
 
+    if not len(footprint_lines):
+        return cq.Workplane()
+
     lines = []
     for footprint_line in footprint_lines:
         line = cq.Workplane()
@@ -274,6 +287,9 @@ def make_segments(board_data, layer):
 
     lines = []
 
+    if not len(layer_segments):
+        return cq.Workplane()
+
     for layer_segment in layer_segments:
         segment = cq.Workplane()
         segment = segment.moveTo(
@@ -297,31 +313,31 @@ def make_pcb_parts(board_data):
 
     parts = []
 
-    # thru_hole_pads = make_thru_hole_pads(board_data)
-    # via_pads = make_via_pads(board_data)
-    # surface_mount_pads = make_surface_mount_pads(board_data)
+    thru_hole_pads = make_thru_hole_pads(board_data)
+    via_pads = make_via_pads(board_data)
+    surface_mount_pads = make_surface_mount_pads(board_data)
 
-    # front_silkscreens = make_footprint_lines(board_data, "F.SilkS")
-    # back_silkscreens = make_footprint_lines(board_data, "B.SilkS")
-    # front_segments = make_segments(board_data, "F.Cu")
-    # back_segments = make_segments(board_data, "B.Cu")
+    front_silkscreens = make_footprint_lines(board_data, "F.SilkS")
+    back_silkscreens = make_footprint_lines(board_data, "B.SilkS")
+    front_segments = make_segments(board_data, "F.Cu")
+    back_segments = make_segments(board_data, "B.Cu")
 
     parts.append(("PCB board", board, {"color": (0, 51, 25), "alpha": 0}))
-    # parts.append(("PCB thru hold pads", thru_hole_pads, {"color": pad_yellow}))
-    # parts.append(("PCB via pads", via_pads, {"color": pad_yellow}))
-    # parts.append(
-    #     (
-    #         "PCB surface mount pads",
-    #         surface_mount_pads,
-    #         {"color": pad_yellow},
-    #     )
-    # )
-    # parts.append(
-    #     ("PCB front silkscreens", front_silkscreens, {"color": "white"})
-    # )
-    # parts.append(("PCB back silkscreens", back_silkscreens, {"color": "white"}))
-    # parts.append(("PCB front segments", front_segments, {"color": "red"}))
-    # parts.append(("PCB back segments", back_segments, {"color": "blue"}))
+    parts.append(("PCB thru hold pads", thru_hole_pads, {"color": pad_yellow}))
+    parts.append(("PCB via pads", via_pads, {"color": pad_yellow}))
+    parts.append(
+        (
+            "PCB surface mount pads",
+            surface_mount_pads,
+            {"color": pad_yellow},
+        )
+    )
+    parts.append(
+        ("PCB front silkscreens", front_silkscreens, {"color": "white"})
+    )
+    parts.append(("PCB back silkscreens", back_silkscreens, {"color": "white"}))
+    parts.append(("PCB front segments", front_segments, {"color": "red"}))
+    parts.append(("PCB back segments", back_segments, {"color": "blue"}))
 
     return [parts, board_data]
 
