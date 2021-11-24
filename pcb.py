@@ -147,7 +147,6 @@ def make_surface_mount_pads(board_data):
         return cq.Workplane()
 
     footprints = board_data["footprints"]
-    thickness = board_data["general"]["thickness"]
     positions = []
     for footprint in footprints:
         for pad in footprint["pads"]:

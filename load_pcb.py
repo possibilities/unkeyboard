@@ -36,50 +36,9 @@ def ensure_default(obj, key, val):
     return obj
 
 
-def parse_footprint(footprint_data):
-    footprint = {}
-
-    for symbol_and_values in footprint_data:
-        [symbol, *values] = symbol_and_values
-        name = str(symbol)
-
-        if str(name) == "fp_line":
-            footprint = ensure_default(footprint, "fp_lines", [])
-            footprint["fp_lines"].append(parse_attributes(values))
-
-        elif str(name) == "fp_circle":
-            footprint = ensure_default(footprint, "fp_circles", [])
-            footprint["fp_circles"].append(parse_attributes(values))
-
-        elif str(name) == "pad":
-            footprint = ensure_default(footprint, "pads", [])
-            [label, type, shape, state, *pad_values] = values
-            footprint["pads"].append(
-                {
-                    **parse_attributes(pad_values),
-                    "label": label,
-                    "type": str(type),
-                    "state": str(state),
-                    "shape": str(shape),
-                }
-            )
-
-        elif str(name) == "fp_text":
-            footprint = ensure_default(footprint, "fp_texts", [])
-            footprint["fp_texts"].append(parse_attributes(values))
-
-        elif str(name) in ["attr", "layer", "descr"]:
-            footprint[str(name)] = str(values[0])
-
-        else:
-            footprint[str(name)] = values
-
-    return footprint
-
-
 def parse_pcb(pcb_data):
     board = {}
-    for symbol_and_values in pcb_data[1:]:
+    for symbol_and_values in pcb_data:
         [symbol, *values] = symbol_and_values
         name = str(symbol)
 
@@ -392,5 +351,5 @@ prepare_pcb = flow(
 def load_pcb(path):
     with open(path) as f:
         pcb_data = loads(f.read())
-    pcb = parse_pcb(pcb_data)
+    pcb = parse_pcb(pcb_data[1:])
     return prepare_pcb(pcb)
