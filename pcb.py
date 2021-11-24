@@ -73,6 +73,9 @@ def pcb_lines_to_polyline(lines):
 
 
 def make_thru_hole_pads(board_data):
+    if not "footprints" in board_data:
+        return cq.Workplane()
+
     footprints = board_data["footprints"]
     thickness = board_data["general"]["thickness"]
 
@@ -134,6 +137,9 @@ def make_via_pads(board_data):
 
 
 def make_surface_mount_pads(board_data):
+    if not "footprints" in board_data:
+        return cq.Workplane()
+
     footprints = board_data["footprints"]
     thickness = board_data["general"]["thickness"]
     positions = []
@@ -248,6 +254,9 @@ def make_board(board_data):
 
 
 def make_footprint_lines(board_data, layer):
+    if not "footprints" in board_data:
+        return cq.Workplane()
+
     footprints = board_data["footprints"]
 
     footprint_lines = []

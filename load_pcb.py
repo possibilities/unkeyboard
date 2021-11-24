@@ -80,7 +80,6 @@ def set_default(obj, key, val):
 
 def parse_pcb(pcb_data):
     board = {
-        "footprints": [],
         "vias": [],
         "gr_texts": [],
         "gr_lines": [],
@@ -100,6 +99,7 @@ def parse_pcb(pcb_data):
             board["nets"].append(parse_net(values))
 
         elif str(name) == "footprint":
+            board = set_default(board, "footprints", [])
             [label, *footprint_values] = values
             board["footprints"].append(parse_footprint(label, footprint_values))
 
@@ -249,6 +249,8 @@ def make_footprint_child_positions_absolute(footprint):
 
 
 def make_footprints_child_positions_absolute(pcb):
+    if "footprints" not in pcb:
+        return pcb
     footprints = [
         make_footprint_child_positions_absolute(footprint)
         for footprint in pcb["footprints"]
@@ -343,6 +345,8 @@ def rotate_footprint_child_positions(footprint):
 
 
 def rotate_footprints_child_positions(pcb):
+    if "footprints" not in pcb:
+        return pcb
     footprints = [
         rotate_footprint_child_positions(footprint)
         for footprint in pcb["footprints"]
