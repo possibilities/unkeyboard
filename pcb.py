@@ -116,10 +116,13 @@ def make_thru_hole_pads(board_data):
 
 
 def make_via_pads(board_data):
+    pads = cq.Workplane()
+
+    if not "vias" in board_data:
+        return pads
+
     vias = board_data["vias"]
     thickness = board_data["general"]["thickness"]
-
-    pads = cq.Workplane()
 
     if not len(vias):
         return pads
@@ -245,10 +248,12 @@ def make_board(board_data):
         .drill_holes_for_thru_hole_pads(
             board_data["footprints"], board_data["general"]["thickness"]
         )
-        .drill_holes_for_vias(
+    )
+
+    if "vias" in board_data:
+        board = board.drill_holes_for_vias(
             board_data["vias"], board_data["general"]["thickness"]
         )
-    )
 
     return board
 
