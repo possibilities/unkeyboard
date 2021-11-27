@@ -107,7 +107,7 @@ def calculate_switch_positions(config):
     return switch_positions
 
 
-def calculate_switch_plate_points(named_points, switch_positions, config):
+def calculate_switch_plate_points(mirror_at_point, switch_positions, config):
     switch_plate_points = []
 
     number_of_inside_columns = 1
@@ -139,7 +139,7 @@ def calculate_switch_plate_points(named_points, switch_positions, config):
     flattened_switch_plate_points = flatten_list(switch_plate_points)
 
     mirrored_switch_plate_points = [
-        mirror_points(corner, named_points.mirror_at_point, combine=False)
+        mirror_points(corner, mirror_at_point, combine=False)
         for corner in flattened_switch_plate_points
     ]
 
@@ -397,7 +397,7 @@ def calculate_case_outside_points(named_points, outside_frame_size, config):
 
 
 def calculate_spacer_inside_points(
-    named_points, case_outside_points, outside_frame_size, config
+    mirror_at_point, case_outside_points, outside_frame_size, config
 ):
     points = [
         calculate_point_for_angle(
@@ -410,7 +410,7 @@ def calculate_spacer_inside_points(
             case_outside_points[2], -outside_frame_size, 45 - config.angle
         ),
     ]
-    return mirror_points(points, named_points.mirror_at_point)
+    return mirror_points(points, mirror_at_point)
 
 
 def calculate_screw_points(
@@ -466,7 +466,7 @@ def calculate_case_geometry(config):
     ] = calculate_switch_plate_outline_points(switch_positions, config)
 
     switch_plate_points = calculate_switch_plate_points(
-        named_points,
+        named_points.mirror_at_point,
         switch_positions,
         config,
     )
@@ -525,7 +525,10 @@ def calculate_case_geometry(config):
     )
 
     spacer_inside_points = calculate_spacer_inside_points(
-        named_points, case_outside_points, outside_frame_size, config
+        named_points.mirror_at_point,
+        case_outside_points,
+        outside_frame_size,
+        config,
     )
 
     screw_points = calculate_screw_points(
