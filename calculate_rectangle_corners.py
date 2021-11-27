@@ -1,4 +1,3 @@
-from pprint import pprint
 import cadquery as cq
 from rotate_2d import rotate_2d
 

@@ -1,5 +1,4 @@
 import math
-import cadquery as cq
 from OCP.Geom2dAPI import Geom2dAPI_InterCurveCurve
 from OCP.gp import gp_Pnt2d, gp_Ax2d, gp_Dir2d, gp_Vec2d
 from OCP.Geom2d import Geom2d_Line

@@ -1,6 +1,4 @@
-import math
 import cadquery as cq
-from pprint import pprint
 from types import SimpleNamespace
 from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
@@ -58,7 +56,9 @@ def drill_reset_button_hole(part, geometry):
 def has_reached_end_of_inside_switches_row(column, row, config):
     has_reached_end_column = column == 0
     if has_reached_end_column:
-        has_reached_end_row = row > (1 if config.has_two_inside_switches else 0)
+        has_reached_end_row = row > (
+            1 if config.has_two_inside_switches else 0
+        )
         if has_reached_end_row:
             return True
     return False
@@ -95,7 +95,9 @@ def calculate_switch_positions(config):
                 )
 
                 switch_position_y = config.distance_between_switch_centers * (
-                    row + 0.5 + calculate_column_stagger_percent(column, config)
+                    row
+                    + 0.5
+                    + calculate_column_stagger_percent(column, config)
                 )
 
                 switch_positions[-1].append(
@@ -157,7 +159,8 @@ def calculate_switch_plate_outline_points(switch_positions, config):
     ) + widen_cutout_around_inside_switches_size
 
     outline_size_per_switch = (
-        config.distance_between_switch_centers + widen_cutout_around_switch_size
+        config.distance_between_switch_centers
+        + widen_cutout_around_switch_size
     )
 
     inside_switch_padding_y = (

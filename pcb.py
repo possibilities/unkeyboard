@@ -1,9 +1,4 @@
-import uuid
 import cadquery as cq
-from pprint import pprint
-import os
-import sys
-import inspect
 from fuse_parts import fuse_parts
 from load_pcb import load_pcb
 from cq_workplane_plugin import cq_workplane_plugin
@@ -15,7 +10,7 @@ pad_thickness = 0.075
 
 
 def calculate_position_of_atreus_62_pcb(geometry, board_data):
-    if not "gr_lines" in board_data:
+    if "gr_lines" not in board_data:
         return [0, 0]
 
     edge_cut_lines = [
@@ -45,7 +40,8 @@ def calculate_position_of_atreus_62_pcb(geometry, board_data):
     )
 
     y_offset = (
-        upper_right_hand_footprint_center[1] - upper_right_hand_switch_center[1]
+        upper_right_hand_footprint_center[1]
+        - upper_right_hand_switch_center[1]
     )
     x_offset = midpoint_of_pbc[0] - geometry.mirror_at.point[0]
 
@@ -76,7 +72,7 @@ def pcb_lines_to_polyline(lines):
 
 
 def make_thru_hole_pads(board_data):
-    if not "footprints" in board_data:
+    if "footprints" not in board_data:
         return cq.Workplane()
 
     footprints = board_data["footprints"]
@@ -121,7 +117,7 @@ def make_thru_hole_pads(board_data):
 def make_via_pads(board_data):
     pads = cq.Workplane()
 
-    if not "vias" in board_data:
+    if "vias" not in board_data:
         return pads
 
     vias = board_data["vias"]
@@ -143,7 +139,7 @@ def make_via_pads(board_data):
 
 
 def make_surface_mount_pads(board_data):
-    if not "footprints" in board_data:
+    if "footprints" not in board_data:
         return cq.Workplane()
 
     footprints = board_data["footprints"]
@@ -181,13 +177,13 @@ def drill_holes_for_thru_hole_pads(self, footprints, thickness):
         for pad in footprint["pads"]:
             if pad["type"] in ["thru_hole", "np_thru_hole"]:
                 if pad["shape"] == "circle":
-                    if not pad["size"][0] in circular_holes_by_size:
+                    if pad["size"][0] not in circular_holes_by_size:
                         circular_holes_by_size[pad["size"][0]] = []
                     circular_holes_by_size[pad["size"][0]].append(
                         (pad["position_x"], pad["position_y"])
                     )
                 elif pad["shape"] == "rect":
-                    if not pad["size"][0] in rectangular_holes_by_size:
+                    if pad["size"][0] not in rectangular_holes_by_size:
                         rectangular_holes_by_size[pad["size"][0]] = []
                     rectangular_holes_by_size[pad["size"][0]].append(
                         (pad["position_x"], pad["position_y"])
@@ -217,7 +213,7 @@ def drill_holes_for_vias(self, vias, thickness):
     holes_by_size = {}
 
     for via in vias:
-        if not via["drill"] in holes_by_size:
+        if via["drill"] not in holes_by_size:
             holes_by_size[via["drill"]] = []
         holes_by_size[via["drill"]].append(
             (via["position_x"], via["position_y"])
@@ -235,7 +231,7 @@ def drill_holes_for_vias(self, vias, thickness):
 
 
 def make_board(board_data):
-    if not "gr_lines" in board_data:
+    if "gr_lines" not in board_data:
         return cq.Workplane()
 
     edge_cut_lines = [
@@ -263,7 +259,7 @@ def make_board(board_data):
 
 
 def make_footprint_lines(board_data, layer):
-    if not "footprints" in board_data:
+    if "footprints" not in board_data:
         return cq.Workplane()
 
     footprints = board_data["footprints"]
@@ -291,13 +287,15 @@ def make_footprint_lines(board_data, layer):
         [
             0,
             0,
-            board_data["general"]["thickness"] if layer.startswith("F.") else 0,
+            board_data["general"]["thickness"]
+            if layer.startswith("F.")
+            else 0,
         ]
     )
 
 
 def make_segments(board_data, layer):
-    if not "segments" in board_data:
+    if "segments" not in board_data:
         return cq.Workplane()
 
     board_segments = board_data["segments"]
@@ -319,7 +317,9 @@ def make_segments(board_data, layer):
         [
             0,
             0,
-            board_data["general"]["thickness"] if layer.startswith("F.") else 0,
+            board_data["general"]["thickness"]
+            if layer.startswith("F.")
+            else 0,
         ]
     )
 
@@ -353,7 +353,9 @@ def make_pcb_parts(board_data):
     parts.append(
         ("PCB front silkscreens", front_silkscreens, {"color": "white"})
     )
-    parts.append(("PCB back silkscreens", back_silkscreens, {"color": "white"}))
+    parts.append(
+        ("PCB back silkscreens", back_silkscreens, {"color": "white"})
+    )
     parts.append(("PCB front segments", front_segments, {"color": "red"}))
     parts.append(("PCB back segments", back_segments, {"color": "blue"}))
 

@@ -1,13 +1,5 @@
-import cadquery as cq
-from pprint import pprint
-import os
-import sys
-import inspect
-from fuse_parts import fuse_parts
 from load_pcb import load_pcb
-from cq_workplane_plugin import cq_workplane_plugin
 from pcb import make_pcb_parts
-from calculate_rectangle_corners import calculate_rectangle_corners
 
 
 if "show_object" in globals():

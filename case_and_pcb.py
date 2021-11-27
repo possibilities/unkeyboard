@@ -1,8 +1,6 @@
-from pprint import pprint
 from keyboard import make_keyboard_parts
 from pcb import load_pcb, make_pcb_parts
 from explode_parts import explode_parts
-from midpoint import midpoint
 from pcb import calculate_position_of_atreus_62_pcb
 
 

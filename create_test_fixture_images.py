@@ -12,7 +12,7 @@ preset_names = presets.__dict__.keys()
 
 try:
     os.remove("__fixtures__/images")
-except:
+except Exception:
     pass
 
 for preset_name in preset_names:
@@ -34,7 +34,8 @@ for preset_name in preset_names:
         )
 
         os.makedirs("__fixtures__/images", exist_ok=True)
-        svg2png(
-            url=f"/tmp/{token}/{preset_name_slug}-{part_name_slug}.svg",
-            write_to=f"__fixtures__/images/{preset_name_slug}-{part_name_slug}.png",
+        url = f"/tmp/{token}/{preset_name_slug}-{part_name_slug}.svg"
+        write_to = (
+            f"__fixtures__/images/{preset_name_slug}-{part_name_slug}.png"
         )
+        svg2png(url=url, write_to=write_to)

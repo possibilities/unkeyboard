@@ -7,7 +7,7 @@ from keyboard import make_keyboard_parts
 def main():
     try:
         os.mkdir("./data")
-    except:
+    except Exception:
         pass
 
     [parts, geometry] = make_keyboard_parts()

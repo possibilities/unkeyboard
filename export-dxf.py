@@ -209,7 +209,7 @@ def export_layered_dxf(file_name):
 def main():
     try:
         os.mkdir("./data")
-    except:
+    except Exception:
         pass
 
     file_name = "./data/keyboard.dxf"

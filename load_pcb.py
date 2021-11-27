@@ -1,5 +1,3 @@
-import cadquery as cq
-from pprint import pprint
 from sexpdata import loads
 from mirror_point import mirror_point
 from flow import flow
@@ -31,7 +29,7 @@ def parse_net(net):
 
 
 def ensure_default(obj, key, val):
-    if not key in obj:
+    if key not in obj:
         obj[key] = val
     return obj
 
