@@ -342,7 +342,6 @@ def calculate_switch_plate_outline_points(switch_positions, config):
         start_of_bottom_row=start_of_bottom_row,
         bottom_right_corner=bottom_right_corner,
         top_right_corner=top_right_corner,
-        mirror_at_point=mirror_at_point,
     )
 
     mirrored_switch_plate_outline_points = mirror_points(
@@ -370,11 +369,14 @@ def calculate_switch_plate_outline_points(switch_positions, config):
             *switch_plate_outline_points[0:-1],
             *mirrored_switch_plate_outline_points,
         ],
+        mirror_at_point,
         named_points,
     ]
 
 
-def calculate_case_outside_points(named_points, outside_frame_size, config):
+def calculate_case_outside_points(
+    mirror_at_point, named_points, outside_frame_size, config
+):
     bottom_left_corner = calculate_point_for_angle(
         named_points.start_of_bottom_row,
         -outside_frame_size,
@@ -392,7 +394,7 @@ def calculate_case_outside_points(named_points, outside_frame_size, config):
     )
     return mirror_points(
         [bottom_left_corner, bottom_right_corner, top_right_corner],
-        named_points.mirror_at_point,
+        mirror_at_point,
     )
 
 
@@ -462,11 +464,12 @@ def calculate_case_geometry(config):
 
     [
         switch_plate_outline_points,
+        mirror_at_point,
         named_points,
     ] = calculate_switch_plate_outline_points(switch_positions, config)
 
     switch_plate_points = calculate_switch_plate_points(
-        named_points.mirror_at_point,
+        mirror_at_point,
         switch_positions,
         config,
     )
@@ -503,9 +506,7 @@ def calculate_case_geometry(config):
 
     pcb_outline_points = [
         *pcb_outline_midpoints,
-        *mirror_points(
-            pcb_outline_midpoints, named_points.mirror_at_point, combine=False
-        ),
+        *mirror_points(pcb_outline_midpoints, mirror_at_point, combine=False),
     ]
 
     outside_frame_size = (
@@ -515,7 +516,7 @@ def calculate_case_geometry(config):
     )
 
     case_outside_points = calculate_case_outside_points(
-        named_points, outside_frame_size, config
+        mirror_at_point, named_points, outside_frame_size, config
     )
 
     outside_frame_size = (
@@ -525,7 +526,7 @@ def calculate_case_geometry(config):
     )
 
     spacer_inside_points = calculate_spacer_inside_points(
-        named_points.mirror_at_point,
+        mirror_at_point,
         case_outside_points,
         outside_frame_size,
         config,
@@ -534,7 +535,7 @@ def calculate_case_geometry(config):
     screw_points = calculate_screw_points(
         spacer_inside_points,
         outside_frame_size,
-        named_points.mirror_at_point,
+        mirror_at_point,
         config,
     )
 
@@ -555,19 +556,19 @@ def calculate_case_geometry(config):
 
     spacer_usb_cutout_points = [
         (
-            named_points.mirror_at_point[0] + config.usb_cutout_width / 2,
+            mirror_at_point[0] + config.usb_cutout_width / 2,
             case_outside_points[2][1],
         ),
         (
-            named_points.mirror_at_point[0] + config.usb_cutout_width / 2,
+            mirror_at_point[0] + config.usb_cutout_width / 2,
             2,
         ),
         (
-            named_points.mirror_at_point[0] - config.usb_cutout_width / 2,
+            mirror_at_point[0] - config.usb_cutout_width / 2,
             2,
         ),
         (
-            named_points.mirror_at_point[0] - config.usb_cutout_width / 2,
+            mirror_at_point[0] - config.usb_cutout_width / 2,
             case_outside_points[2][1],
         ),
     ]
@@ -608,7 +609,7 @@ def calculate_case_geometry(config):
         ),
         pcb_outline=SimpleNamespace(points=pcb_outline_points),
         mirror_at=SimpleNamespace(
-            point=named_points.mirror_at_point,
+            point=mirror_at_point,
         ),
     )
 
