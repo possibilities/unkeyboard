@@ -247,10 +247,12 @@ def make_board(board_data):
         .polyline(pcb_lines_to_polyline(edge_cut_lines))
         .close()
         .extrude(board_data["general"]["thickness"])
-        .drill_holes_for_thru_hole_pads(
+    )
+
+    if "footprints" in board_data:
+        board = board.drill_holes_for_thru_hole_pads(
             board_data["footprints"], board_data["general"]["thickness"]
         )
-    )
 
     if "vias" in board_data:
         board = board.drill_holes_for_vias(
