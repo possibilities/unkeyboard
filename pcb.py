@@ -236,7 +236,7 @@ def drill_holes_for_vias(self, vias, thickness):
 
 def make_board(board_data):
     if not "gr_lines" in board_data:
-        return None
+        return cq.Workplane()
 
     edge_cut_lines = [
         line for line in board_data["gr_lines"] if line["layer"] == "Edge.Cuts"
@@ -399,20 +399,7 @@ if "show_object" in globals():
     blank_path = "./blank.kicad_pcb"
     blank_board_data = load_pcb(blank_path)
 
-    gr_lines = [
-        {
-            "layer": "Edge.Cuts",
-            "start_x": line[0][0],
-            "start_y": line[0][1],
-            "end_x": line[1][0],
-            "end_y": line[1][1],
-        }
-        for line in polyline_to_pcb_line(geometry.pcb_outline.points)
-    ]
-
-    [pcb_parts, board_data] = make_pcb_parts(
-        {**blank_board_data, "gr_lines": gr_lines}
-    )
+    [pcb_parts, board_data] = make_pcb_parts(blank_board_data)
 
     for layer_name_part_and_options in pcb_parts:
         [layer_name, part, options] = layer_name_part_and_options
