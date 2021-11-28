@@ -362,21 +362,6 @@ def make_pcb_parts(board_data):
     return [parts, board_data]
 
 
-def polyline_to_pcb_line(polyline_points):
-    pcb_lines = []
-    for index, polyline_point in enumerate(polyline_points):
-        is_last_line = index < len(polyline_points) - 1
-        pcb_lines.append(
-            (
-                polyline_point,
-                polyline_points[index + 1]
-                if is_last_line
-                else polyline_points[0],
-            )
-        )
-    return pcb_lines
-
-
 if "show_object" in globals():
     [case_parts, case_geometry] = make_case_parts()
 
