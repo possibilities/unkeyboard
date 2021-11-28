@@ -7,8 +7,6 @@ from calculate_point_for_angle import calculate_point_for_angle
 from calculate_rectangle_corners import calculate_rectangle_corners
 from calculate_intersection_of_points import calculate_intersection_of_points
 from rotate_2d import rotate_2d
-from zip import zip
-from midpoint import midpoint
 from mirror_points import mirror_points
 
 explode_by = 20
@@ -475,41 +473,6 @@ def calculate_case_geometry(config):
         config,
     )
 
-    total_number_of_keys = (
-        config.number_of_rows * config.number_of_columns
-        + (2 if config.has_two_inside_switches else 1)
-    ) * 2
-
-    index_of_first_key_after_inner_keys = int(total_number_of_keys / 2) + 1
-
-    index_of_first_key_in_last_column = index_of_first_key_after_inner_keys + (
-        ((config.number_of_columns - 1) * config.number_of_rows)
-    )
-
-    pcb_construction_outside_points = [
-        switch_plate_outline_points[2],
-        switch_plate_outline_points[(config.number_of_columns * 2) - 1],
-        switch_plate_outline_points[(config.number_of_columns * 2)],
-    ]
-
-    pcb_construction_inside_points = [
-        switch_plate_points[index_of_first_key_after_inner_keys][0],
-        switch_plate_points[index_of_first_key_in_last_column][1],
-        switch_plate_points[-1][2],
-    ]
-
-    pcb_outline_midpoints = [
-        midpoint(pair[0], pair[1])
-        for pair in zip(
-            pcb_construction_inside_points, pcb_construction_outside_points
-        )
-    ]
-
-    pcb_outline_points = [
-        *pcb_outline_midpoints,
-        *mirror_points(pcb_outline_midpoints, mirror_at_point, combine=False),
-    ]
-
     outside_frame_size = (
         config.outside_frame_size_for_chicago_bolt
         if config.use_chicago_bolt
@@ -611,7 +574,6 @@ def calculate_case_geometry(config):
             points=switch_plate_points,
             thickness=config.base_layer_thickness,
         ),
-        pcb_outline=SimpleNamespace(points=pcb_outline_points),
         mirror_at=SimpleNamespace(
             point=mirror_at_point,
         ),
