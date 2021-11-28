@@ -370,6 +370,8 @@ def make_pcb_parts(board_data):
 def calculate_pcb_geometry(user_config={}):
     config = SimpleNamespace(**{**presets.default, **user_config})
 
+    [case_parts, case_geometry] = make_case_parts(config)
+
     total_number_of_keys = (
         config.number_of_rows * config.number_of_columns
         + (2 if config.has_two_inside_switches else 1)

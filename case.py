@@ -2,7 +2,6 @@ import cadquery as cq
 from types import SimpleNamespace
 from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
-from flatten_list import flatten_list
 from calculate_point_for_angle import calculate_point_for_angle
 from calculate_rectangle_corners import calculate_rectangle_corners
 from calculate_intersection_of_points import calculate_intersection_of_points
