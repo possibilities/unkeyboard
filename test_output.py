@@ -50,7 +50,7 @@ def assert_images_equal(
         )
 
 
-preset_names = presets.__dict__.keys()
+preset_names = [name for name in presets.__dict__.keys() if name != "default"]
 part_names = [
     "Case bottom plate",
     "Case top plate",

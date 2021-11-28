@@ -8,7 +8,7 @@ from case import make_case_parts
 
 token = secrets.token_urlsafe(8)
 
-preset_names = presets.__dict__.keys()
+preset_names = [name for name in presets.__dict__.keys() if name != "default"]
 
 try:
     os.remove("__fixtures__/images")
