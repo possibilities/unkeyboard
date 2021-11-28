@@ -5,15 +5,13 @@ from cairosvg import svg2png
 from cadquery import exporters
 from presets import presets
 from case import make_case_parts
+from shutil import rmtree
 
 token = secrets.token_urlsafe(8)
 
 preset_names = [name for name in presets.__dict__.keys() if name != "default"]
 
-try:
-    os.remove("__fixtures__/images")
-except Exception:
-    pass
+rmtree("__fixtures__/images")
 
 for preset_name in preset_names:
     config = presets.__dict__[preset_name]
