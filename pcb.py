@@ -1,7 +1,6 @@
 import cadquery as cq
 from types import SimpleNamespace
 from fuse_parts import fuse_parts
-from load_pcb import load_pcb
 from cq_workplane_plugin import cq_workplane_plugin
 from calculate_rectangle_corners import calculate_rectangle_corners
 from case import make_case_parts
@@ -10,54 +9,18 @@ from mirror_point import mirror_point
 import kicad_script as pcb
 from zip import zip
 from presets import presets
+from rotate_2d import rotate_2d
 
 pad_thickness = 0.075
-
-
-def calculate_position_of_atreus_62_pcb(geometry, board_data):
-    if "gr_lines" not in board_data:
-        return [0, 0]
-
-    edge_cut_lines = [
-        line for line in board_data["gr_lines"] if line["layer"] == "Edge.Cuts"
-    ]
-
-    midpoint_of_pbc = midpoint(
-        (edge_cut_lines[5]["start_x"], edge_cut_lines[5]["start_y"]),
-        (edge_cut_lines[14]["start_x"], edge_cut_lines[14]["start_y"]),
-    )
-
-    switch_footprints = [
-        footprint
-        for footprint in board_data["footprints"]
-        if "label" in footprint
-        and footprint["label"] == "footprints:CHERRY_PCB_100H"
-    ]
-    upper_right_hand_footprint = switch_footprints[-5]
-    upper_right_hand_footprint_center = (
-        upper_right_hand_footprint["position_x"],
-        upper_right_hand_footprint["position_y"],
-    )
-
-    upper_right_hand_switch_center = midpoint(
-        geometry.switch_plate.points[-1][0],
-        geometry.switch_plate.points[-1][2],
-    )
-
-    y_offset = (
-        upper_right_hand_footprint_center[1]
-        - upper_right_hand_switch_center[1]
-    )
-    x_offset = midpoint_of_pbc[0] - geometry.mirror_at.point[0]
-
-    return [-x_offset, -y_offset]
 
 
 def find_next_pcb_line(line, lines):
     for next_line in lines:
         if (
-            next_line["start_y"] == line["end_y"]
-            and next_line["start_x"] == line["end_x"]
+            pcb.get_values(next_line, "start")[0]
+            == pcb.get_values(line, "end")[0]
+            and pcb.get_values(next_line, "start")[1]
+            == pcb.get_values(line, "end")[1]
         ):
             return next_line
     return None
@@ -73,104 +36,181 @@ def pcb_lines_to_polyline(lines):
         else:
             break
 
-    return [(line["start_x"], line["start_y"]) for line in ordered_lines]
+    return [pcb.get_values(line, "start") for line in ordered_lines]
 
 
 def make_thru_hole_pads(board_data):
-    if "footprints" not in board_data:
-        return cq.Workplane()
-
-    footprints = board_data["footprints"]
-    thickness = board_data["general"]["thickness"]
-
     circular_positions = []
-    for footprint in footprints:
-        for pad in footprint["pads"]:
-            if pad["type"] == "thru_hole" and pad["shape"] == "circle":
-                circular_positions.append(pad)
-
     rectangular_positions = []
-    for footprint in footprints:
-        for pad in footprint["pads"]:
-            if pad["type"] == "thru_hole" and pad["shape"] == "rect":
-                rectangular_positions.append(pad)
+
+    for footprint in pcb.get_collection(board_data, "footprint"):
+        footprint_position_values = list(
+            filter(
+                lambda item: isinstance(item, int) or isinstance(item, float),
+                pcb.get_values(footprint, "at"),
+            )
+        )
+        footprint_position = footprint_position_values[0:2]
+        footprint_rotation = (
+            footprint_position_values[2]
+            if len(footprint_position_values) >= 3
+            else 0
+        )
+        for pad in pcb.get_collection(footprint, "pad"):
+            item_position = pcb.get_values(pad, "at")[0:2]
+            if str(pad[2]) == "thru_hole":
+                if str(pad[3]) == "circle":
+                    circular_positions.append(
+                        {
+                            "position": flip_point_over_y_axis(
+                                rotate_2d(
+                                    footprint_position,
+                                    (
+                                        item_position[0]
+                                        + footprint_position[0],
+                                        item_position[1]
+                                        + footprint_position[1],
+                                    ),
+                                    -footprint_rotation,
+                                )
+                            ),
+                            "inner_radius": pcb.get_value(pad, "drill") / 2,
+                            "outer_radius": pcb.get_values(pad, "size")[0] / 2,
+                        }
+                    )
+                elif str(pad[3]) == "rect":
+                    rectangular_positions.append(
+                        {
+                            "position": flip_point_over_y_axis(
+                                rotate_2d(
+                                    footprint_position,
+                                    (
+                                        item_position[0]
+                                        + footprint_position[0],
+                                        item_position[1]
+                                        + footprint_position[1],
+                                    ),
+                                    -footprint_rotation,
+                                )
+                            ),
+                            "inner_radius": pcb.get_value(pad, "drill") / 2,
+                            "outer_rect_width": pcb.get_values(pad, "size")[0],
+                            "outer_rect_height": pcb.get_values(pad, "size")[
+                                1
+                            ],
+                        }
+                    )
 
     pads = cq.Workplane()
 
-    if not len(circular_positions) and not len(rectangular_positions):
-        return pads
-
-    for position in circular_positions:
-        pads = (
-            pads.moveTo(position["position_x"], position["position_y"])
-            .circle(position["drill"] / 2)
-            .circle(position["size"][0] / 2)
-        )
-
-    for position in rectangular_positions:
-        pads = (
-            pads.moveTo(position["position_x"], position["position_y"])
-            .circle(position["drill"] / 2)
-            .rect(position["size"][0], position["size"][1])
-        )
-
-    return pads.extrude((pad_thickness * 2) + thickness).translate(
-        [0, 0, -pad_thickness]
+    thickness = pcb.get_value(
+        pcb.get_values(board_data, "general"), "thickness"
     )
+
+    if len(circular_positions) or len(rectangular_positions):
+        for pad in circular_positions:
+            pads = (
+                pads.moveTo(*pad["position"])
+                .circle(pad["inner_radius"])
+                .circle(pad["outer_radius"])
+            )
+
+        for pad in rectangular_positions:
+            pads = (
+                pads.moveTo(*pad["position"])
+                .circle(pad["inner_radius"])
+                .rect(pad["outer_rect_height"], pad["outer_rect_height"])
+            )
+
+        return pads.extrude((pad_thickness * 2) + thickness).translate(
+            [0, 0, -pad_thickness]
+        )
+
+    return pads
 
 
 def make_via_pads(board_data):
     pads = cq.Workplane()
 
-    if "vias" not in board_data:
-        return pads
+    vias = pcb.get_collection(board_data, "via")
 
-    vias = board_data["vias"]
-    thickness = board_data["general"]["thickness"]
+    thickness = pcb.get_value(
+        pcb.get_values(board_data, "general"), "thickness"
+    )
 
-    if not len(vias):
-        return pads
+    if len(vias):
+        for via in vias:
+            via_position = pcb.get_values(via, "at")[0:2]
+            pads = (
+                pads.moveTo(*flip_point_over_y_axis(via_position))
+                .circle(pcb.get_value(via, "drill") / 2)
+                .circle(pcb.get_values(via, "size")[0] / 2)
+            )
 
-    for via in vias:
-        pads = (
-            pads.moveTo(via["position_x"], via["position_y"])
-            .circle(via["drill"] / 2)
-            .circle(via["size"][0] / 2)
+        pads = pads.extrude(pad_thickness + thickness).translate(
+            [0, 0, -pad_thickness / 2]
         )
 
-    return pads.extrude(pad_thickness + thickness).translate(
-        [0, 0, -pad_thickness / 2]
-    )
+    return pads
 
 
 def make_surface_mount_pads(board_data):
-    if "footprints" not in board_data:
-        return cq.Workplane()
-
-    footprints = board_data["footprints"]
     positions = []
-    for footprint in footprints:
-        for pad in footprint["pads"]:
-            if pad["type"] == "smd" and pad["shape"] == "rect":
-                corners = calculate_rectangle_corners(
-                    (pad["position_x"], pad["position_y"]),
-                    pad["size"][0],
-                    pad["size"][1],
-                    angle=pad["rotation"],
-                )
-                positions.append(
-                    corners,
-                )
+
+    for footprint in pcb.get_collection(board_data, "footprint"):
+        footprint_position_values = list(
+            filter(
+                lambda item: isinstance(item, int) or isinstance(item, float),
+                pcb.get_values(footprint, "at"),
+            )
+        )
+        footprint_position = footprint_position_values[0:2]
+        footprint_rotation = (
+            footprint_position_values[2]
+            if len(footprint_position_values) >= 3
+            else 0
+        )
+        for pad in pcb.get_collection(footprint, "pad"):
+            item_position = pcb.get_values(pad, "at")[0:2]
+            item_rotation = (
+                pcb.get_values(pad, "at")[2]
+                if len(pcb.get_values(pad, "at")) >= 3
+                else 0
+            )
+            if str(pad[2]) == "smd":
+                if str(pad[3]) == "rect":
+
+                    positions.append(
+                        calculate_rectangle_corners(
+                            flip_point_over_y_axis(
+                                rotate_2d(
+                                    footprint_position,
+                                    (
+                                        item_position[0]
+                                        + footprint_position[0],
+                                        item_position[1]
+                                        + footprint_position[1],
+                                    ),
+                                    -footprint_rotation,
+                                )
+                            ),
+                            pcb.get_values(pad, "size")[0],
+                            pcb.get_values(pad, "size")[1],
+                            angle=item_rotation,
+                        )
+                    )
 
     pads = cq.Workplane()
 
-    if not len(positions):
-        return pads
+    if len(positions):
+        for position in positions:
+            pads = pads.polyline(position).close()
 
-    for position in positions:
-        pads = pads.polyline(position).close()
+        pads = pads.extrude(pad_thickness * 2).translate(
+            [0, 0, -pad_thickness]
+        )
 
-    return pads.extrude(pad_thickness * 2).translate([0, 0, -pad_thickness])
+    return pads
 
 
 @cq_workplane_plugin
@@ -179,25 +219,67 @@ def drill_holes_for_thru_hole_pads(self, footprints, thickness):
     rectangular_holes_by_size = {}
 
     for footprint in footprints:
-        for pad in footprint["pads"]:
-            if pad["type"] in ["thru_hole", "np_thru_hole"]:
-                if pad["shape"] == "circle":
-                    if pad["size"][0] not in circular_holes_by_size:
-                        circular_holes_by_size[pad["size"][0]] = []
-                    circular_holes_by_size[pad["size"][0]].append(
-                        (pad["position_x"], pad["position_y"])
+        footprint_position_values = list(
+            filter(
+                lambda item: isinstance(item, int) or isinstance(item, float),
+                pcb.get_values(footprint, "at"),
+            )
+        )
+        footprint_position = footprint_position_values[0:2]
+        footprint_rotation = (
+            footprint_position_values[2]
+            if len(footprint_position_values) >= 3
+            else 0
+        )
+        for pad in pcb.get_collection(footprint, "pad"):
+            if str(pad[2]) in ["thru_hole", "np_thru_hole"]:
+                if str(pad[3]) == "circle":
+                    if (
+                        pcb.get_values(pad, "size")[0]
+                        not in circular_holes_by_size
+                    ):
+                        circular_holes_by_size[
+                            pcb.get_values(pad, "size")[0]
+                        ] = []
+                    item_position = pcb.get_values(pad, "at")[0:2]
+                    circular_holes_by_size[
+                        pcb.get_values(pad, "size")[0]
+                    ].append(
+                        rotate_2d(
+                            footprint_position,
+                            (
+                                item_position[0] + footprint_position[0],
+                                item_position[1] + footprint_position[1],
+                            ),
+                            -footprint_rotation,
+                        ),
                     )
-                elif pad["shape"] == "rect":
-                    if pad["size"][0] not in rectangular_holes_by_size:
-                        rectangular_holes_by_size[pad["size"][0]] = []
-                    rectangular_holes_by_size[pad["size"][0]].append(
-                        (pad["position_x"], pad["position_y"])
+                elif str(pad[3]) == "rect":
+                    if (
+                        pcb.get_values(pad, "size")[0]
+                        not in rectangular_holes_by_size
+                    ):
+                        rectangular_holes_by_size[
+                            pcb.get_values(pad, "size")[0]
+                        ] = []
+                    item_position = pcb.get_values(pad, "at")[0:2]
+                    rectangular_holes_by_size[
+                        pcb.get_values(pad, "size")[0]
+                    ].append(
+                        rotate_2d(
+                            footprint_position,
+                            (
+                                item_position[0] + footprint_position[0],
+                                item_position[1] + footprint_position[1],
+                            ),
+                            -footprint_rotation,
+                        ),
                     )
 
     for size, positions in circular_holes_by_size.items():
         self = (
             self.faces("front")
-            .pushPoints(positions)
+            .pushPoints(flip_points_over_y_axis(positions))
             .circle(size / 2)
             .cutBlind(thickness)
         )
@@ -205,7 +287,7 @@ def drill_holes_for_thru_hole_pads(self, footprints, thickness):
     for size, positions in rectangular_holes_by_size.items():
         self = (
             self.faces("front")
-            .pushPoints(positions)
+            .pushPoints(flip_points_over_y_axis(positions))
             .rect(size, size)
             .cutBlind(thickness)
         )
@@ -214,20 +296,21 @@ def drill_holes_for_thru_hole_pads(self, footprints, thickness):
 
 
 @cq_workplane_plugin
+@cq_workplane_plugin
 def drill_holes_for_vias(self, vias, thickness):
     holes_by_size = {}
 
     for via in vias:
-        if via["drill"] not in holes_by_size:
-            holes_by_size[via["drill"]] = []
-        holes_by_size[via["drill"]].append(
-            (via["position_x"], via["position_y"])
+        if pcb.get_value(via, "drill") not in holes_by_size:
+            holes_by_size[pcb.get_value(via, "drill")] = []
+        holes_by_size[pcb.get_value(via, "drill")].append(
+            pcb.get_values(via, "at")[0:2]
         )
 
     for size, positions in holes_by_size.items():
         self = (
             self.faces("front")
-            .pushPoints(positions)
+            .pushPoints(flip_points_over_y_axis(positions))
             .circle(size / 2)
             .cutBlind(thickness)
         )
@@ -236,95 +319,140 @@ def drill_holes_for_vias(self, vias, thickness):
 
 
 def make_board(board_data):
-    if "gr_lines" not in board_data:
-        return cq.Workplane()
-
-    edge_cut_lines = [
-        line for line in board_data["gr_lines"] if line["layer"] == "Edge.Cuts"
-    ]
-
-    board = (
-        cq.Workplane()
-        .polyline(pcb_lines_to_polyline(edge_cut_lines))
-        .close()
-        .extrude(board_data["general"]["thickness"])
+    edge_cut_lines = list(
+        filter(
+            lambda line: pcb.get_value(line, "layer") == "Edge.Cuts",
+            pcb.get_collection(board_data, "gr_line"),
+        )
     )
 
-    if "footprints" in board_data:
-        board = board.drill_holes_for_thru_hole_pads(
-            board_data["footprints"], board_data["general"]["thickness"]
-        )
+    if not len(edge_cut_lines):
+        return cq.Workplane()
 
-    if "vias" in board_data:
-        board = board.drill_holes_for_vias(
-            board_data["vias"], board_data["general"]["thickness"]
-        )
+    thickness = pcb.get_value(
+        pcb.get_values(board_data, "general"), "thickness"
+    )
+
+    edge_cut_lines = flip_points_over_y_axis(
+        pcb_lines_to_polyline(edge_cut_lines)
+    )
+
+    board = cq.Workplane().polyline(edge_cut_lines).close().extrude(thickness)
+
+    board = board.drill_holes_for_thru_hole_pads(
+        pcb.get_collection(board_data, "footprint"), thickness
+    )
+
+    board = board.drill_holes_for_vias(
+        pcb.get_collection(board_data, "via"), thickness
+    )
 
     return board
 
 
-def make_footprint_lines(board_data, layer):
-    if "footprints" not in board_data:
-        return cq.Workplane()
+def make_lines(footprint, layer, line_type):
+    footprint_position_values = (
+        list(
+            filter(
+                lambda item: isinstance(item, int) or isinstance(item, float),
+                pcb.get_values(footprint, "at"),
+            )
+        )
+        if pcb.get_values(footprint, "at")
+        else [0, 0]
+    )
+    footprint_position = footprint_position_values[0:2]
+    footprint_lines_for_layer = list(
+        filter(
+            lambda line: pcb.get_value(line, "layer") == layer,
+            pcb.get_collection(footprint, line_type),
+        )
+    )
+    footprint_rotation = (
+        footprint_position_values[2]
+        if len(footprint_position_values) >= 3
+        else 0
+    )
+    footprint_lines = [
+        {
+            "start": flip_point_over_y_axis(
+                rotate_2d(
+                    footprint_position,
+                    (
+                        pcb.get_values(line, "start")[0]
+                        + footprint_position[0],
+                        pcb.get_values(line, "start")[1]
+                        + footprint_position[1],
+                    ),
+                    -footprint_rotation,
+                )
+            ),
+            "end": flip_point_over_y_axis(
+                rotate_2d(
+                    footprint_position,
+                    (
+                        pcb.get_values(line, "end")[0] + footprint_position[0],
+                        pcb.get_values(line, "end")[1] + footprint_position[1],
+                    ),
+                    -footprint_rotation,
+                )
+            ),
+        }
+        for line in footprint_lines_for_layer
+    ]
+    return footprint_lines
 
-    footprints = board_data["footprints"]
+
+def make_footprints_lines(board_data, layer):
+    thickness = pcb.get_value(
+        pcb.get_values(board_data, "general"), "thickness"
+    )
 
     footprint_lines = []
 
-    for footprint in footprints:
-        layer_lines = [
-            line for line in footprint["fp_lines"] if line["layer"] == layer
+    for footprint in pcb.get_collection(board_data, "footprint"):
+        footprint_lines = [
+            *footprint_lines,
+            *make_lines(footprint, layer, "fp_line"),
         ]
-        footprint_lines = [*footprint_lines, *layer_lines]
-
-    if not len(footprint_lines):
-        return cq.Workplane()
 
     lines = []
     for footprint_line in footprint_lines:
         line = cq.Workplane()
-        line = line.moveTo(
-            footprint_line["start_x"], footprint_line["start_y"]
-        ).lineTo(footprint_line["end_x"], footprint_line["end_y"])
+        line = line.moveTo(*footprint_line["start"]).lineTo(
+            *footprint_line["end"]
+        )
         lines.append(line)
 
     return fuse_parts(lines).translate(
         [
             0,
             0,
-            board_data["general"]["thickness"]
-            if layer.startswith("F.")
-            else 0,
+            thickness if layer.startswith("F.") else 0,
         ]
     )
 
 
 def make_segments(board_data, layer):
-    if "segments" not in board_data:
-        return cq.Workplane()
+    thickness = pcb.get_value(
+        pcb.get_values(board_data, "general"), "thickness"
+    )
 
-    board_segments = board_data["segments"]
-
-    layer_segments = [
-        segment for segment in board_segments if segment["layer"] == layer
-    ]
+    footprint_lines = make_lines(board_data, layer, "segment")
 
     lines = []
-
-    for layer_segment in layer_segments:
-        segment = cq.Workplane()
-        segment = segment.moveTo(
-            layer_segment["start_x"], layer_segment["start_y"]
-        ).lineTo(layer_segment["end_x"], layer_segment["end_y"])
-        lines.append(segment)
+    for footprint_line in footprint_lines:
+        line = cq.Workplane()
+        line = line.moveTo(*footprint_line["start"]).lineTo(
+            *footprint_line["end"]
+        )
+        lines.append(line)
 
     return fuse_parts(lines).translate(
         [
             0,
             0,
-            board_data["general"]["thickness"]
-            if layer.startswith("F.")
-            else 0,
+            thickness if layer.startswith("F.") else 0,
         ]
     )
 
@@ -340,8 +468,8 @@ def make_pcb_parts(board_data):
     via_pads = make_via_pads(board_data)
     surface_mount_pads = make_surface_mount_pads(board_data)
 
-    front_silkscreens = make_footprint_lines(board_data, "F.SilkS")
-    back_silkscreens = make_footprint_lines(board_data, "B.SilkS")
+    front_silkscreens = make_footprints_lines(board_data, "F.SilkS")
+    back_silkscreens = make_footprints_lines(board_data, "B.SilkS")
     front_segments = make_segments(board_data, "F.Cu")
     back_segments = make_segments(board_data, "B.Cu")
 
@@ -349,11 +477,7 @@ def make_pcb_parts(board_data):
     parts.append(("PCB thru hold pads", thru_hole_pads, {"color": pad_yellow}))
     parts.append(("PCB via pads", via_pads, {"color": pad_yellow}))
     parts.append(
-        (
-            "PCB surface mount pads",
-            surface_mount_pads,
-            {"color": pad_yellow},
-        )
+        ("PCB surface mount pads", surface_mount_pads, {"color": pad_yellow})
     )
     parts.append(
         ("PCB front silkscreens", front_silkscreens, {"color": "white"})
@@ -364,7 +488,7 @@ def make_pcb_parts(board_data):
     parts.append(("PCB front segments", front_segments, {"color": "red"}))
     parts.append(("PCB back segments", back_segments, {"color": "blue"}))
 
-    return [parts, board_data]
+    return parts
 
 
 def flip_point_over_y_axis(point):
@@ -462,25 +586,12 @@ def make_pcb(user_config={}):
 
 
 if "show_object" in globals():
-    [case_parts, case_geometry] = make_case_parts()
+    atreus_62_board_data = pcb.load_board(".", "atreus_62")
+    atreus_62_parts = make_pcb_parts(atreus_62_board_data)
 
-    atreus_62_path = "./atreus_62.kicad_pcb"
-    atreus_62_board_data = load_pcb(atreus_62_path)
-    [atreus_62_pcb_parts, atreus_62_board_data] = make_pcb_parts(
-        atreus_62_board_data
-    )
-
-    position_of_atreus_62_pcb = calculate_position_of_atreus_62_pcb(
-        case_geometry, atreus_62_board_data
-    )
-
-    for layer_name_part_and_options in atreus_62_pcb_parts:
+    for layer_name_part_and_options in atreus_62_parts:
         [layer_name, part, options] = layer_name_part_and_options
-        show_object(
-            part.translate([*position_of_atreus_62_pcb, 70]),
-            name="Atreus 62 " + layer_name,
-            options=options,
-        )
+        show_object(part, name="Atreus 62 " + layer_name, options=options)
 
     board = make_pcb()
     pcb.save_board(board, "data", "keyboard")
