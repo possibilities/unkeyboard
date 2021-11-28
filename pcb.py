@@ -1,10 +1,15 @@
 import cadquery as cq
+from types import SimpleNamespace
 from fuse_parts import fuse_parts
 from load_pcb import load_pcb
 from cq_workplane_plugin import cq_workplane_plugin
 from calculate_rectangle_corners import calculate_rectangle_corners
 from case import make_case_parts
 from midpoint import midpoint
+import kicad_script as pcb
+from zip import zip
+from mirror_points import mirror_points
+from presets import presets
 
 pad_thickness = 0.075
 
@@ -362,6 +367,57 @@ def make_pcb_parts(board_data):
     return [parts, board_data]
 
 
+def calculate_pcb_geometry(user_config={}):
+    config = SimpleNamespace(**{**presets.default, **user_config})
+
+    total_number_of_keys = (
+        config.number_of_rows * config.number_of_columns
+        + (2 if config.has_two_inside_switches else 1)
+    ) * 2
+
+    index_of_first_key_after_inner_keys = int(total_number_of_keys / 2) + 1
+
+    index_of_first_key_in_last_column = index_of_first_key_after_inner_keys + (
+        ((config.number_of_columns - 1) * config.number_of_rows)
+    )
+
+    pcb_construction_outside_points = [
+        case_geometry.switch_plate_outline.points[2],
+        case_geometry.switch_plate_outline.points[
+            (config.number_of_columns * 2) - 1
+        ],
+        case_geometry.switch_plate_outline.points[
+            (config.number_of_columns * 2)
+        ],
+    ]
+
+    pcb_construction_inside_points = [
+        case_geometry.switch_plate.points[index_of_first_key_after_inner_keys][
+            0
+        ],
+        case_geometry.switch_plate.points[index_of_first_key_in_last_column][
+            1
+        ],
+        case_geometry.switch_plate.points[-1][2],
+    ]
+
+    pcb_outline_midpoints = [
+        midpoint(pair[0], pair[1])
+        for pair in zip(
+            pcb_construction_inside_points, pcb_construction_outside_points
+        )
+    ]
+
+    pcb_outline_points = [
+        *pcb_outline_midpoints,
+        *mirror_points(
+            pcb_outline_midpoints, case_geometry.mirror_at.point, combine=False
+        ),
+    ]
+
+    return SimpleNamespace(outline_points=pcb_outline_points)
+
+
 if "show_object" in globals():
     [case_parts, case_geometry] = make_case_parts()
 
@@ -382,3 +438,10 @@ if "show_object" in globals():
             name="Atreus 62 " + layer_name,
             options=options,
         )
+
+    pcb_geometry = calculate_pcb_geometry()
+
+    board = pcb.create_board()
+    board = pcb.set_edge_cut_points(board, pcb_geometry.outline_points)
+
+    pcb.save_board(board, "data", "keyboard")

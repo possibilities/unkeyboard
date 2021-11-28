@@ -8,33 +8,10 @@ from calculate_rectangle_corners import calculate_rectangle_corners
 from calculate_intersection_of_points import calculate_intersection_of_points
 from rotate_2d import rotate_2d
 from mirror_points import mirror_points
+from presets import presets
 
 explode_by = 20
 flatten_items = False
-
-default_config = SimpleNamespace(
-    # Configurable
-    has_thicc_spacer=False,
-    use_chicago_bolt=True,
-    has_two_inside_switches=False,
-    angle=10,
-    number_of_rows=5,
-    number_of_columns=6,
-    stagger_percent_for_single_inside_switch=8.5,
-    stagger_percent_for_double_inside_switches=3.98,
-    column_stagger_percents=(-1, 4, 10, 5, 2, 2),
-    # Structural
-    base_layer_thickness=3,
-    inside_frame_size=2.1,
-    outside_frame_size_for_chicago_bolt=20,
-    outside_frame_size_for_regular_screw=16,
-    screw_hole_radius_for_chicago_bolt=2.5,
-    screw_hole_radius_for_regular_screw=1.5,
-    switch_plate_cutout_size=13.97,
-    distance_between_switch_centers=19,
-    usb_cutout_width=4,
-    top_inside_screw_distance_from_usb=5.50,
-)
 
 
 @cq_workplane_plugin
@@ -574,6 +551,9 @@ def calculate_case_geometry(config):
             points=switch_plate_points,
             thickness=config.base_layer_thickness,
         ),
+        switch_plate_outline=SimpleNamespace(
+            points=switch_plate_outline_points,
+        ),
         mirror_at=SimpleNamespace(
             point=mirror_at_point,
         ),
@@ -665,7 +645,7 @@ def make_spacer(geometry):
 
 
 def make_case_parts(user_config={}):
-    config = SimpleNamespace(**{**default_config.__dict__, **user_config})
+    config = SimpleNamespace(**{**presets.default, **user_config})
 
     parts = []
 
