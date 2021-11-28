@@ -456,11 +456,12 @@ if "show_object" in globals():
     board = pcb.create_board()
     board = pcb.set_edge_cut_points(board, pcb_geometry.outline_points)
 
-    for position in case_geometry.rotated_switch_positions:
-        rotation = -15 if position[0] > 0 else 15
+    for index, position in enumerate(case_geometry.rotated_switch_positions):
+        rotation = -10 if position[0] > 0 else 10
         board = pcb.add_footprint(
             board,
             {
+                "reference": f"SW{index + 1}",
                 "position": position,
                 "rotation": rotation,
                 "library_name": "footprints",
