@@ -330,18 +330,10 @@ def calculate_switch_plate_outline_points(switch_positions, config):
         top_left_corner,
     ]
 
-    start_of_bottom_row = bottom_row_points[1]
-
     mirror_at_point = (
         switch_plate_outline_points[-1][0]
         + (widen_cutout_around_switch_size / 2),
         switch_plate_outline_points[-1][1],
-    )
-
-    named_points = SimpleNamespace(
-        start_of_bottom_row=start_of_bottom_row,
-        bottom_right_corner=bottom_right_corner,
-        top_right_corner=top_right_corner,
     )
 
     mirrored_switch_plate_outline_points = mirror_points(
@@ -364,31 +356,41 @@ def calculate_switch_plate_outline_points(switch_positions, config):
         combine=False,
     )
 
-    return [
-        [
-            *switch_plate_outline_points[0:-1],
-            *mirrored_switch_plate_outline_points,
-        ],
-        mirror_at_point,
-        named_points,
+    switch_plate_outline_points = [
+        *switch_plate_outline_points[0:-1],
+        *mirrored_switch_plate_outline_points,
     ]
+
+    return [switch_plate_outline_points, mirror_at_point]
 
 
 def calculate_case_outside_points(
-    mirror_at_point, named_points, outside_frame_size, config
+    switch_plate_outline_points,
+    outside_frame_size,
+    mirror_at_point,
+    config,
 ):
+    outside_points_start_of_bottom_row = switch_plate_outline_points[2]
+    outside_points_bottom_right_corner = switch_plate_outline_points[
+        (config.number_of_columns * 2)
+        + (-1 if config.number_of_columns % 2 == 0 else 1)
+    ]
+    outside_points_top_right_corner = switch_plate_outline_points[
+        config.number_of_columns * 2
+        + (0 if config.number_of_columns % 2 == 0 else 2)
+    ]
     bottom_left_corner = calculate_point_for_angle(
-        named_points.start_of_bottom_row,
+        outside_points_start_of_bottom_row,
         -outside_frame_size,
         45 - config.angle,
     )
     bottom_right_corner = calculate_point_for_angle(
-        named_points.bottom_right_corner,
+        outside_points_bottom_right_corner,
         -outside_frame_size,
         -45 - config.angle,
     )
     top_right_corner = calculate_point_for_angle(
-        named_points.top_right_corner,
+        outside_points_top_right_corner,
         outside_frame_size,
         45 - config.angle,
     )
@@ -465,7 +467,6 @@ def calculate_case_geometry(config):
     [
         switch_plate_outline_points,
         mirror_at_point,
-        named_points,
     ] = calculate_switch_plate_outline_points(switch_positions, config)
 
     switch_plate_points = calculate_switch_plate_points(
@@ -516,7 +517,10 @@ def calculate_case_geometry(config):
     )
 
     case_outside_points = calculate_case_outside_points(
-        mirror_at_point, named_points, outside_frame_size, config
+        switch_plate_outline_points,
+        outside_frame_size,
+        mirror_at_point,
+        config,
     )
 
     outside_frame_size = (
