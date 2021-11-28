@@ -82,31 +82,43 @@ def calculate_switch_positions(config):
     return switch_positions
 
 
-def calculate_switch_plate_points(mirror_at_point, switch_positions, config):
-    switch_plate_points = []
-
+def calculate_rotated_switch_positions(switch_positions, config):
     number_of_inside_columns = 1
     total_number_of_columns = (
         config.number_of_columns + number_of_inside_columns
     )
 
+    rotated_switch_positions = []
     for column in range(total_number_of_columns):
         for row in range(config.number_of_rows):
             if not has_reached_end_of_inside_switches_row(column, row, config):
                 switch_position = switch_positions[column][row]
-
-                switch_cutout_corner_points = calculate_rectangle_corners(
-                    switch_position,
-                    config.switch_plate_cutout_size,
-                    config.switch_plate_cutout_size,
+                rotated_switch_position = rotate_2d(
+                    (0, 0), switch_position, config.angle
                 )
+                rotated_switch_positions.append(rotated_switch_position)
 
-                rotated_switch_cutout_corner_points = [
-                    rotate_2d((0, 0), cutout, config.angle)
-                    for cutout in switch_cutout_corner_points
-                ]
+    return rotated_switch_positions
 
-                switch_plate_points.append(rotated_switch_cutout_corner_points)
+
+def calculate_switch_plate_points(
+    mirror_at_point, rotated_switch_positions, config
+):
+    switch_plate_points = []
+
+    for rotated_switch_position in rotated_switch_positions:
+        switch_cutout_corner_points = calculate_rectangle_corners(
+            rotated_switch_position,
+            config.switch_plate_cutout_size,
+            config.switch_plate_cutout_size,
+        )
+
+        rotated_switch_cutout_corner_points = [
+            rotate_2d(rotated_switch_position, point, config.angle)
+            for point in switch_cutout_corner_points
+        ]
+
+        switch_plate_points.append(rotated_switch_cutout_corner_points)
 
     mirrored_switch_plate_points = [
         mirror_points(corner, mirror_at_point, combine=False)
@@ -434,14 +446,26 @@ def calculate_screw_points(
 def calculate_case_geometry(config):
     switch_positions = calculate_switch_positions(config)
 
+    for column in switch_positions:
+        for position in column:
+            if "show_object" in globals():
+                show_object(
+                    cq.Workplane().moveTo(*position).circle(1).extrude(1)
+                )
+
     [
         switch_plate_outline_points,
         mirror_at_point,
     ] = calculate_switch_plate_outline_points(switch_positions, config)
 
+    rotated_switch_positions = calculate_rotated_switch_positions(
+        switch_positions,
+        config,
+    )
+
     switch_plate_points = calculate_switch_plate_points(
         mirror_at_point,
-        switch_positions,
+        rotated_switch_positions,
         config,
     )
 
