@@ -6,6 +6,7 @@ from cq_workplane_plugin import cq_workplane_plugin
 from calculate_rectangle_corners import calculate_rectangle_corners
 from case import make_case_parts
 from midpoint import midpoint
+from mirror_point import mirror_point
 import kicad_script as pcb
 from zip import zip
 from presets import presets
@@ -49,7 +50,7 @@ def calculate_position_of_atreus_62_pcb(geometry, board_data):
     )
     x_offset = midpoint_of_pbc[0] - geometry.mirror_at.point[0]
 
-    return [-x_offset, -y_offset, 70]
+    return [-x_offset, -y_offset]
 
 
 def find_next_pcb_line(line, lines):
@@ -366,6 +367,16 @@ def make_pcb_parts(board_data):
     return [parts, board_data]
 
 
+def flip_point_over_y_axis(point):
+    [flipped_x, flipped_y] = mirror_point((0, point[1]), (0, 0), axis="X")
+    return (point[0], flipped_y)
+
+
+def flip_points_over_y_axis(points):
+    return [flip_point_over_y_axis(point) for point in points]
+    return points
+
+
 def make_pcb(user_config={}):
     config = SimpleNamespace(**{**presets.default, **user_config})
 
@@ -427,11 +438,15 @@ def make_pcb(user_config={}):
         )
     ]
 
+    pcb_outline_points = flip_points_over_y_axis(pcb_outline_points)
+
     board = pcb.create_board()
     board = pcb.set_edge_cut_points(board, pcb_outline_points)
 
-    for index, position in enumerate(case_geometry.rotated_switch_positions):
-        rotation = -config.angle if position[0] > 0 else config.angle
+    for index, position in enumerate(
+        flip_points_over_y_axis(case_geometry.rotated_switch_positions)
+    ):
+        rotation = config.angle if position[0] > 0 else -config.angle
         board = pcb.add_footprint(
             board,
             {
@@ -462,7 +477,7 @@ if "show_object" in globals():
     for layer_name_part_and_options in atreus_62_pcb_parts:
         [layer_name, part, options] = layer_name_part_and_options
         show_object(
-            part.translate(position_of_atreus_62_pcb),
+            part.translate([*position_of_atreus_62_pcb, 70]),
             name="Atreus 62 " + layer_name,
             options=options,
         )

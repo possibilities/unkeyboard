@@ -20,7 +20,7 @@ if "show_object" in globals():
     for layer_name_part_and_options in atreus_62_pcb_parts:
         [layer_name, part, options] = layer_name_part_and_options
         show_object(
-            part.translate(position_of_atreus_62_pcb),
+            part.translate([*position_of_atreus_62_pcb, 70]),
             name="Atreus 62 " + layer_name,
             options=options,
         )
