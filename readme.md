@@ -12,4 +12,4 @@ PCB rendering will take a very long time and lock up CQ-Editor unless you lower 
 ## Credits
 
 * Initial case and PCB dimensions are reverse engineered from the [Atreus64 project](https://github.com/profet23/atreus62).
-* Switch footprint from [KBD parts](https://github.com/foostan/kbd)
+* Switch footprint from Dale Price's [Keyswitches library](https://github.com/daprice/keyswitches.pretty)

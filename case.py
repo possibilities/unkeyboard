@@ -81,7 +81,9 @@ def calculate_switch_positions(config):
     return switch_positions
 
 
-def calculate_rotated_switch_positions(switch_positions, config):
+def calculate_rotated_switch_positions(
+    mirror_at_point, switch_positions, config
+):
     number_of_inside_columns = 1
     total_number_of_columns = (
         config.number_of_columns + number_of_inside_columns
@@ -97,7 +99,7 @@ def calculate_rotated_switch_positions(switch_positions, config):
                 )
                 rotated_switch_positions.append(rotated_switch_position)
 
-    return rotated_switch_positions
+    return mirror_points(rotated_switch_positions, mirror_at_point)
 
 
 def calculate_switch_plate_points(
@@ -113,18 +115,15 @@ def calculate_switch_plate_points(
         )
 
         rotated_switch_cutout_corner_points = [
-            rotate_2d(rotated_switch_position, point, config.angle)
+            rotate_2d(rotated_switch_position, point, -config.angle)
+            if point[0] < mirror_at_point[0]
+            else rotate_2d(rotated_switch_position, point, config.angle)
             for point in switch_cutout_corner_points
         ]
 
         switch_plate_points.append(rotated_switch_cutout_corner_points)
 
-    mirrored_switch_plate_points = [
-        mirror_points(corner, mirror_at_point, combine=False)
-        for corner in switch_plate_points
-    ]
-
-    return [*mirrored_switch_plate_points, *switch_plate_points]
+    return switch_plate_points
 
 
 def calculate_switch_plate_outline_points(switch_positions, config):
@@ -445,19 +444,13 @@ def calculate_screw_points(
 def calculate_case_geometry(config):
     switch_positions = calculate_switch_positions(config)
 
-    for column in switch_positions:
-        for position in column:
-            if "show_object" in globals():
-                show_object(
-                    cq.Workplane().moveTo(*position).circle(1).extrude(1)
-                )
-
     [
         switch_plate_outline_points,
         mirror_at_point,
     ] = calculate_switch_plate_outline_points(switch_positions, config)
 
     rotated_switch_positions = calculate_rotated_switch_positions(
+        mirror_at_point,
         switch_positions,
         config,
     )
@@ -536,6 +529,7 @@ def calculate_case_geometry(config):
     ]
 
     return SimpleNamespace(
+        rotated_switch_positions=rotated_switch_positions,
         screws=SimpleNamespace(
             points=screw_points,
             radius=screw_radius,

@@ -8,7 +8,6 @@ from case import make_case_parts
 from midpoint import midpoint
 import kicad_script as pcb
 from zip import zip
-from mirror_points import mirror_points
 from presets import presets
 
 pad_thickness = 0.075
@@ -370,17 +369,10 @@ def make_pcb_parts(board_data):
 def calculate_pcb_geometry(user_config={}):
     config = SimpleNamespace(**{**presets.default, **user_config})
 
-    [case_parts, case_geometry] = make_case_parts(config)
+    [case_parts, case_geometry] = make_case_parts(config.__dict__)
 
-    total_number_of_keys = (
-        config.number_of_rows * config.number_of_columns
-        + (2 if config.has_two_inside_switches else 1)
-    ) * 2
-
-    index_of_first_key_after_inner_keys = int(total_number_of_keys / 2) + 1
-
-    index_of_first_key_in_last_column = index_of_first_key_after_inner_keys + (
-        ((config.number_of_columns - 1) * config.number_of_rows)
+    index_of_first_key_after_inner_keys = (
+        2 if config.has_two_inside_switches else 1
     )
 
     pcb_construction_outside_points = [
@@ -391,30 +383,48 @@ def calculate_pcb_geometry(user_config={}):
         case_geometry.switch_plate_outline.points[
             (config.number_of_columns * 2)
         ],
+        case_geometry.switch_plate_outline.points[
+            -(config.number_of_columns * 2) - 2
+        ],
+        case_geometry.switch_plate_outline.points[
+            -(config.number_of_columns * 2) - 1
+        ],
+        case_geometry.switch_plate_outline.points[-4],
     ]
 
     pcb_construction_inside_points = [
         case_geometry.switch_plate.points[index_of_first_key_after_inner_keys][
             0
         ],
-        case_geometry.switch_plate.points[index_of_first_key_in_last_column][
-            1
-        ],
-        case_geometry.switch_plate.points[-1][2],
+        case_geometry.switch_plate.points[
+            index_of_first_key_after_inner_keys
+            + (config.number_of_columns * (config.number_of_rows - 1))
+            + 1
+        ][1],
+        case_geometry.switch_plate.points[
+            index_of_first_key_after_inner_keys
+            + (config.number_of_columns * config.number_of_rows)
+            - 1
+        ][2],
+        case_geometry.switch_plate.points[
+            index_of_first_key_after_inner_keys
+            + (config.number_of_columns * config.number_of_rows)
+        ][3],
+        case_geometry.switch_plate.points[
+            index_of_first_key_after_inner_keys
+            + ((config.number_of_columns + 1) * config.number_of_rows)
+            - 1
+        ][0],
+        case_geometry.switch_plate.points[
+            -index_of_first_key_after_inner_keys - 1
+        ][1],
     ]
 
-    pcb_outline_midpoints = [
+    pcb_outline_points = [
         midpoint(pair[0], pair[1])
         for pair in zip(
             pcb_construction_inside_points, pcb_construction_outside_points
         )
-    ]
-
-    pcb_outline_points = [
-        *pcb_outline_midpoints,
-        *mirror_points(
-            pcb_outline_midpoints, case_geometry.mirror_at.point, combine=False
-        ),
     ]
 
     return SimpleNamespace(outline_points=pcb_outline_points)
@@ -445,5 +455,17 @@ if "show_object" in globals():
 
     board = pcb.create_board()
     board = pcb.set_edge_cut_points(board, pcb_geometry.outline_points)
+
+    for position in case_geometry.rotated_switch_positions:
+        rotation = -15 if position[0] > 0 else 15
+        board = pcb.add_footprint(
+            board,
+            {
+                "position": position,
+                "rotation": rotation,
+                "library_name": "footprints",
+                "footprint_name": "SW_MX",
+            },
+        )
 
     pcb.save_board(board, "data", "keyboard")
