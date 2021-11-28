@@ -686,7 +686,7 @@ def make_case_parts(user_config={}):
 
 
 if "show_object" in globals():
-    [case_parts, geometry] = make_case_parts()
+    [case_parts, case_geometry] = make_case_parts()
 
     if not flatten_items:
         case_parts = explode_parts(case_parts, explode_by)

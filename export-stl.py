@@ -10,9 +10,9 @@ def main():
     except Exception:
         pass
 
-    [parts, geometry] = make_case_parts()
+    [case_parts, case_geometry] = make_case_parts()
 
-    for layer_name_part_and_options in parts:
+    for layer_name_part_and_options in case_parts:
         [part_name, part, options] = layer_name_part_and_options
 
         part_name_slug = slugify(part_name)

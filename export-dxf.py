@@ -136,7 +136,7 @@ def export_flat_dxf(file_name):
     offset_y = 0
     offset_x = 0
 
-    [parts, geometry] = make_case_parts()
+    [case_parts, case_geometry] = make_case_parts()
 
     dxf = ezdxf.new(setup=True, units=units.MM)
     msp = dxf.modelspace()
@@ -144,7 +144,7 @@ def export_flat_dxf(file_name):
     layer_name = "All parts"
     dxf.layers.new(name=layer_name)
 
-    for (index, layer_name_and_part) in enumerate(parts):
+    for (index, layer_name_and_part) in enumerate(case_parts):
         part = layer_name_and_part[1]
 
         if rotate_parts:
@@ -180,13 +180,13 @@ def export_flat_dxf(file_name):
 
 
 def export_layered_dxf(file_name):
-    [parts, geometry] = make_case_parts()
+    [case_parts, case_geometry] = make_case_parts()
 
     dxf = ezdxf.new(setup=True, units=units.MM)
     dxf = ezdxf.new(setup=True)
     msp = dxf.modelspace()
 
-    for layer_name_and_part in parts:
+    for layer_name_and_part in case_parts:
         [layer_name, part, options] = layer_name_and_part
         thickness = (
             part.vertices("front").val().Center().z

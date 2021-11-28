@@ -5,7 +5,7 @@ from pcb import calculate_position_of_atreus_62_pcb
 
 
 if "show_object" in globals():
-    [case_parts, geometry] = make_case_parts()
+    [case_parts, case_geometry] = make_case_parts()
 
     atreus_62_path = "./atreus_62.kicad_pcb"
     atreus_62_board_data = load_pcb(atreus_62_path)
@@ -14,7 +14,7 @@ if "show_object" in globals():
     )
 
     position_of_atreus_62_pcb = calculate_position_of_atreus_62_pcb(
-        geometry, atreus_62_board_data
+        case_geometry, atreus_62_board_data
     )
 
     for layer_name_part_and_options in atreus_62_pcb_parts:

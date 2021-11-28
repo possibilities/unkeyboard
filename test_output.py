@@ -65,9 +65,9 @@ def test_output(preset_name, part_name):
     token = secrets.token_urlsafe(8)
     os.makedirs(f"/tmp/{token}", exist_ok=True)
     preset = presets.__dict__[preset_name]
-    [parts, geometry] = make_case_parts(preset)
+    [case_parts, case_geometry] = make_case_parts(preset)
     test_has_run = False
-    for part_name_and_part in parts:
+    for part_name_and_part in case_parts:
         [current_part_name, part] = part_name_and_part[0:2]
         if part_name == current_part_name:
             test_has_run = True
