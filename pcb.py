@@ -366,7 +366,7 @@ def make_pcb_parts(board_data):
     return [parts, board_data]
 
 
-def calculate_pcb_geometry(user_config={}):
+def make_pcb(user_config={}):
     config = SimpleNamespace(**{**presets.default, **user_config})
 
     [case_parts, case_geometry] = make_case_parts(config.__dict__)
@@ -427,7 +427,23 @@ def calculate_pcb_geometry(user_config={}):
         )
     ]
 
-    return SimpleNamespace(outline_points=pcb_outline_points)
+    board = pcb.create_board()
+    board = pcb.set_edge_cut_points(board, pcb_outline_points)
+
+    for index, position in enumerate(case_geometry.rotated_switch_positions):
+        rotation = -config.angle if position[0] > 0 else config.angle
+        board = pcb.add_footprint(
+            board,
+            {
+                "reference": f"SW{index + 1}",
+                "position": position,
+                "rotation": rotation,
+                "library_name": "footprints",
+                "footprint_name": "SW_MX",
+            },
+        )
+
+    return board
 
 
 if "show_object" in globals():
@@ -451,22 +467,5 @@ if "show_object" in globals():
             options=options,
         )
 
-    pcb_geometry = calculate_pcb_geometry()
-
-    board = pcb.create_board()
-    board = pcb.set_edge_cut_points(board, pcb_geometry.outline_points)
-
-    for index, position in enumerate(case_geometry.rotated_switch_positions):
-        rotation = -10 if position[0] > 0 else 10
-        board = pcb.add_footprint(
-            board,
-            {
-                "reference": f"SW{index + 1}",
-                "position": position,
-                "rotation": rotation,
-                "library_name": "footprints",
-                "footprint_name": "SW_MX",
-            },
-        )
-
+    board = make_pcb()
     pcb.save_board(board, "data", "keyboard")
