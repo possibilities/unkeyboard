@@ -397,14 +397,3 @@ if "show_object" in globals():
             name="Atreus 62 " + layer_name,
             options=options,
         )
-
-    blank_path = "./blank.kicad_pcb"
-    blank_board_data = load_pcb(blank_path)
-
-    [pcb_parts, board_data] = make_pcb_parts(blank_board_data)
-
-    for layer_name_part_and_options in pcb_parts:
-        [layer_name, part, options] = layer_name_part_and_options
-        show_object(
-            part.translate([0, 0, -20]), name=layer_name, options=options
-        )

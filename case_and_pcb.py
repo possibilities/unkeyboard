@@ -25,10 +25,6 @@ if "show_object" in globals():
             options=options,
         )
 
-    blank_pcb_path = "./blank.kicad_pcb"
-    blank_board_data = load_pcb(blank_pcb_path)
-    [pcb_parts, board_data] = make_pcb_parts(blank_board_data)
-
     case_parts = explode_parts(case_parts, 25)
 
     for layer_name_part_and_options in case_parts:
