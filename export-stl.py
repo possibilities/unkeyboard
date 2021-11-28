@@ -1,7 +1,7 @@
 import os
 from slugify import slugify
 from cadquery import exporters
-from keyboard import make_keyboard_parts
+from case import make_case_parts
 
 
 def main():
@@ -10,7 +10,7 @@ def main():
     except Exception:
         pass
 
-    [parts, geometry] = make_keyboard_parts()
+    [parts, geometry] = make_case_parts()
 
     for layer_name_part_and_options in parts:
         [part_name, part, options] = layer_name_part_and_options

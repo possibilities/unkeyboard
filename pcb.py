@@ -3,7 +3,7 @@ from fuse_parts import fuse_parts
 from load_pcb import load_pcb
 from cq_workplane_plugin import cq_workplane_plugin
 from calculate_rectangle_corners import calculate_rectangle_corners
-from keyboard import make_keyboard_parts
+from case import make_case_parts
 from midpoint import midpoint
 
 pad_thickness = 0.075
@@ -378,7 +378,7 @@ def polyline_to_pcb_line(polyline_points):
 
 
 if "show_object" in globals():
-    [keyboard_parts, geometry] = make_keyboard_parts()
+    [case_parts, geometry] = make_case_parts()
 
     atreus_62_path = "./atreus_62.kicad_pcb"
     atreus_62_board_data = load_pcb(atreus_62_path)

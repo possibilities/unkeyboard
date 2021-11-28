@@ -5,7 +5,7 @@ from cadquery import exporters
 from cadquery.units import RAD2DEG
 from OCP.gp import gp_Dir
 from OCP.GeomConvert import GeomConvert
-from keyboard import make_keyboard_parts
+from case import make_case_parts
 
 # This is largely copped from cadquery with the bottom modified:
 # * Adds models to named layers
@@ -136,7 +136,7 @@ def export_flat_dxf(file_name):
     offset_y = 0
     offset_x = 0
 
-    [parts, geometry] = make_keyboard_parts()
+    [parts, geometry] = make_case_parts()
 
     dxf = ezdxf.new(setup=True, units=units.MM)
     msp = dxf.modelspace()
@@ -180,7 +180,7 @@ def export_flat_dxf(file_name):
 
 
 def export_layered_dxf(file_name):
-    [parts, geometry] = make_keyboard_parts()
+    [parts, geometry] = make_case_parts()
 
     dxf = ezdxf.new(setup=True, units=units.MM)
     dxf = ezdxf.new(setup=True)

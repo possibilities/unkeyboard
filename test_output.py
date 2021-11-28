@@ -4,7 +4,7 @@ import pytest
 import itertools
 import secrets
 from presets import presets
-from keyboard import make_keyboard_parts
+from case import make_case_parts
 from cadquery import exporters
 from cairosvg import svg2png
 from PIL import Image, ImageStat, ImageChops
@@ -65,7 +65,7 @@ def test_output(preset_name, part_name):
     token = secrets.token_urlsafe(8)
     os.makedirs(f"/tmp/{token}", exist_ok=True)
     preset = presets.__dict__[preset_name]
-    [parts, geometry] = make_keyboard_parts(preset)
+    [parts, geometry] = make_case_parts(preset)
     test_has_run = False
     for part_name_and_part in parts:
         [current_part_name, part] = part_name_and_part[0:2]

@@ -664,7 +664,7 @@ def make_spacer(geometry):
     )
 
 
-def make_keyboard_parts(user_config={}):
+def make_case_parts(user_config={}):
     config = SimpleNamespace(**{**default_config.__dict__, **user_config})
 
     parts = []
@@ -686,11 +686,11 @@ def make_keyboard_parts(user_config={}):
 
 
 if "show_object" in globals():
-    [keyboard_parts, geometry] = make_keyboard_parts()
+    [case_parts, geometry] = make_case_parts()
 
     if not flatten_items:
-        keyboard_parts = explode_parts(keyboard_parts, explode_by)
+        case_parts = explode_parts(case_parts, explode_by)
 
-    for layer_name_part_and_options in keyboard_parts:
+    for layer_name_part_and_options in case_parts:
         [layer_name, part, options] = layer_name_part_and_options
         show_object(part, name=layer_name, options=options)

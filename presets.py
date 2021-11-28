@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from keyboard import default_config
+from case import default_config
 
 presets = SimpleNamespace(
     atreus_62=default_config.__dict__,
