@@ -91,7 +91,6 @@ def calculate_switch_plate_points(mirror_at_point, switch_positions, config):
     )
 
     for column in range(total_number_of_columns):
-        switch_plate_points.append([])
         for row in range(config.number_of_rows):
             if not has_reached_end_of_inside_switches_row(column, row, config):
                 switch_position = switch_positions[column][row]
@@ -107,18 +106,14 @@ def calculate_switch_plate_points(mirror_at_point, switch_positions, config):
                     for cutout in switch_cutout_corner_points
                 ]
 
-                switch_plate_points[-1].append(
-                    rotated_switch_cutout_corner_points
-                )
-
-    flattened_switch_plate_points = flatten_list(switch_plate_points)
+                switch_plate_points.append(rotated_switch_cutout_corner_points)
 
     mirrored_switch_plate_points = [
         mirror_points(corner, mirror_at_point, combine=False)
-        for corner in flattened_switch_plate_points
+        for corner in switch_plate_points
     ]
 
-    return [*mirrored_switch_plate_points, *flattened_switch_plate_points]
+    return [*mirrored_switch_plate_points, *switch_plate_points]
 
 
 def calculate_switch_plate_outline_points(switch_positions, config):
