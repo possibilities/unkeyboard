@@ -1,8 +1,6 @@
 (footprint "SW_MX" (version 20211014) (generator pcbnew)
   (layer "F.Cu")
   (tedit 5DD4F656)
-  (descr "MX-style keyswitch")
-  (tags "MX,cherry,gateron,kailh")
   (attr through_hole)
   (fp_text reference "REF**" (at 0 4.318 unlocked) (layer "F.SilkS")
     (effects (font (size 1 1) (thickness 0.15)))

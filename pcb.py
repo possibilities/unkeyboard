@@ -5,6 +5,7 @@ from cq_workplane_plugin import cq_workplane_plugin
 from calculate_rectangle_corners import calculate_rectangle_corners
 from case import make_case_parts
 from midpoint import midpoint
+from calculate_point_for_angle import calculate_point_for_angle
 import kicad_script as pcb
 from zip import zip
 from presets import presets
@@ -204,17 +205,19 @@ def make_surface_mount_pads(board_data):
                         )
                     )
 
-    pads = cq.Workplane()
+    pads = []
 
     if len(positions):
         for position in positions:
-            pads = pads.polyline(position).close()
+            pads.append(
+                cq.Workplane()
+                .polyline(position)
+                .close()
+                .extrude(pad_thickness * 2)
+                .translate([0, 0, -pad_thickness])
+            )
 
-        pads = pads.extrude(pad_thickness * 2).translate(
-            [0, 0, -pad_thickness]
-        )
-
-    return pads
+    return fuse_parts(pads)
 
 
 @cq_workplane_plugin
@@ -565,6 +568,7 @@ def make_pcb(user_config={}):
         flip_points_over_y_axis(case_geometry.rotated_switch_positions)
     ):
         rotation = config.angle if position[0] > 0 else -config.angle
+
         board = pcb.add_footprint(
             board,
             {
@@ -576,10 +580,39 @@ def make_pcb(user_config={}):
             },
         )
 
+        diode_distance_from_switch_center = 7
+        diode_position = calculate_point_for_angle(
+            position, diode_distance_from_switch_center, rotation
+        )
+
+        board = pcb.add_footprint(
+            board,
+            {
+                "reference": f"D{index + 1}",
+                "position": diode_position,
+                "rotation": rotation,
+                "library_name": "footprints",
+                "footprint_name": "D3_SMD",
+            },
+        )
+
     return board
 
 
 if "show_object" in globals():
+    generated_pcb = make_pcb()
+    generated_parts = make_pcb_parts(generated_pcb)
+
+    pcb.save_board(generated_pcb, "data", "keyboard")
+
+    for layer_name_part_and_options in generated_parts:
+        [layer_name, part, options] = layer_name_part_and_options
+        show_object(
+            part,
+            name=layer_name,
+            options=options,
+        )
+
     [case_parts, case_geometry] = make_case_parts()
 
     atreus_62_board_data = pcb.load_board(".", "atreus_62")
@@ -600,16 +633,5 @@ if "show_object" in globals():
                 [*pcb_offset_to_match_case, z_offset_from_generated_pcb]
             ),
             name="Atreus 62 " + layer_name,
-            options=options,
-        )
-
-    generated_pcb = make_pcb()
-    generated_parts = make_pcb_parts(generated_pcb)
-
-    for layer_name_part_and_options in generated_parts:
-        [layer_name, part, options] = layer_name_part_and_options
-        show_object(
-            part,
-            name=layer_name,
             options=options,
         )
