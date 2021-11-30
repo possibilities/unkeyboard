@@ -569,36 +569,34 @@ def make_pcb(user_config={}):
     ):
         rotation = config.angle if position[0] > 0 else -config.angle
 
-        board = pcb.add_footprint(
-            board,
-            pcb.create_footprint(
-                {
-                    "reference": f"SW{index + 1}",
-                    "position": position,
-                    "rotation": rotation,
-                    "library_name": "footprints",
-                    "footprint_name": "SW_MX",
-                }
-            ),
+        switch_footprint = pcb.create_footprint(
+            {
+                "reference": f"SW{index + 1}",
+                "position": position,
+                "rotation": rotation,
+                "library_name": "footprints",
+                "footprint_name": "SW_MX",
+            }
         )
+
+        board = pcb.add_footprint(board, switch_footprint)
 
         diode_distance_from_switch_center = 7
         diode_position = calculate_point_for_angle(
             position, diode_distance_from_switch_center, rotation
         )
 
-        board = pcb.add_footprint(
-            board,
-            pcb.create_footprint(
-                {
-                    "reference": f"D{index + 1}",
-                    "position": diode_position,
-                    "rotation": rotation,
-                    "library_name": "footprints",
-                    "footprint_name": "D3_SMD",
-                }
-            ),
+        diode_footprint = pcb.create_footprint(
+            {
+                "reference": f"D{index + 1}",
+                "position": diode_position,
+                "rotation": rotation,
+                "library_name": "footprints",
+                "footprint_name": "D3_SMD",
+            }
         )
+
+        board = pcb.add_footprint(board, diode_footprint)
 
     return board
 
