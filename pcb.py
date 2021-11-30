@@ -571,13 +571,15 @@ def make_pcb(user_config={}):
 
         board = pcb.add_footprint(
             board,
-            {
-                "reference": f"SW{index + 1}",
-                "position": position,
-                "rotation": rotation,
-                "library_name": "footprints",
-                "footprint_name": "SW_MX",
-            },
+            pcb.create_footprint(
+                {
+                    "reference": f"SW{index + 1}",
+                    "position": position,
+                    "rotation": rotation,
+                    "library_name": "footprints",
+                    "footprint_name": "SW_MX",
+                }
+            ),
         )
 
         diode_distance_from_switch_center = 7
@@ -587,13 +589,15 @@ def make_pcb(user_config={}):
 
         board = pcb.add_footprint(
             board,
-            {
-                "reference": f"D{index + 1}",
-                "position": diode_position,
-                "rotation": rotation,
-                "library_name": "footprints",
-                "footprint_name": "D3_SMD",
-            },
+            pcb.create_footprint(
+                {
+                    "reference": f"D{index + 1}",
+                    "position": diode_position,
+                    "rotation": rotation,
+                    "library_name": "footprints",
+                    "footprint_name": "D3_SMD",
+                }
+            ),
         )
 
     return board
