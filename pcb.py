@@ -590,7 +590,7 @@ def make_pcb(user_config={}):
             {
                 "reference": f"D{index + 1}",
                 "position": diode_position,
-                "rotation": rotation,
+                "rotation": rotation + 180,
                 "library_name": "footprints",
                 "footprint_name": "D3_SMD",
             }
