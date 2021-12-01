@@ -567,7 +567,11 @@ def make_pcb(user_config={}):
     for index, position in enumerate(
         flip_points_over_y_axis(case_geometry.rotated_switch_positions)
     ):
-        rotation = config.angle if position[0] > 0 else -config.angle
+        rotation = (
+            config.angle
+            if position[0] > case_geometry.mirror_at.point[0]
+            else -config.angle
+        )
 
         switch_footprint = pcb.create_footprint(
             {
@@ -586,11 +590,14 @@ def make_pcb(user_config={}):
             position, diode_distance_from_switch_center, rotation
         )
 
+        # Rotate with everything else and flip it over
+        diode_rotation = rotation + 180
+
         diode_footprint = pcb.create_footprint(
             {
                 "reference": f"D{index + 1}",
                 "position": diode_position,
-                "rotation": rotation + 180,
+                "rotation": diode_rotation,
                 "library_name": "footprints",
                 "footprint_name": "D3_SMD",
             }
