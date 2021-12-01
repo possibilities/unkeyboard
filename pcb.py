@@ -561,7 +561,7 @@ def make_pcb(user_config={}):
     pcb_outline_points = flip_points_over_x_axis(pcb_outline_points)
 
     board = pcb.create_board()
-    board = pcb.add_edge_cut_points(
+    board = pcb.add_edge_cut_lines(
         board, pcb.polyline_to_lines(pcb_outline_points)
     )
 
