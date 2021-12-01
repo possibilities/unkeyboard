@@ -52,8 +52,8 @@ def calculate_column_stagger_percent(column, config):
     ) / config.distance_between_switch_centers
 
 
-def calculate_switch_positions(config):
-    switch_positions = []
+def calculate_unrotated_switch_positions(config):
+    unrotated_switch_positions = []
 
     number_of_inside_columns = 1
     total_number_of_columns = (
@@ -61,7 +61,7 @@ def calculate_switch_positions(config):
     )
 
     for column in range(total_number_of_columns):
-        switch_positions.append([])
+        unrotated_switch_positions.append([])
         for row in range(config.number_of_rows):
             if not has_reached_end_of_inside_switches_row(column, row, config):
                 switch_position_x = config.distance_between_switch_centers * (
@@ -74,50 +74,50 @@ def calculate_switch_positions(config):
                     + calculate_column_stagger_percent(column, config)
                 )
 
-                switch_positions[-1].append(
+                unrotated_switch_positions[-1].append(
                     (switch_position_x, switch_position_y)
                 )
 
-    return switch_positions
+    return unrotated_switch_positions
 
 
-def calculate_rotated_switch_positions(
-    mirror_at_point, switch_positions, config
+def calculate_switch_positions(
+    mirror_at_point, unrotated_switch_positions, config
 ):
     number_of_inside_columns = 1
     total_number_of_columns = (
         config.number_of_columns + number_of_inside_columns
     )
 
-    rotated_switch_positions = []
+    switch_positions = []
     for column in range(total_number_of_columns):
         for row in range(config.number_of_rows):
             if not has_reached_end_of_inside_switches_row(column, row, config):
-                switch_position = switch_positions[column][row]
-                rotated_switch_position = rotate_2d(
-                    (0, 0), switch_position, config.angle
+                unrotated_switch_position = unrotated_switch_positions[column][
+                    row
+                ]
+                switch_position = rotate_2d(
+                    (0, 0), unrotated_switch_position, config.angle
                 )
-                rotated_switch_positions.append(rotated_switch_position)
+                switch_positions.append(switch_position)
 
-    return mirror_points(rotated_switch_positions, mirror_at_point)
+    return mirror_points(switch_positions, mirror_at_point)
 
 
-def calculate_switch_plate_points(
-    mirror_at_point, rotated_switch_positions, config
-):
+def calculate_switch_plate_points(mirror_at_point, switch_positions, config):
     switch_plate_points = []
 
-    for rotated_switch_position in rotated_switch_positions:
+    for switch_position in switch_positions:
         switch_cutout_corner_points = calculate_rectangle_corners(
-            rotated_switch_position,
+            switch_position,
             config.switch_plate_cutout_size,
             config.switch_plate_cutout_size,
         )
 
         rotated_switch_cutout_corner_points = [
-            rotate_2d(rotated_switch_position, point, -config.angle)
+            rotate_2d(switch_position, point, -config.angle)
             if point[0] < mirror_at_point[0]
-            else rotate_2d(rotated_switch_position, point, config.angle)
+            else rotate_2d(switch_position, point, config.angle)
             for point in switch_cutout_corner_points
         ]
 
@@ -126,7 +126,7 @@ def calculate_switch_plate_points(
     return switch_plate_points
 
 
-def calculate_switch_plate_outline_points(switch_positions, config):
+def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
     widen_cutout_around_switch_size = 1
 
     widen_cutout_around_inside_switches_size = (
@@ -148,18 +148,18 @@ def calculate_switch_plate_outline_points(switch_positions, config):
     ) / 2
     outline_size = outline_size_per_switch / 2
     top_left_switch = (
-        switch_positions[0][-1][0],
-        switch_positions[0][-1][1] + inside_switch_padding_y,
+        unrotated_switch_positions[0][-1][0],
+        unrotated_switch_positions[0][-1][1] + inside_switch_padding_y,
     )
-    top_right_switch = switch_positions[-1][-1]
+    top_right_switch = unrotated_switch_positions[-1][-1]
     bottom_left_switch = (
-        switch_positions[0][0][0],
-        switch_positions[0][0][1] - inside_switch_padding_y,
+        unrotated_switch_positions[0][0][0],
+        unrotated_switch_positions[0][0][1] - inside_switch_padding_y,
     )
-    bottom_right_switch = switch_positions[-1][0]
+    bottom_right_switch = unrotated_switch_positions[-1][0]
 
-    top_row = [column[-1] for column in switch_positions]
-    bottom_row = [column[0] for column in switch_positions]
+    top_row = [column[-1] for column in unrotated_switch_positions]
+    bottom_row = [column[0] for column in unrotated_switch_positions]
 
     top_row_points = []
     for index, switch_position in enumerate(top_row):
@@ -442,22 +442,24 @@ def calculate_screw_points(
 
 
 def calculate_case_geometry(config):
-    switch_positions = calculate_switch_positions(config)
+    unrotated_switch_positions = calculate_unrotated_switch_positions(config)
 
     [
         switch_plate_outline_points,
         mirror_at_point,
-    ] = calculate_switch_plate_outline_points(switch_positions, config)
+    ] = calculate_switch_plate_outline_points(
+        unrotated_switch_positions, config
+    )
 
-    rotated_switch_positions = calculate_rotated_switch_positions(
+    switch_positions = calculate_switch_positions(
         mirror_at_point,
-        switch_positions,
+        unrotated_switch_positions,
         config,
     )
 
     switch_plate_points = calculate_switch_plate_points(
         mirror_at_point,
-        rotated_switch_positions,
+        switch_positions,
         config,
     )
 
@@ -529,7 +531,7 @@ def calculate_case_geometry(config):
     ]
 
     return SimpleNamespace(
-        rotated_switch_positions=rotated_switch_positions,
+        switch_positions=switch_positions,
         screws=SimpleNamespace(
             points=screw_points,
             radius=screw_radius,

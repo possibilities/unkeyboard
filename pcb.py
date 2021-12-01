@@ -565,7 +565,7 @@ def make_pcb(user_config={}):
     board = pcb.set_edge_cut_points(board, pcb_outline_points)
 
     for index, position in enumerate(
-        flip_points_over_y_axis(case_geometry.rotated_switch_positions)
+        flip_points_over_y_axis(case_geometry.switch_positions)
     ):
         rotation = (
             config.angle
