@@ -1,5 +1,4 @@
 import cadquery as cq
-from types import SimpleNamespace
 from cq_workplane_plugin import cq_workplane_plugin
 from explode_parts import explode_parts
 from calculate_point_for_angle import calculate_point_for_angle
@@ -21,9 +20,9 @@ def drill_holes(part, points, radius, thickness):
 @cq_workplane_plugin
 def drill_reset_button_hole(part, geometry):
     return (
-        part.moveTo(*geometry.reset_button.point)
-        .circle(geometry.reset_button.radius)
-        .cutBlind(geometry.reset_button.thickness)
+        part.moveTo(*geometry["reset_button"]["point"])
+        .circle(geometry["reset_button"]["radius"])
+        .cutBlind(geometry["reset_button"]["thickness"])
     )
 
 
@@ -31,7 +30,7 @@ def has_reached_end_of_inside_switches_row(column, row, config):
     has_reached_end_column = column == 0
     if has_reached_end_column:
         has_reached_end_row = row > (
-            1 if config.has_two_inside_switches else 0
+            1 if config["has_two_inside_switches"] else 0
         )
         if has_reached_end_row:
             return True
@@ -40,16 +39,16 @@ def has_reached_end_of_inside_switches_row(column, row, config):
 
 def calculate_column_stagger_percent(column, config):
     inside_switches_stagger_percent = (
-        config.stagger_percent_for_double_inside_switches
-        if config.has_two_inside_switches
-        else config.stagger_percent_for_single_inside_switch
+        config["stagger_percent_for_double_inside_switches"]
+        if config["has_two_inside_switches"]
+        else config["stagger_percent_for_single_inside_switch"]
     )
 
     return (
         inside_switches_stagger_percent
         if column == 0
-        else config.column_stagger_percents[column - 1]
-    ) / config.distance_between_switch_centers
+        else config["column_stagger_percents"][column - 1]
+    ) / config["distance_between_switch_centers"]
 
 
 def calculate_unrotated_switch_positions(config):
@@ -57,18 +56,20 @@ def calculate_unrotated_switch_positions(config):
 
     number_of_inside_columns = 1
     total_number_of_columns = (
-        config.number_of_columns + number_of_inside_columns
+        config["number_of_columns"] + number_of_inside_columns
     )
 
     for column in range(total_number_of_columns):
         unrotated_switch_positions.append([])
-        for row in range(config.number_of_rows):
+        for row in range(config["number_of_rows"]):
             if not has_reached_end_of_inside_switches_row(column, row, config):
-                switch_position_x = config.distance_between_switch_centers * (
-                    column + 0.5
-                )
+                switch_position_x = config[
+                    "distance_between_switch_centers"
+                ] * (column + 0.5)
 
-                switch_position_y = config.distance_between_switch_centers * (
+                switch_position_y = config[
+                    "distance_between_switch_centers"
+                ] * (
                     row
                     + 0.5
                     + calculate_column_stagger_percent(column, config)
@@ -86,18 +87,18 @@ def calculate_switch_positions(
 ):
     number_of_inside_columns = 1
     total_number_of_columns = (
-        config.number_of_columns + number_of_inside_columns
+        config["number_of_columns"] + number_of_inside_columns
     )
 
     switch_positions = []
     for column in range(total_number_of_columns):
-        for row in range(config.number_of_rows):
+        for row in range(config["number_of_rows"]):
             if not has_reached_end_of_inside_switches_row(column, row, config):
                 unrotated_switch_position = unrotated_switch_positions[column][
                     row
                 ]
                 switch_position = rotate_2d(
-                    (0, 0), unrotated_switch_position, config.angle
+                    (0, 0), unrotated_switch_position, config["angle"]
                 )
                 switch_positions.append(switch_position)
 
@@ -110,14 +111,14 @@ def calculate_switch_plate_points(mirror_at_point, switch_positions, config):
     for switch_position in switch_positions:
         switch_cutout_corner_points = calculate_rectangle_corners(
             switch_position,
-            config.switch_plate_cutout_size,
-            config.switch_plate_cutout_size,
+            config["switch_plate_cutout_size"],
+            config["switch_plate_cutout_size"],
         )
 
         rotated_switch_cutout_corner_points = [
-            rotate_2d(switch_position, point, -config.angle)
+            rotate_2d(switch_position, point, -config["angle"])
             if point[0] < mirror_at_point[0]
-            else rotate_2d(switch_position, point, config.angle)
+            else rotate_2d(switch_position, point, config["angle"])
             for point in switch_cutout_corner_points
         ]
 
@@ -130,21 +131,23 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
     widen_cutout_around_switch_size = 1
 
     widen_cutout_around_inside_switches_size = (
-        0 if config.has_two_inside_switches else 1.5
+        0 if config["has_two_inside_switches"] else 1.5
     )
-    inside_switches_unit_height = 1 if config.has_two_inside_switches else 1.5
+    inside_switches_unit_height = (
+        1 if config["has_two_inside_switches"] else 1.5
+    )
 
     inside_switches_height = (
-        config.distance_between_switch_centers * inside_switches_unit_height
+        config["distance_between_switch_centers"] * inside_switches_unit_height
     ) + widen_cutout_around_inside_switches_size
 
     outline_size_per_switch = (
-        config.distance_between_switch_centers
+        config["distance_between_switch_centers"]
         + widen_cutout_around_switch_size
     )
 
     inside_switch_padding_y = (
-        inside_switches_height - config.distance_between_switch_centers
+        inside_switches_height - config["distance_between_switch_centers"]
     ) / 2
     outline_size = outline_size_per_switch / 2
     top_left_switch = (
@@ -174,7 +177,7 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
                 inside_switch_padding_y = (
                     (
                         inside_switches_height
-                        - config.distance_between_switch_centers
+                        - config["distance_between_switch_centers"]
                         - widen_cutout_around_switch_size
                     )
                     / 2
@@ -226,7 +229,7 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
                 inside_switch_padding_y = (
                     (
                         inside_switches_height
-                        - config.distance_between_switch_centers
+                        - config["distance_between_switch_centers"]
                         - widen_cutout_around_switch_size
                     )
                     / 2
@@ -266,7 +269,7 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
                 bottom_row_points.append(right_point)
 
     inside_switches_height = (
-        config.distance_between_switch_centers * inside_switches_unit_height
+        config["distance_between_switch_centers"] * inside_switches_unit_height
     ) + widen_cutout_around_inside_switches_size
 
     bottom_left_corner = (
@@ -291,15 +294,18 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
     )
 
     bottom_row_points = [
-        rotate_2d((0, 0), point, config.angle) for point in bottom_row_points
+        rotate_2d((0, 0), point, config["angle"])
+        for point in bottom_row_points
     ]
     top_row_points = [
-        rotate_2d((0, 0), point, config.angle) for point in top_row_points
+        rotate_2d((0, 0), point, config["angle"]) for point in top_row_points
     ]
-    bottom_left_corner = rotate_2d((0, 0), bottom_left_corner, config.angle)
-    bottom_right_corner = rotate_2d((0, 0), bottom_right_corner, config.angle)
-    top_right_corner = rotate_2d((0, 0), top_right_corner, config.angle)
-    top_left_corner = rotate_2d((0, 0), top_left_corner, config.angle)
+    bottom_left_corner = rotate_2d((0, 0), bottom_left_corner, config["angle"])
+    bottom_right_corner = rotate_2d(
+        (0, 0), bottom_right_corner, config["angle"]
+    )
+    top_right_corner = rotate_2d((0, 0), top_right_corner, config["angle"])
+    top_left_corner = rotate_2d((0, 0), top_left_corner, config["angle"])
 
     switch_plate_outline_points = [
         bottom_left_corner,
@@ -320,14 +326,14 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
         [
             calculate_intersection_of_points(
                 switch_plate_outline_points[0],
-                90 - config.angle,
+                90 - config["angle"],
                 mirror_at_point,
                 90,
             ),
             *switch_plate_outline_points[0:-1],
             calculate_intersection_of_points(
                 switch_plate_outline_points[-2],
-                -config.angle,
+                -config["angle"],
                 mirror_at_point,
                 90,
             ),
@@ -352,27 +358,27 @@ def calculate_case_outside_points(
 ):
     outside_points_start_of_bottom_row = switch_plate_outline_points[2]
     outside_points_bottom_right_corner = switch_plate_outline_points[
-        (config.number_of_columns * 2)
-        + (-1 if config.number_of_columns % 2 == 0 else 1)
+        (config["number_of_columns"] * 2)
+        + (-1 if config["number_of_columns"] % 2 == 0 else 1)
     ]
     outside_points_top_right_corner = switch_plate_outline_points[
-        config.number_of_columns * 2
-        + (0 if config.number_of_columns % 2 == 0 else 2)
+        config["number_of_columns"] * 2
+        + (0 if config["number_of_columns"] % 2 == 0 else 2)
     ]
     bottom_left_corner = calculate_point_for_angle(
         outside_points_start_of_bottom_row,
         -outside_frame_size,
-        45 - config.angle,
+        45 - config["angle"],
     )
     bottom_right_corner = calculate_point_for_angle(
         outside_points_bottom_right_corner,
         -outside_frame_size,
-        -45 - config.angle,
+        -45 - config["angle"],
     )
     top_right_corner = calculate_point_for_angle(
         outside_points_top_right_corner,
         outside_frame_size,
-        45 - config.angle,
+        45 - config["angle"],
     )
     return mirror_points(
         [bottom_left_corner, bottom_right_corner, top_right_corner],
@@ -385,13 +391,13 @@ def calculate_spacer_inside_points(
 ):
     points = [
         calculate_point_for_angle(
-            case_outside_points[0], outside_frame_size, 45 - config.angle
+            case_outside_points[0], outside_frame_size, 45 - config["angle"]
         ),
         calculate_point_for_angle(
-            case_outside_points[1], outside_frame_size, -45 - config.angle
+            case_outside_points[1], outside_frame_size, -45 - config["angle"]
         ),
         calculate_point_for_angle(
-            case_outside_points[2], -outside_frame_size, 45 - config.angle
+            case_outside_points[2], -outside_frame_size, 45 - config["angle"]
         ),
     ]
     return mirror_points(points, mirror_at_point)
@@ -401,7 +407,7 @@ def calculate_screw_points(
     spacer_inside_points, outside_frame_size, mirror_at_point, config
 ):
     screw_distance_from_inside_edge = (
-        outside_frame_size - config.inside_frame_size
+        outside_frame_size - config["inside_frame_size"]
     ) / 2
 
     spacer_bottom_left_corner = spacer_inside_points[0]
@@ -411,24 +417,24 @@ def calculate_screw_points(
     screw_top_right_corner = calculate_point_for_angle(
         spacer_top_right_corner,
         screw_distance_from_inside_edge,
-        45 - config.angle,
+        45 - config["angle"],
     )
 
     screw_top_left_corner = (
-        config.top_inside_screw_distance_from_usb,
+        config["top_inside_screw_distance_from_usb"],
         screw_top_right_corner[1],
     )
 
     screw_bottom_left_corner = calculate_point_for_angle(
         spacer_bottom_left_corner,
         -screw_distance_from_inside_edge,
-        45 - config.angle,
+        45 - config["angle"],
     )
 
     screw_bottom_right_corner = calculate_point_for_angle(
         spacer_bottom_right_corner,
         -screw_distance_from_inside_edge,
-        -45 - config.angle,
+        -45 - config["angle"],
     )
 
     screw_points = [
@@ -464,9 +470,9 @@ def calculate_case_geometry(config):
     )
 
     outside_frame_size = (
-        config.outside_frame_size_for_chicago_bolt
-        if config.use_chicago_bolt
-        else config.outside_frame_size_for_regular_screw
+        config["outside_frame_size_for_chicago_bolt"]
+        if config["use_chicago_bolt"]
+        else config["outside_frame_size_for_regular_screw"]
     )
 
     case_outside_points = calculate_case_outside_points(
@@ -477,9 +483,9 @@ def calculate_case_geometry(config):
     )
 
     outside_frame_size = (
-        config.outside_frame_size_for_chicago_bolt
-        if config.use_chicago_bolt
-        else config.outside_frame_size_for_regular_screw
+        config["outside_frame_size_for_chicago_bolt"]
+        if config["use_chicago_bolt"]
+        else config["outside_frame_size_for_regular_screw"]
     )
 
     spacer_inside_points = calculate_spacer_inside_points(
@@ -497,93 +503,93 @@ def calculate_case_geometry(config):
     )
 
     screw_radius = (
-        config.screw_hole_radius_for_chicago_bolt
-        if config.use_chicago_bolt
-        else config.screw_hole_radius_for_regular_screw
+        config["screw_hole_radius_for_chicago_bolt"]
+        if config["use_chicago_bolt"]
+        else config["screw_hole_radius_for_regular_screw"]
     )
 
     reset_button_radius = 1.5
     reset_button_point = (-30, 101)
 
     spacer_thickness = (
-        config.base_layer_thickness * 2
-        if config.has_thicc_spacer
-        else config.base_layer_thickness
+        config["base_layer_thickness"] * 2
+        if config["has_thicc_spacer"]
+        else config["base_layer_thickness"]
     )
 
     spacer_usb_cutout_points = [
         (
-            mirror_at_point[0] + config.usb_cutout_width / 2,
+            mirror_at_point[0] + config["usb_cutout_width"] / 2,
             case_outside_points[2][1],
         ),
         (
-            mirror_at_point[0] + config.usb_cutout_width / 2,
+            mirror_at_point[0] + config["usb_cutout_width"] / 2,
             2,
         ),
         (
-            mirror_at_point[0] - config.usb_cutout_width / 2,
+            mirror_at_point[0] - config["usb_cutout_width"] / 2,
             2,
         ),
         (
-            mirror_at_point[0] - config.usb_cutout_width / 2,
+            mirror_at_point[0] - config["usb_cutout_width"] / 2,
             case_outside_points[2][1],
         ),
     ]
 
-    return SimpleNamespace(
-        switch_positions=switch_positions,
-        screws=SimpleNamespace(
-            points=screw_points,
-            radius=screw_radius,
-        ),
-        reset_button=SimpleNamespace(
-            point=reset_button_point,
-            radius=reset_button_radius,
-            thickness=config.base_layer_thickness,
-        ),
-        case_outside=SimpleNamespace(
-            points=case_outside_points,
-        ),
-        spacer_inside=SimpleNamespace(
-            points=spacer_inside_points,
-        ),
-        spacer_usb_cutout=SimpleNamespace(points=spacer_usb_cutout_points),
-        spacer=SimpleNamespace(
-            thickness=spacer_thickness,
-        ),
-        switch_outline=SimpleNamespace(
-            points=switch_plate_outline_points,
-            thickness=config.base_layer_thickness,
-        ),
-        top_plate=SimpleNamespace(
-            thickness=config.base_layer_thickness,
-        ),
-        bottom_plate=SimpleNamespace(
-            thickness=config.base_layer_thickness,
-        ),
-        switch_plate=SimpleNamespace(
-            points=switch_plate_points,
-            thickness=config.base_layer_thickness,
-        ),
-        switch_plate_outline=SimpleNamespace(
-            points=switch_plate_outline_points,
-        ),
-        mirror_at=SimpleNamespace(
-            point=mirror_at_point,
-        ),
-    )
+    return {
+        "switch_positions": switch_positions,
+        "screws": {
+            "points": screw_points,
+            "radius": screw_radius,
+        },
+        "reset_button": {
+            "point": reset_button_point,
+            "radius": reset_button_radius,
+            "thickness": config["base_layer_thickness"],
+        },
+        "case_outside": {
+            "points": case_outside_points,
+        },
+        "spacer_inside": {
+            "points": spacer_inside_points,
+        },
+        "spacer_usb_cutout": {"points": spacer_usb_cutout_points},
+        "spacer": {
+            "thickness": spacer_thickness,
+        },
+        "switch_outline": {
+            "points": switch_plate_outline_points,
+            "thickness": config["base_layer_thickness"],
+        },
+        "top_plate": {
+            "thickness": config["base_layer_thickness"],
+        },
+        "bottom_plate": {
+            "thickness": config["base_layer_thickness"],
+        },
+        "switch_plate": {
+            "points": switch_plate_points,
+            "thickness": config["base_layer_thickness"],
+        },
+        "switch_plate_outline": {
+            "points": switch_plate_outline_points,
+        },
+        "mirror_at": {
+            "point": mirror_at_point,
+        },
+    }
 
 
 def make_bottom_plate(geometry):
     return (
         cq.Workplane()
-        .polyline(geometry.case_outside.points)
+        .polyline(geometry["case_outside"]["points"])
         .close()
-        .extrude(geometry.bottom_plate.thickness)
+        .extrude(geometry["bottom_plate"]["thickness"])
         .drill_holes(
-            geometry.screws.points,
-            geometry.screws.radius,
-            geometry.bottom_plate.thickness,
+            geometry["screws"]["points"],
+            geometry["screws"]["radius"],
+            geometry["bottom_plate"]["thickness"],
         )
         .drill_reset_button_hole(geometry)
     )
@@ -592,19 +598,19 @@ def make_bottom_plate(geometry):
 def make_top_plate(geometry):
     cutout = (
         cq.Workplane()
-        .polyline(geometry.switch_outline.points)
+        .polyline(geometry["switch_outline"]["points"])
         .close()
-        .extrude(geometry.top_plate.thickness)
+        .extrude(geometry["top_plate"]["thickness"])
     )
     return (
         cq.Workplane()
-        .polyline(geometry.case_outside.points)
+        .polyline(geometry["case_outside"]["points"])
         .close()
-        .extrude(geometry.top_plate.thickness)
+        .extrude(geometry["top_plate"]["thickness"])
         .drill_holes(
-            geometry.screws.points,
-            geometry.screws.radius,
-            geometry.top_plate.thickness,
+            geometry["screws"]["points"],
+            geometry["screws"]["radius"],
+            geometry["top_plate"]["thickness"],
         )
         .cut(cutout)
     )
@@ -613,17 +619,17 @@ def make_top_plate(geometry):
 def make_switch_plate(geometry):
     switch_plate = cq.Workplane()
 
-    for switch_cutout_points in geometry.switch_plate.points:
+    for switch_cutout_points in geometry["switch_plate"]["points"]:
         switch_plate = switch_plate.polyline(switch_cutout_points).close()
 
     return (
-        switch_plate.polyline(geometry.case_outside.points)
+        switch_plate.polyline(geometry["case_outside"]["points"])
         .close()
-        .extrude(geometry.switch_plate.thickness)
+        .extrude(geometry["switch_plate"]["thickness"])
         .drill_holes(
-            geometry.screws.points,
-            geometry.screws.radius,
-            geometry.switch_plate.thickness,
+            geometry["screws"]["points"],
+            geometry["screws"]["radius"],
+            geometry["switch_plate"]["thickness"],
         )
     )
 
@@ -631,35 +637,35 @@ def make_switch_plate(geometry):
 def make_spacer(geometry):
     inside_cutout = (
         cq.Workplane()
-        .polyline(geometry.spacer_inside.points)
+        .polyline(geometry["spacer_inside"]["points"])
         .close()
-        .extrude(geometry.spacer.thickness)
+        .extrude(geometry["spacer"]["thickness"])
     )
 
     usb_cutout = (
         cq.Workplane()
-        .polyline(geometry.spacer_usb_cutout.points)
+        .polyline(geometry["spacer_usb_cutout"]["points"])
         .close()
-        .extrude(geometry.spacer.thickness)
+        .extrude(geometry["spacer"]["thickness"])
     )
 
     return (
         cq.Workplane()
-        .polyline(geometry.case_outside.points)
+        .polyline(geometry["case_outside"]["points"])
         .close()
-        .extrude(geometry.spacer.thickness)
+        .extrude(geometry["spacer"]["thickness"])
         .cut(inside_cutout)
         .cut(usb_cutout)
         .drill_holes(
-            geometry.screws.points,
-            geometry.screws.radius,
-            geometry.spacer.thickness,
+            geometry["screws"]["points"],
+            geometry["screws"]["radius"],
+            geometry["spacer"]["thickness"],
         )
     )
 
 
 def make_case_parts(user_config={}):
-    config = SimpleNamespace(**{**presets.default, **user_config})
+    config = {**presets["default"], **user_config}
 
     parts = []
 
@@ -668,7 +674,7 @@ def make_case_parts(user_config={}):
     parts.append(("Case top plate", make_top_plate(geometry), {}))
     parts.append(("Case switch plate", make_switch_plate(geometry), {}))
 
-    if config.has_thicc_spacer:
+    if config["has_thicc_spacer"]:
         parts.append(("Case spacer", make_spacer(geometry), {}))
     else:
         parts.append(("Case spacer 1", make_spacer(geometry), {}))

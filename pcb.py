@@ -1,5 +1,4 @@
 import cadquery as cq
-from types import SimpleNamespace
 from fuse_parts import fuse_parts
 from cq_workplane_plugin import cq_workplane_plugin
 from calculate_rectangle_corners import calculate_rectangle_corners
@@ -499,55 +498,55 @@ def make_pcb_parts(board_data):
 
 
 def make_pcb(user_config={}):
-    config = SimpleNamespace(**{**presets.default, **user_config})
+    config = {**presets["default"], **user_config}
 
-    [case_parts, case_geometry] = make_case_parts(config.__dict__)
+    [case_parts, case_geometry] = make_case_parts(config)
 
     index_of_first_key_after_inner_keys = (
-        2 if config.has_two_inside_switches else 1
+        2 if config["has_two_inside_switches"] else 1
     )
 
     pcb_construction_outside_points = [
-        case_geometry.switch_plate_outline.points[2],
-        case_geometry.switch_plate_outline.points[
-            (config.number_of_columns * 2) - 1
+        case_geometry["switch_plate_outline"]["points"][2],
+        case_geometry["switch_plate_outline"]["points"][
+            (config["number_of_columns"] * 2) - 1
         ],
-        case_geometry.switch_plate_outline.points[
-            (config.number_of_columns * 2)
+        case_geometry["switch_plate_outline"]["points"][
+            (config["number_of_columns"] * 2)
         ],
-        case_geometry.switch_plate_outline.points[
-            -(config.number_of_columns * 2) - 2
+        case_geometry["switch_plate_outline"]["points"][
+            -(config["number_of_columns"] * 2) - 2
         ],
-        case_geometry.switch_plate_outline.points[
-            -(config.number_of_columns * 2) - 1
+        case_geometry["switch_plate_outline"]["points"][
+            -(config["number_of_columns"] * 2) - 1
         ],
-        case_geometry.switch_plate_outline.points[-4],
+        case_geometry["switch_plate_outline"]["points"][-4],
     ]
 
     pcb_construction_inside_points = [
-        case_geometry.switch_plate.points[index_of_first_key_after_inner_keys][
-            0
-        ],
-        case_geometry.switch_plate.points[
+        case_geometry["switch_plate"]["points"][
             index_of_first_key_after_inner_keys
-            + (config.number_of_columns * (config.number_of_rows - 1))
+        ][0],
+        case_geometry["switch_plate"]["points"][
+            index_of_first_key_after_inner_keys
+            + (config["number_of_columns"] * (config["number_of_rows"] - 1))
             + 1
         ][1],
-        case_geometry.switch_plate.points[
+        case_geometry["switch_plate"]["points"][
             index_of_first_key_after_inner_keys
-            + (config.number_of_columns * config.number_of_rows)
+            + (config["number_of_columns"] * config["number_of_rows"])
             - 1
         ][2],
-        case_geometry.switch_plate.points[
+        case_geometry["switch_plate"]["points"][
             index_of_first_key_after_inner_keys
-            + (config.number_of_columns * config.number_of_rows)
+            + (config["number_of_columns"] * config["number_of_rows"])
         ][3],
-        case_geometry.switch_plate.points[
+        case_geometry["switch_plate"]["points"][
             index_of_first_key_after_inner_keys
-            + ((config.number_of_columns + 1) * config.number_of_rows)
+            + ((config["number_of_columns"] + 1) * config["number_of_rows"])
             - 1
         ][0],
-        case_geometry.switch_plate.points[
+        case_geometry["switch_plate"]["points"][
             -index_of_first_key_after_inner_keys - 1
         ][1],
     ]
@@ -565,12 +564,12 @@ def make_pcb(user_config={}):
     board = pcb.set_edge_cut_points(board, pcb_outline_points)
 
     for index, position in enumerate(
-        flip_points_over_y_axis(case_geometry.switch_positions)
+        flip_points_over_y_axis(case_geometry["switch_positions"])
     ):
         rotation = (
-            config.angle
-            if position[0] > case_geometry.mirror_at.point[0]
-            else -config.angle
+            config["angle"]
+            if position[0] > case_geometry["mirror_at"]["point"][0]
+            else -config["angle"]
         )
 
         switch_footprint = pcb.create_footprint(

@@ -32,10 +32,14 @@ def calculate_atreus_62_original_pcb_offset_to_match_position_of_case(
         pcb.get_values(upper_right_hand_footprint, "at")[0:2]
     )
 
-    number_of_keys = len(case_geometry.switch_plate.points)
+    number_of_keys = len(case_geometry["switch_plate"]["points"])
     upper_right_hand_switch_center = midpoint(
-        case_geometry.switch_plate.points[int(number_of_keys / 2) - 1][0],
-        case_geometry.switch_plate.points[int(number_of_keys / 2) - 1][2],
+        case_geometry["switch_plate"]["points"][int(number_of_keys / 2) - 1][
+            0
+        ],
+        case_geometry["switch_plate"]["points"][int(number_of_keys / 2) - 1][
+            2
+        ],
     )
 
     y_offset = (
@@ -44,7 +48,8 @@ def calculate_atreus_62_original_pcb_offset_to_match_position_of_case(
     )
 
     x_offset = (
-        midpoint_of_pbc_for_x_offset[0] - case_geometry.mirror_at.point[0]
+        midpoint_of_pbc_for_x_offset[0]
+        - case_geometry["mirror_at"]["point"][0]
     )
 
     return [-x_offset, -y_offset]

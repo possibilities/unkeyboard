@@ -9,12 +9,15 @@ from shutil import rmtree
 
 token = secrets.token_urlsafe(8)
 
-preset_names = [name for name in presets.__dict__.keys() if name != "default"]
+preset_names = [name for name in presets.keys() if name != "default"]
 
-rmtree("__fixtures__/images")
+try:
+    rmtree("__fixtures__/images")
+except FileNotFoundError:
+    pass
 
 for preset_name in preset_names:
-    config = presets.__dict__[preset_name]
+    config = presets[preset_name]
     [case_parts, case_geometry] = make_case_parts(config)
     for [part_name, part, options] in case_parts:
         part_name_slug = slugify(part_name)
@@ -37,3 +40,6 @@ for preset_name in preset_names:
             f"__fixtures__/images/{preset_name_slug}-{part_name_slug}.png"
         )
         svg2png(url=url, write_to=write_to)
+
+print()
+print("Created test fixtures")

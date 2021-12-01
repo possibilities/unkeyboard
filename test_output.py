@@ -50,7 +50,7 @@ def assert_images_equal(
         )
 
 
-preset_names = [name for name in presets.__dict__.keys() if name != "default"]
+preset_names = [name for name in presets.keys() if name != "default"]
 part_names = [
     "Case bottom plate",
     "Case top plate",
@@ -64,7 +64,7 @@ test_data = itertools.product(preset_names, part_names)
 def test_output(preset_name, part_name):
     token = secrets.token_urlsafe(8)
     os.makedirs(f"/tmp/{token}", exist_ok=True)
-    preset = presets.__dict__[preset_name]
+    preset = presets[preset_name]
     [case_parts, case_geometry] = make_case_parts(preset)
     test_has_run = False
     for part_name_and_part in case_parts:
