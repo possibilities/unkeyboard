@@ -497,11 +497,7 @@ def make_pcb_parts(board_data):
     return parts
 
 
-def make_pcb(user_config={}):
-    config = {**presets["default"], **user_config}
-
-    [case_parts, case_geometry] = make_case_parts(config)
-
+def generate_pcb_outline_points(case_geometry, config):
     index_of_first_key_after_inner_keys = (
         2 if config["has_two_inside_switches"] else 1
     )
@@ -560,7 +556,17 @@ def make_pcb(user_config={}):
 
     pcb_outline_points = flip_points_over_x_axis(pcb_outline_points)
 
+    return pcb_outline_points
+
+
+def make_pcb(user_config={}):
+    config = {**presets["default"], **user_config}
+
+    [case_parts, case_geometry] = make_case_parts(config)
+
     board = pcb.create_board()
+
+    pcb_outline_points = generate_pcb_outline_points(case_geometry, config)
     board = pcb.add_edge_cut_lines(
         board, pcb.polyline_to_lines(pcb_outline_points)
     )
