@@ -561,7 +561,9 @@ def make_pcb(user_config={}):
     pcb_outline_points = flip_points_over_x_axis(pcb_outline_points)
 
     board = pcb.create_board()
-    board = pcb.set_edge_cut_points(board, pcb_outline_points)
+    board = pcb.add_edge_cut_points(
+        board, pcb.polyline_to_lines(pcb_outline_points)
+    )
 
     for index, position in enumerate(
         flip_points_over_x_axis(case_geometry["switch_positions"])
