@@ -1,6 +1,6 @@
 import kicad_script as pcb
 from midpoint import midpoint
-from flip_point_over_y_axis import flip_point_over_y_axis
+from flip_point_over_x_axis import flip_point_over_x_axis
 
 
 def calculate_atreus_62_original_pcb_offset_to_match_position_of_case(
@@ -13,7 +13,7 @@ def calculate_atreus_62_original_pcb_offset_to_match_position_of_case(
         )
     )
 
-    midpoint_of_pbc_for_x_offset = flip_point_over_y_axis(
+    midpoint_of_pbc_for_x_offset = flip_point_over_x_axis(
         midpoint(
             pcb.get_values(edge_cut_lines[5], "start"),
             pcb.get_values(edge_cut_lines[14], "start"),
@@ -28,7 +28,7 @@ def calculate_atreus_62_original_pcb_offset_to_match_position_of_case(
     )
 
     upper_right_hand_footprint = switch_footprints[-5]
-    upper_right_hand_footprint_center = flip_point_over_y_axis(
+    upper_right_hand_footprint_center = flip_point_over_x_axis(
         pcb.get_values(upper_right_hand_footprint, "at")[0:2]
     )
 

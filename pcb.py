@@ -9,8 +9,8 @@ import kicad_script as pcb
 from zip import zip
 from presets import presets
 from rotate_2d import rotate_2d
-from flip_point_over_y_axis import flip_point_over_y_axis
-from flip_points_over_y_axis import flip_points_over_y_axis
+from flip_point_over_x_axis import flip_point_over_x_axis
+from flip_points_over_x_axis import flip_points_over_x_axis
 from calculate_atreus_62_original_pcb_offset_to_match_position_of_case import (
     calculate_atreus_62_original_pcb_offset_to_match_position_of_case,
 )
@@ -66,7 +66,7 @@ def make_thru_hole_pads(board_data):
                 if str(pad[3]) == "circle":
                     circular_positions.append(
                         {
-                            "position": flip_point_over_y_axis(
+                            "position": flip_point_over_x_axis(
                                 rotate_2d(
                                     footprint_position,
                                     (
@@ -85,7 +85,7 @@ def make_thru_hole_pads(board_data):
                 elif str(pad[3]) == "rect":
                     rectangular_positions.append(
                         {
-                            "position": flip_point_over_y_axis(
+                            "position": flip_point_over_x_axis(
                                 rotate_2d(
                                     footprint_position,
                                     (
@@ -146,7 +146,7 @@ def make_via_pads(board_data):
         for via in vias:
             via_position = pcb.get_values(via, "at")[0:2]
             pads = (
-                pads.moveTo(*flip_point_over_y_axis(via_position))
+                pads.moveTo(*flip_point_over_x_axis(via_position))
                 .circle(pcb.get_value(via, "drill") / 2)
                 .circle(pcb.get_values(via, "size")[0] / 2)
             )
@@ -186,7 +186,7 @@ def make_surface_mount_pads(board_data):
 
                     positions.append(
                         calculate_rectangle_corners(
-                            flip_point_over_y_axis(
+                            flip_point_over_x_axis(
                                 rotate_2d(
                                     footprint_position,
                                     (
@@ -285,7 +285,7 @@ def drill_holes_for_thru_hole_pads(self, footprints, thickness):
     for size, positions in circular_holes_by_size.items():
         self = (
             self.faces("front")
-            .pushPoints(flip_points_over_y_axis(positions))
+            .pushPoints(flip_points_over_x_axis(positions))
             .circle(size / 2)
             .cutBlind(thickness)
         )
@@ -293,7 +293,7 @@ def drill_holes_for_thru_hole_pads(self, footprints, thickness):
     for size, positions in rectangular_holes_by_size.items():
         self = (
             self.faces("front")
-            .pushPoints(flip_points_over_y_axis(positions))
+            .pushPoints(flip_points_over_x_axis(positions))
             .rect(size, size)
             .cutBlind(thickness)
         )
@@ -316,7 +316,7 @@ def drill_holes_for_vias(self, vias, thickness):
     for size, positions in holes_by_size.items():
         self = (
             self.faces("front")
-            .pushPoints(flip_points_over_y_axis(positions))
+            .pushPoints(flip_points_over_x_axis(positions))
             .circle(size / 2)
             .cutBlind(thickness)
         )
@@ -339,7 +339,7 @@ def make_board(board_data):
         pcb.get_values(board_data, "general"), "thickness"
     )
 
-    edge_cut_lines = flip_points_over_y_axis(
+    edge_cut_lines = flip_points_over_x_axis(
         pcb_lines_to_polyline(edge_cut_lines)
     )
 
@@ -381,7 +381,7 @@ def make_lines(footprint, layer, line_type):
     )
     footprint_lines = [
         {
-            "start": flip_point_over_y_axis(
+            "start": flip_point_over_x_axis(
                 rotate_2d(
                     footprint_position,
                     (
@@ -393,7 +393,7 @@ def make_lines(footprint, layer, line_type):
                     -footprint_rotation,
                 )
             ),
-            "end": flip_point_over_y_axis(
+            "end": flip_point_over_x_axis(
                 rotate_2d(
                     footprint_position,
                     (
@@ -558,13 +558,13 @@ def make_pcb(user_config={}):
         )
     ]
 
-    pcb_outline_points = flip_points_over_y_axis(pcb_outline_points)
+    pcb_outline_points = flip_points_over_x_axis(pcb_outline_points)
 
     board = pcb.create_board()
     board = pcb.set_edge_cut_points(board, pcb_outline_points)
 
     for index, position in enumerate(
-        flip_points_over_y_axis(case_geometry["switch_positions"])
+        flip_points_over_x_axis(case_geometry["switch_positions"])
     ):
         rotation = (
             config["angle"]
