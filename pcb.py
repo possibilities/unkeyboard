@@ -75,7 +75,7 @@ def make_thru_hole_pads(board_data):
                                         item_position[1]
                                         + footprint_position[1],
                                     ),
-                                    -footprint_rotation,
+                                    footprint_rotation,
                                 )
                             ),
                             "inner_radius": pcb.get_value(pad, "drill") / 2,
@@ -94,7 +94,7 @@ def make_thru_hole_pads(board_data):
                                         item_position[1]
                                         + footprint_position[1],
                                     ),
-                                    -footprint_rotation,
+                                    footprint_rotation,
                                 )
                             ),
                             "inner_radius": pcb.get_value(pad, "drill") / 2,
@@ -195,12 +195,12 @@ def make_surface_mount_pads(board_data):
                                         item_position[1]
                                         + footprint_position[1],
                                     ),
-                                    -footprint_rotation,
+                                    footprint_rotation,
                                 )
                             ),
                             pcb.get_values(pad, "size")[0],
                             pcb.get_values(pad, "size")[1],
-                            angle=item_rotation,
+                            angle=-item_rotation,
                         )
                     )
 
@@ -257,7 +257,7 @@ def drill_holes_for_thru_hole_pads(self, footprints, thickness):
                                 item_position[0] + footprint_position[0],
                                 item_position[1] + footprint_position[1],
                             ),
-                            -footprint_rotation,
+                            footprint_rotation,
                         ),
                     )
                 elif str(pad[3]) == "rect":
@@ -278,7 +278,7 @@ def drill_holes_for_thru_hole_pads(self, footprints, thickness):
                                 item_position[0] + footprint_position[0],
                                 item_position[1] + footprint_position[1],
                             ),
-                            -footprint_rotation,
+                            footprint_rotation,
                         ),
                     )
 
@@ -390,7 +390,7 @@ def make_lines(footprint, layer, line_type):
                         pcb.get_values(line, "start")[1]
                         + footprint_position[1],
                     ),
-                    -footprint_rotation,
+                    footprint_rotation,
                 )
             ),
             "end": flip_point_over_x_axis(
@@ -400,7 +400,7 @@ def make_lines(footprint, layer, line_type):
                         pcb.get_values(line, "end")[0] + footprint_position[0],
                         pcb.get_values(line, "end")[1] + footprint_position[1],
                     ),
-                    -footprint_rotation,
+                    footprint_rotation,
                 )
             ),
         }

@@ -98,7 +98,7 @@ def calculate_switch_positions(
                     row
                 ]
                 switch_position = rotate_2d(
-                    (0, 0), unrotated_switch_position, config["angle"]
+                    (0, 0), unrotated_switch_position, -config["angle"]
                 )
                 switch_positions.append(switch_position)
 
@@ -116,9 +116,9 @@ def calculate_switch_plate_points(mirror_at_point, switch_positions, config):
         )
 
         rotated_switch_cutout_corner_points = [
-            rotate_2d(switch_position, point, -config["angle"])
+            rotate_2d(switch_position, point, config["angle"])
             if point[0] < mirror_at_point[0]
-            else rotate_2d(switch_position, point, config["angle"])
+            else rotate_2d(switch_position, point, -config["angle"])
             for point in switch_cutout_corner_points
         ]
 
@@ -294,18 +294,20 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
     )
 
     bottom_row_points = [
-        rotate_2d((0, 0), point, config["angle"])
+        rotate_2d((0, 0), point, -config["angle"])
         for point in bottom_row_points
     ]
     top_row_points = [
-        rotate_2d((0, 0), point, config["angle"]) for point in top_row_points
+        rotate_2d((0, 0), point, -config["angle"]) for point in top_row_points
     ]
-    bottom_left_corner = rotate_2d((0, 0), bottom_left_corner, config["angle"])
-    bottom_right_corner = rotate_2d(
-        (0, 0), bottom_right_corner, config["angle"]
+    bottom_left_corner = rotate_2d(
+        (0, 0), bottom_left_corner, -config["angle"]
     )
-    top_right_corner = rotate_2d((0, 0), top_right_corner, config["angle"])
-    top_left_corner = rotate_2d((0, 0), top_left_corner, config["angle"])
+    bottom_right_corner = rotate_2d(
+        (0, 0), bottom_right_corner, -config["angle"]
+    )
+    top_right_corner = rotate_2d((0, 0), top_right_corner, -config["angle"])
+    top_left_corner = rotate_2d((0, 0), top_left_corner, -config["angle"])
 
     switch_plate_outline_points = [
         bottom_left_corner,
