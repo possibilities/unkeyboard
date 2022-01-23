@@ -1,2 +1,10 @@
-def zip(list1, list2):
-    return [[item1, list2[index]] for index, item1 in enumerate(list1)]
+def zip(*lists):
+    zipped = []
+    for list in lists:
+        for index, item in enumerate(list):
+            try:
+                zipped[index]
+            except Exception:
+                zipped.append([])
+            zipped[index].append(item)
+    return zipped

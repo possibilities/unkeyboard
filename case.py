@@ -6,10 +6,12 @@ from calculate_rectangle_corners import calculate_rectangle_corners
 from calculate_intersection_of_points import calculate_intersection_of_points
 from rotate_2d import rotate_2d
 from mirror_points import mirror_points
+from calculate_column_stagger_size import calculate_column_stagger_size
 from presets import presets
 
 explode_by = 20
 flatten_items = False
+switch_plate_cutout_size = 13.97
 
 
 @cq_workplane_plugin
@@ -26,53 +28,33 @@ def drill_reset_button_hole(part, geometry):
     )
 
 
-def has_reached_end_of_inside_switches_row(column, row, config):
+def has_reached_end_of_thumb_keys_row(column, row, config):
     has_reached_end_column = column == 0
     if has_reached_end_column:
-        has_reached_end_row = row > (
-            1 if config["has_two_inside_switches"] else 0
-        )
+        has_reached_end_row = row > (1 if config["has_two_thumb_keys"] else 0)
         if has_reached_end_row:
             return True
     return False
 
 
-def calculate_column_stagger_percent(column, config):
-    inside_switches_stagger_percent = (
-        config["stagger_percent_for_double_inside_switches"]
-        if config["has_two_inside_switches"]
-        else config["stagger_percent_for_single_inside_switch"]
-    )
-
-    return (
-        inside_switches_stagger_percent
-        if column == 0
-        else config["column_stagger_percents"][column - 1]
-    ) / config["distance_between_switch_centers"]
-
-
 def calculate_unrotated_switch_positions(config):
     unrotated_switch_positions = []
 
-    number_of_inside_columns = 1
+    number_of_thumb_key_columns_per_side = 1
     total_number_of_columns = (
-        config["number_of_columns"] + number_of_inside_columns
+        config["number_of_columns"] + number_of_thumb_key_columns_per_side
     )
 
     for column in range(total_number_of_columns):
         unrotated_switch_positions.append([])
         for row in range(config["number_of_rows"]):
-            if not has_reached_end_of_inside_switches_row(column, row, config):
-                switch_position_x = config[
-                    "distance_between_switch_centers"
-                ] * (column + 0.5)
+            if not has_reached_end_of_thumb_keys_row(column, row, config):
+                switch_position_x = config["distance_between_switch_centers"] * (
+                    column + 0.5
+                )
 
-                switch_position_y = config[
-                    "distance_between_switch_centers"
-                ] * (
-                    row
-                    + 0.5
-                    + calculate_column_stagger_percent(column, config)
+                switch_position_y = config["distance_between_switch_centers"] * (
+                    row + 0.5 + calculate_column_stagger_size(column, config)
                 )
 
                 unrotated_switch_positions[-1].append(
@@ -82,21 +64,17 @@ def calculate_unrotated_switch_positions(config):
     return unrotated_switch_positions
 
 
-def calculate_switch_positions(
-    mirror_at_point, unrotated_switch_positions, config
-):
-    number_of_inside_columns = 1
+def calculate_switch_positions(mirror_at_point, unrotated_switch_positions, config):
+    number_of_thumb_key_columns_per_side = 1
     total_number_of_columns = (
-        config["number_of_columns"] + number_of_inside_columns
+        config["number_of_columns"] + number_of_thumb_key_columns_per_side
     )
 
     switch_positions = []
     for column in range(total_number_of_columns):
         for row in range(config["number_of_rows"]):
-            if not has_reached_end_of_inside_switches_row(column, row, config):
-                unrotated_switch_position = unrotated_switch_positions[column][
-                    row
-                ]
+            if not has_reached_end_of_thumb_keys_row(column, row, config):
+                unrotated_switch_position = unrotated_switch_positions[column][row]
                 switch_position = rotate_2d(
                     (0, 0), unrotated_switch_position, -config["angle"]
                 )
@@ -111,8 +89,8 @@ def calculate_switch_plate_points(mirror_at_point, switch_positions, config):
     for switch_position in switch_positions:
         switch_cutout_corner_points = calculate_rectangle_corners(
             switch_position,
-            config["switch_plate_cutout_size"],
-            config["switch_plate_cutout_size"],
+            switch_plate_cutout_size,
+            switch_plate_cutout_size,
         )
 
         rotated_switch_cutout_corner_points = [
@@ -130,34 +108,29 @@ def calculate_switch_plate_points(mirror_at_point, switch_positions, config):
 def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
     widen_cutout_around_switch_size = 1
 
-    widen_cutout_around_inside_switches_size = (
-        0 if config["has_two_inside_switches"] else 1.5
-    )
-    inside_switches_unit_height = (
-        1 if config["has_two_inside_switches"] else 1.5
-    )
+    widen_cutout_around_thumb_keys_size = 0 if config["has_two_thumb_keys"] else 1.5
+    thumb_keys_unit_height = 1 if config["has_two_thumb_keys"] else 1.5
 
-    inside_switches_height = (
-        config["distance_between_switch_centers"] * inside_switches_unit_height
-    ) + widen_cutout_around_inside_switches_size
+    thumb_keys_height = (
+        config["distance_between_switch_centers"] * thumb_keys_unit_height
+    ) + widen_cutout_around_thumb_keys_size
 
     outline_size_per_switch = (
-        config["distance_between_switch_centers"]
-        + widen_cutout_around_switch_size
+        config["distance_between_switch_centers"] + widen_cutout_around_switch_size
     )
 
-    inside_switch_padding_y = (
-        inside_switches_height - config["distance_between_switch_centers"]
+    thumb_key_padding_y = (
+        thumb_keys_height - config["distance_between_switch_centers"]
     ) / 2
     outline_size = outline_size_per_switch / 2
     top_left_switch = (
         unrotated_switch_positions[0][-1][0],
-        unrotated_switch_positions[0][-1][1] + inside_switch_padding_y,
+        unrotated_switch_positions[0][-1][1] + thumb_key_padding_y,
     )
     top_right_switch = unrotated_switch_positions[-1][-1]
     bottom_left_switch = (
         unrotated_switch_positions[0][0][0],
-        unrotated_switch_positions[0][0][1] - inside_switch_padding_y,
+        unrotated_switch_positions[0][0][1] - thumb_key_padding_y,
     )
     bottom_right_switch = unrotated_switch_positions[-1][0]
 
@@ -170,13 +143,11 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
         if not is_last_column_of_top_row:
             next_switch_position = top_row[index + 1]
             is_lower_than_next = next_switch_position[1] > switch_position[1]
-            next_switch_has_same_stagger = (
-                next_switch_position[1] == switch_position[1]
-            )
+            next_switch_has_same_stagger = next_switch_position[1] == switch_position[1]
             if not next_switch_has_same_stagger:
-                inside_switch_padding_y = (
+                thumb_key_padding_y = (
                     (
-                        inside_switches_height
+                        thumb_keys_height
                         - config["distance_between_switch_centers"]
                         - widen_cutout_around_switch_size
                     )
@@ -188,16 +159,12 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
                 left_point = (
                     (
                         next_switch_position[0] - outline_size,
-                        switch_position[1]
-                        + outline_size
-                        + inside_switch_padding_y,
+                        switch_position[1] + outline_size + thumb_key_padding_y,
                     )
                     if is_lower_than_next
                     else (
                         switch_position[0] + outline_size,
-                        switch_position[1]
-                        + outline_size
-                        + inside_switch_padding_y,
+                        switch_position[1] + outline_size + thumb_key_padding_y,
                     )
                 )
 
@@ -222,13 +189,11 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
         if not is_last_column_of_bottom_row:
             next_switch_position = bottom_row[index + 1]
             is_lower_than_next = next_switch_position[1] > switch_position[1]
-            next_switch_has_same_stagger = (
-                next_switch_position[1] == switch_position[1]
-            )
+            next_switch_has_same_stagger = next_switch_position[1] == switch_position[1]
             if not next_switch_has_same_stagger:
-                inside_switch_padding_y = (
+                thumb_key_padding_y = (
                     (
-                        inside_switches_height
+                        thumb_keys_height
                         - config["distance_between_switch_centers"]
                         - widen_cutout_around_switch_size
                     )
@@ -240,16 +205,12 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
                 left_point = (
                     (
                         switch_position[0] + outline_size,
-                        switch_position[1]
-                        - outline_size
-                        - inside_switch_padding_y,
+                        switch_position[1] - outline_size - thumb_key_padding_y,
                     )
                     if is_lower_than_next
                     else (
                         next_switch_position[0] - outline_size,
-                        switch_position[1]
-                        - outline_size
-                        - inside_switch_padding_y,
+                        switch_position[1] - outline_size - thumb_key_padding_y,
                     )
                 )
 
@@ -268,15 +229,13 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
                 bottom_row_points.append(left_point)
                 bottom_row_points.append(right_point)
 
-    inside_switches_height = (
-        config["distance_between_switch_centers"] * inside_switches_unit_height
-    ) + widen_cutout_around_inside_switches_size
+    thumb_keys_height = (
+        config["distance_between_switch_centers"] * thumb_keys_unit_height
+    ) + widen_cutout_around_thumb_keys_size
 
     bottom_left_corner = (
         bottom_left_switch[0] - outline_size,
-        bottom_left_switch[1]
-        - outline_size
-        + (widen_cutout_around_switch_size / 2),
+        bottom_left_switch[1] - outline_size + (widen_cutout_around_switch_size / 2),
     )
     bottom_right_corner = (
         bottom_right_switch[0] + outline_size,
@@ -288,24 +247,17 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
     )
     top_left_corner = (
         top_left_switch[0] - outline_size,
-        top_left_switch[1]
-        + outline_size
-        - (widen_cutout_around_switch_size / 2),
+        top_left_switch[1] + outline_size - (widen_cutout_around_switch_size / 2),
     )
 
     bottom_row_points = [
-        rotate_2d((0, 0), point, -config["angle"])
-        for point in bottom_row_points
+        rotate_2d((0, 0), point, -config["angle"]) for point in bottom_row_points
     ]
     top_row_points = [
         rotate_2d((0, 0), point, -config["angle"]) for point in top_row_points
     ]
-    bottom_left_corner = rotate_2d(
-        (0, 0), bottom_left_corner, -config["angle"]
-    )
-    bottom_right_corner = rotate_2d(
-        (0, 0), bottom_right_corner, -config["angle"]
-    )
+    bottom_left_corner = rotate_2d((0, 0), bottom_left_corner, -config["angle"])
+    bottom_right_corner = rotate_2d((0, 0), bottom_right_corner, -config["angle"])
     top_right_corner = rotate_2d((0, 0), top_right_corner, -config["angle"])
     top_left_corner = rotate_2d((0, 0), top_left_corner, -config["angle"])
 
@@ -319,8 +271,7 @@ def calculate_switch_plate_outline_points(unrotated_switch_positions, config):
     ]
 
     mirror_at_point = (
-        switch_plate_outline_points[-1][0]
-        + (widen_cutout_around_switch_size / 2),
+        switch_plate_outline_points[-1][0] + (widen_cutout_around_switch_size / 2),
         switch_plate_outline_points[-1][1],
     )
 
@@ -455,9 +406,7 @@ def calculate_case_geometry(config):
     [
         switch_plate_outline_points,
         mirror_at_point,
-    ] = calculate_switch_plate_outline_points(
-        unrotated_switch_positions, config
-    )
+    ] = calculate_switch_plate_outline_points(unrotated_switch_positions, config)
 
     switch_positions = calculate_switch_positions(
         mirror_at_point,

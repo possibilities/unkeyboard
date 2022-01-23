@@ -1,5 +1,5 @@
-def to_pairs(dictionary):
+def to_pairs(obj):
     pairs = []
-    for key in dictionary.keys():
-        pairs.append([key, dictionary[key]])
+    for key in obj.keys():
+        pairs.append([key, obj[key]])
     return pairs

@@ -1,627 +1,265 @@
-import cadquery as cq
-from fuse_parts import fuse_parts
-from cq_workplane_plugin import cq_workplane_plugin
-from calculate_rectangle_corners import calculate_rectangle_corners
+import os
+import jinja2
+import uuid
+import sexpdata
+import calculate_tracks
 from case import make_case_parts
-from midpoint import midpoint
-from calculate_point_for_angle import calculate_point_for_angle
-import kicad_script as pcb
 from zip import zip
 from presets import presets
-from rotate_2d import rotate_2d
 from flip_point_over_x_axis import flip_point_over_x_axis
-from flip_points_over_x_axis import flip_points_over_x_axis
-from calculate_atreus_62_original_pcb_offset_to_match_position_of_case import (
-    calculate_atreus_62_original_pcb_offset_to_match_position_of_case,
-)
+from make_pcb_parts import make_pcb_parts
+from make_atreus_62_pcb import make_atreus_62_pcb
+from save_pcb import save_pcb
+from from_pairs import from_pairs
+from calculate_pcb_outline import calculate_pcb_outline
+from to_pairs import to_pairs
+from calculate_pcb_tracks import calculate_pcb_tracks
+from calculate_footprint_positions import calculate_footprint_positions
+from calculate_min_max_coords_for_lines import calculate_min_max_coords_for_lines
+import kicad
 
-pad_thickness = 0.075
-
-
-def find_next_pcb_line(line, lines):
-    for next_line in lines:
-        if (
-            pcb.get_values(next_line, "start")[0]
-            == pcb.get_values(line, "end")[0]
-            and pcb.get_values(next_line, "start")[1]
-            == pcb.get_values(line, "end")[1]
-        ):
-            return next_line
-    return None
+id_for_net_name_lookup = {}
 
 
-def pcb_lines_to_polyline(lines):
-    ordered_lines = [lines[0]]
-
-    while True:
-        next_line = find_next_pcb_line(ordered_lines[-1], lines[1:])
-        if next_line:
-            ordered_lines.append(next_line)
-        else:
-            break
-
-    return [pcb.get_values(line, "start") for line in ordered_lines]
+def id_for_net_name(name):
+    if name not in id_for_net_name_lookup:
+        id_for_net_name_lookup[name] = len(id_for_net_name_lookup.keys()) + 1
+    return id_for_net_name_lookup[name]
 
 
-def make_thru_hole_pads(board_data):
-    circular_positions = []
-    rectangular_positions = []
+def calculate_reset_switch_geometry(case_geometry, config):
+    reset_switch_rotation = config["angle"]
 
-    for footprint in pcb.get_collection(board_data, "footprint"):
-        footprint_position_values = list(
-            filter(
-                lambda item: isinstance(item, int) or isinstance(item, float),
-                pcb.get_values(footprint, "at"),
-            )
-        )
-        footprint_position = footprint_position_values[0:2]
-        footprint_rotation = (
-            footprint_position_values[2]
-            if len(footprint_position_values) >= 3
-            else 0
-        )
-        for pad in pcb.get_collection(footprint, "pad"):
-            item_position = pcb.get_values(pad, "at")[0:2]
-            if str(pad[2]) == "thru_hole":
-                if str(pad[3]) == "circle":
-                    circular_positions.append(
-                        {
-                            "position": flip_point_over_x_axis(
-                                rotate_2d(
-                                    footprint_position,
-                                    (
-                                        item_position[0]
-                                        + footprint_position[0],
-                                        item_position[1]
-                                        + footprint_position[1],
-                                    ),
-                                    footprint_rotation,
-                                )
-                            ),
-                            "inner_radius": pcb.get_value(pad, "drill") / 2,
-                            "outer_radius": pcb.get_values(pad, "size")[0] / 2,
-                        }
-                    )
-                elif str(pad[3]) == "rect":
-                    rectangular_positions.append(
-                        {
-                            "position": flip_point_over_x_axis(
-                                rotate_2d(
-                                    footprint_position,
-                                    (
-                                        item_position[0]
-                                        + footprint_position[0],
-                                        item_position[1]
-                                        + footprint_position[1],
-                                    ),
-                                    footprint_rotation,
-                                )
-                            ),
-                            "inner_radius": pcb.get_value(pad, "drill") / 2,
-                            "outer_rect_width": pcb.get_values(pad, "size")[0],
-                            "outer_rect_height": pcb.get_values(pad, "size")[
-                                1
-                            ],
-                        }
-                    )
-
-    pads = cq.Workplane()
-
-    thickness = pcb.get_value(
-        pcb.get_values(board_data, "general"), "thickness"
+    case_reset_switch_position = flip_point_over_x_axis(
+        case_geometry["reset_button"]["point"]
     )
 
-    if len(circular_positions) or len(rectangular_positions):
-        for pad in circular_positions:
-            pads = (
-                pads.moveTo(*pad["position"])
-                .circle(pad["inner_radius"])
-                .circle(pad["outer_radius"])
-            )
-
-        for pad in rectangular_positions:
-            pads = (
-                pads.moveTo(*pad["position"])
-                .circle(pad["inner_radius"])
-                .rect(pad["outer_rect_height"], pad["outer_rect_height"])
-            )
-
-        return pads.extrude((pad_thickness * 2) + thickness).translate(
-            [0, 0, -pad_thickness]
-        )
-
-    return pads
-
-
-def make_via_pads(board_data):
-    pads = cq.Workplane()
-
-    vias = pcb.get_collection(board_data, "via")
-
-    thickness = pcb.get_value(
-        pcb.get_values(board_data, "general"), "thickness"
+    reset_switch_position = (
+        case_geometry["mirror_at"]["point"][0]
+        + (case_geometry["mirror_at"]["point"][0] - case_reset_switch_position[0]),
+        case_reset_switch_position[1],
     )
 
-    if len(vias):
-        for via in vias:
-            via_position = pcb.get_values(via, "at")[0:2]
-            pads = (
-                pads.moveTo(*flip_point_over_x_axis(via_position))
-                .circle(pcb.get_value(via, "drill") / 2)
-                .circle(pcb.get_values(via, "size")[0] / 2)
-            )
-
-        pads = pads.extrude(pad_thickness + thickness).translate(
-            [0, 0, -pad_thickness / 2]
-        )
-
-    return pads
+    return {
+        "position": reset_switch_position,
+        "rotation": reset_switch_rotation,
+        "pad_1_net": {
+            "name": "GND",
+            "id": id_for_net_name("GND"),
+        },
+        "pad_2_net": {
+            "name": "Net-(SW-RST1-Pad2)",
+            "id": id_for_net_name("Net-(SW-RST1-Pad2)"),
+        },
+    }
 
 
-def make_surface_mount_pads(board_data):
-    positions = []
-
-    for footprint in pcb.get_collection(board_data, "footprint"):
-        footprint_position_values = list(
-            filter(
-                lambda item: isinstance(item, int) or isinstance(item, float),
-                pcb.get_values(footprint, "at"),
-            )
-        )
-        footprint_position = footprint_position_values[0:2]
-        footprint_rotation = (
-            footprint_position_values[2]
-            if len(footprint_position_values) >= 3
-            else 0
-        )
-        for pad in pcb.get_collection(footprint, "pad"):
-            item_position = pcb.get_values(pad, "at")[0:2]
-            item_rotation = (
-                pcb.get_values(pad, "at")[2]
-                if len(pcb.get_values(pad, "at")) >= 3
-                else 0
-            )
-            if str(pad[2]) == "smd":
-                if str(pad[3]) == "rect":
-
-                    positions.append(
-                        calculate_rectangle_corners(
-                            flip_point_over_x_axis(
-                                rotate_2d(
-                                    footprint_position,
-                                    (
-                                        item_position[0]
-                                        + footprint_position[0],
-                                        item_position[1]
-                                        + footprint_position[1],
-                                    ),
-                                    footprint_rotation,
-                                )
-                            ),
-                            pcb.get_values(pad, "size")[0],
-                            pcb.get_values(pad, "size")[1],
-                            angle=-item_rotation,
-                        )
-                    )
-
-    pads = []
-
-    if len(positions):
-        for position in positions:
-            pads.append(
-                cq.Workplane()
-                .polyline(position)
-                .close()
-                .extrude(pad_thickness * 2)
-                .translate([0, 0, -pad_thickness])
-            )
-
-    return fuse_parts(pads)
+def calculate_mcu_geometry(case_geometry):
+    mcu_y_offset = -53.55
+    mcu_position = (case_geometry["mirror_at"]["point"][0], mcu_y_offset)
+    return {"position": mcu_position}
 
 
-@cq_workplane_plugin
-def drill_holes_for_thru_hole_pads(self, footprints, thickness):
-    circular_holes_by_size = {}
-    rectangular_holes_by_size = {}
-
-    for footprint in footprints:
-        footprint_position_values = list(
-            filter(
-                lambda item: isinstance(item, int) or isinstance(item, float),
-                pcb.get_values(footprint, "at"),
-            )
-        )
-        footprint_position = footprint_position_values[0:2]
-        footprint_rotation = (
-            footprint_position_values[2]
-            if len(footprint_position_values) >= 3
-            else 0
-        )
-        for pad in pcb.get_collection(footprint, "pad"):
-            if str(pad[2]) in ["thru_hole", "np_thru_hole"]:
-                if str(pad[3]) == "circle":
-                    if (
-                        pcb.get_values(pad, "size")[0]
-                        not in circular_holes_by_size
-                    ):
-                        circular_holes_by_size[
-                            pcb.get_values(pad, "size")[0]
-                        ] = []
-                    item_position = pcb.get_values(pad, "at")[0:2]
-                    circular_holes_by_size[
-                        pcb.get_values(pad, "size")[0]
-                    ].append(
-                        rotate_2d(
-                            footprint_position,
-                            (
-                                item_position[0] + footprint_position[0],
-                                item_position[1] + footprint_position[1],
-                            ),
-                            footprint_rotation,
-                        ),
-                    )
-                elif str(pad[3]) == "rect":
-                    if (
-                        pcb.get_values(pad, "size")[0]
-                        not in rectangular_holes_by_size
-                    ):
-                        rectangular_holes_by_size[
-                            pcb.get_values(pad, "size")[0]
-                        ] = []
-                    item_position = pcb.get_values(pad, "at")[0:2]
-                    rectangular_holes_by_size[
-                        pcb.get_values(pad, "size")[0]
-                    ].append(
-                        rotate_2d(
-                            footprint_position,
-                            (
-                                item_position[0] + footprint_position[0],
-                                item_position[1] + footprint_position[1],
-                            ),
-                            footprint_rotation,
-                        ),
-                    )
-
-    for size, positions in circular_holes_by_size.items():
-        self = (
-            self.faces("front")
-            .pushPoints(flip_points_over_x_axis(positions))
-            .circle(size / 2)
-            .cutBlind(thickness)
-        )
-
-    for size, positions in rectangular_holes_by_size.items():
-        self = (
-            self.faces("front")
-            .pushPoints(flip_points_over_x_axis(positions))
-            .rect(size, size)
-            .cutBlind(thickness)
-        )
-
-    return self
-
-
-@cq_workplane_plugin
-@cq_workplane_plugin
-def drill_holes_for_vias(self, vias, thickness):
-    holes_by_size = {}
-
-    for via in vias:
-        if pcb.get_value(via, "drill") not in holes_by_size:
-            holes_by_size[pcb.get_value(via, "drill")] = []
-        holes_by_size[pcb.get_value(via, "drill")].append(
-            pcb.get_values(via, "at")[0:2]
-        )
-
-    for size, positions in holes_by_size.items():
-        self = (
-            self.faces("front")
-            .pushPoints(flip_points_over_x_axis(positions))
-            .circle(size / 2)
-            .cutBlind(thickness)
-        )
-
-    return self
-
-
-def make_board(board_data):
-    edge_cut_lines = list(
-        filter(
-            lambda line: pcb.get_value(line, "layer") == "Edge.Cuts",
-            pcb.get_collection(board_data, "gr_line"),
-        )
-    )
-
-    if not len(edge_cut_lines):
-        return cq.Workplane()
-
-    thickness = pcb.get_value(
-        pcb.get_values(board_data, "general"), "thickness"
-    )
-
-    edge_cut_lines = flip_points_over_x_axis(
-        pcb_lines_to_polyline(edge_cut_lines)
-    )
-
-    board = cq.Workplane().polyline(edge_cut_lines).close().extrude(thickness)
-
-    board = board.drill_holes_for_thru_hole_pads(
-        pcb.get_collection(board_data, "footprint"), thickness
-    )
-
-    board = board.drill_holes_for_vias(
-        pcb.get_collection(board_data, "via"), thickness
-    )
-
-    return board
-
-
-def make_lines(footprint, layer, line_type):
-    footprint_position_values = (
-        list(
-            filter(
-                lambda item: isinstance(item, int) or isinstance(item, float),
-                pcb.get_values(footprint, "at"),
-            )
-        )
-        if pcb.get_values(footprint, "at")
-        else [0, 0]
-    )
-    footprint_position = footprint_position_values[0:2]
-    footprint_lines_for_layer = list(
-        filter(
-            lambda line: pcb.get_value(line, "layer") == layer,
-            pcb.get_collection(footprint, line_type),
-        )
-    )
-    footprint_rotation = (
-        footprint_position_values[2]
-        if len(footprint_position_values) >= 3
-        else 0
-    )
-    footprint_lines = [
+def add_nets_to_pads(footprints, pads, nets):
+    return [
         {
-            "start": flip_point_over_x_axis(
-                rotate_2d(
-                    footprint_position,
-                    (
-                        pcb.get_values(line, "start")[0]
-                        + footprint_position[0],
-                        pcb.get_values(line, "start")[1]
-                        + footprint_position[1],
-                    ),
-                    footprint_rotation,
-                )
+            **footprint,
+            "pad_1_net": next(
+                (
+                    net_name
+                    for _net_id, net_name in to_pairs(nets)
+                    if pads["1"]["position"] in net_name["points"]
+                ),
+                None,
             ),
-            "end": flip_point_over_x_axis(
-                rotate_2d(
-                    footprint_position,
-                    (
-                        pcb.get_values(line, "end")[0] + footprint_position[0],
-                        pcb.get_values(line, "end")[1] + footprint_position[1],
-                    ),
-                    footprint_rotation,
-                )
+            "pad_2_net": next(
+                (
+                    net_name
+                    for _net_id, net_name in to_pairs(nets)
+                    if pads["2"]["position"] in net_name["points"]
+                ),
+                None,
             ),
         }
-        for line in footprint_lines_for_layer
-    ]
-    return footprint_lines
-
-
-def make_footprints_lines(board_data, layer):
-    thickness = pcb.get_value(
-        pcb.get_values(board_data, "general"), "thickness"
-    )
-
-    footprint_lines = []
-
-    for footprint in pcb.get_collection(board_data, "footprint"):
-        footprint_lines = [
-            *footprint_lines,
-            *make_lines(footprint, layer, "fp_line"),
-        ]
-
-    lines = []
-    for footprint_line in footprint_lines:
-        line = cq.Workplane()
-        line = line.moveTo(*footprint_line["start"]).lineTo(
-            *footprint_line["end"]
-        )
-        lines.append(line)
-
-    return fuse_parts(lines).translate(
-        [
-            0,
-            0,
-            thickness if layer.startswith("F.") else 0,
-        ]
-    )
-
-
-def make_segments(board_data, layer):
-    thickness = pcb.get_value(
-        pcb.get_values(board_data, "general"), "thickness"
-    )
-
-    footprint_lines = make_lines(board_data, layer, "segment")
-
-    lines = []
-    for footprint_line in footprint_lines:
-        line = cq.Workplane()
-        line = line.moveTo(*footprint_line["start"]).lineTo(
-            *footprint_line["end"]
-        )
-        lines.append(line)
-
-    return fuse_parts(lines).translate(
-        [
-            0,
-            0,
-            thickness if layer.startswith("F.") else 0,
-        ]
-    )
-
-
-def make_pcb_parts(board_data):
-    board = make_board(board_data)
-
-    pad_yellow = (204, 204, 0)
-
-    parts = []
-
-    thru_hole_pads = make_thru_hole_pads(board_data)
-    via_pads = make_via_pads(board_data)
-    surface_mount_pads = make_surface_mount_pads(board_data)
-
-    front_silkscreens = make_footprints_lines(board_data, "F.SilkS")
-    back_silkscreens = make_footprints_lines(board_data, "B.SilkS")
-    front_segments = make_segments(board_data, "F.Cu")
-    back_segments = make_segments(board_data, "B.Cu")
-
-    parts.append(("PCB board", board, {"color": (0, 51, 25), "alpha": 0}))
-    parts.append(("PCB thru hold pads", thru_hole_pads, {"color": pad_yellow}))
-    parts.append(("PCB via pads", via_pads, {"color": pad_yellow}))
-    parts.append(
-        ("PCB surface mount pads", surface_mount_pads, {"color": pad_yellow})
-    )
-    parts.append(
-        ("PCB front silkscreens", front_silkscreens, {"color": "white"})
-    )
-    parts.append(
-        ("PCB back silkscreens", back_silkscreens, {"color": "white"})
-    )
-    parts.append(("PCB front segments", front_segments, {"color": "red"}))
-    parts.append(("PCB back segments", back_segments, {"color": "blue"}))
-
-    return parts
-
-
-def generate_pcb_outline_points(case_geometry, config):
-    index_of_first_key_after_inner_keys = (
-        2 if config["has_two_inside_switches"] else 1
-    )
-
-    pcb_construction_outside_points = [
-        case_geometry["switch_plate_outline"]["points"][2],
-        case_geometry["switch_plate_outline"]["points"][
-            (config["number_of_columns"] * 2) - 1
-        ],
-        case_geometry["switch_plate_outline"]["points"][
-            (config["number_of_columns"] * 2)
-        ],
-        case_geometry["switch_plate_outline"]["points"][
-            -(config["number_of_columns"] * 2) - 2
-        ],
-        case_geometry["switch_plate_outline"]["points"][
-            -(config["number_of_columns"] * 2) - 1
-        ],
-        case_geometry["switch_plate_outline"]["points"][-4],
+        for footprint, pads in zip(footprints, pads)
     ]
 
-    pcb_construction_inside_points = [
-        case_geometry["switch_plate"]["points"][
-            index_of_first_key_after_inner_keys
-        ][0],
-        case_geometry["switch_plate"]["points"][
-            index_of_first_key_after_inner_keys
-            + (config["number_of_columns"] * (config["number_of_rows"] - 1))
-            + 1
-        ][1],
-        case_geometry["switch_plate"]["points"][
-            index_of_first_key_after_inner_keys
-            + (config["number_of_columns"] * config["number_of_rows"])
-            - 1
-        ][2],
-        case_geometry["switch_plate"]["points"][
-            index_of_first_key_after_inner_keys
-            + (config["number_of_columns"] * config["number_of_rows"])
-        ][3],
-        case_geometry["switch_plate"]["points"][
-            index_of_first_key_after_inner_keys
-            + ((config["number_of_columns"] + 1) * config["number_of_rows"])
-            - 1
-        ][0],
-        case_geometry["switch_plate"]["points"][
-            -index_of_first_key_after_inner_keys - 1
-        ][1],
-    ]
 
-    pcb_outline_points = [
-        midpoint(pair[0], pair[1])
-        for pair in zip(
-            pcb_construction_inside_points, pcb_construction_outside_points
-        )
-    ]
-
-    pcb_outline_points = flip_points_over_x_axis(pcb_outline_points)
-
-    return pcb_outline_points
+def add_nets_to_mcu_pads(mcu_geometry, mcu_pads, nets):
+    return {
+        **mcu_geometry,
+        **from_pairs(
+            [
+                f"pad_{pad_name}_net",
+                {
+                    "id": next(
+                        (
+                            net_info["id"]
+                            for _net_id, net_info in to_pairs(nets)
+                            if pad_info["position"] in net_info["points"]
+                        ),
+                        0,
+                    ),
+                    "name": next(
+                        (
+                            net_info["name"]
+                            for _net_id, net_info in to_pairs(nets)
+                            if pad_info["position"] in net_info["points"]
+                        ),
+                        "",
+                    ),
+                },
+            ]
+            for pad_name, pad_info in to_pairs(mcu_pads)
+        ),
+    }
 
 
-def make_pcb(user_config={}):
+def nets_from_vias_and_tracks(vias, tracks):
+    nets = {}
+    for via in vias:
+        points = []
+        if str(via["net"]) in nets:
+            points = nets[str(via["net"])]["points"]
+        nets[str(via["net"])] = {
+            "name": via["net"],
+            "id": id_for_net_name(via["net"]),
+            "points": [*points, via["point"]],
+        }
+    for track in tracks:
+        points = []
+        if str(track["net"]) in nets:
+            points = nets[str(track["net"])]["points"]
+        nets[str(track["net"])] = {
+            "name": track["net"],
+            "id": id_for_net_name(track["net"]),
+            "points": [*points, *track["points"]],
+        }
+    return nets
+
+
+def calculate_pcb_geometry(user_config={}):
     config = {**presets["default"], **user_config}
+    case_parts, case_geometry = make_case_parts(config)
 
-    [case_parts, case_geometry] = make_case_parts(config)
+    number_of_thumb_keys = 4 if config["has_two_thumb_keys"] else 2
 
-    board = pcb.create_board()
+    if number_of_thumb_keys == 4:
+        raise Exception("4 thumb keys not yet supported on PCB")
 
-    pcb_outline_points = generate_pcb_outline_points(case_geometry, config)
-    board = pcb.add_edge_cut_lines(
-        board, pcb.polyline_to_lines(pcb_outline_points)
+    switches, diodes = calculate_footprint_positions(
+        case_geometry, number_of_thumb_keys, config
     )
 
-    for index, position in enumerate(
-        flip_points_over_x_axis(case_geometry["switch_positions"])
-    ):
-        rotation = (
-            config["angle"]
-            if position[0] > case_geometry["mirror_at"]["point"][0]
-            else -config["angle"]
-        )
+    edge_cuts = calculate_pcb_outline(case_geometry, config)
 
-        switch_footprint = pcb.create_footprint(
-            {
-                "reference": f"SW{index + 1}",
-                "position": position,
-                "rotation": rotation,
-                "library_name": "footprints",
-                "footprint_name": "SW_MX",
-            }
-        )
+    reset_switch_geometry = calculate_reset_switch_geometry(case_geometry, config)
 
-        board = pcb.add_footprint(board, switch_footprint)
+    mcu_geometry = calculate_mcu_geometry(case_geometry)
 
-        diode_distance_from_switch_center = 7
-        diode_position = calculate_point_for_angle(
-            position, diode_distance_from_switch_center, rotation
-        )
+    pcb_geometry = {
+        "edge_cuts": edge_cuts,
+        "switches": switches,
+        "diodes": diodes,
+        "mcu": mcu_geometry,
+        "reset_switch": reset_switch_geometry,
+    }
 
-        # Rotate with everything else and flip it over
-        diode_rotation = rotation + 180
+    template_environment = jinja2.Environment()
+    template_environment.globals.update(tstamp=uuid.uuid4)
 
-        diode_footprint = pcb.create_footprint(
-            {
-                "reference": f"D{index + 1}",
-                "position": diode_position,
-                "rotation": diode_rotation,
-                "library_name": "footprints",
-                "footprint_name": "D3_SMD",
-            }
-        )
+    with open("pcb-template/keyboard.kicad_pcb.tmpl") as f:
+        kicad_pcb_template_string = f.read()
 
-        board = pcb.add_footprint(board, diode_footprint)
+    kicad_pcb_template = template_environment.from_string(kicad_pcb_template_string)
+    kicad_pcb = kicad_pcb_template.render(pcb_geometry)
 
-    return board
+    board_without_tracks = sexpdata.loads(kicad_pcb)
 
+    [reset_switch_pads] = kicad.load_footprints_pad_positions(
+        board_without_tracks, "parts:SW_SPST_B3U-1000P"
+    )
+
+    [mcu_pads] = kicad.load_footprints_pad_positions(
+        board_without_tracks, "parts:ProMicro_v3"
+    )
+
+    switches_pads = kicad.load_footprints_pad_positions(
+        board_without_tracks, "parts:SW_MX"
+    )
+
+    diodes_pads = kicad.load_footprints_pad_positions(
+        board_without_tracks, "parts:D3_SMD"
+    )
+
+    mirror_at_point = case_geometry["mirror_at"]["point"]
+
+    tracks, vias, debug_points = calculate_pcb_tracks(
+        switches,
+        diodes,
+        switches_pads,
+        diodes_pads,
+        mcu_pads,
+        reset_switch_pads,
+        mirror_at_point,
+        config,
+        calculate_tracks,
+    )
+
+    [min_x, min_y, max_x, max_y] = calculate_min_max_coords_for_lines(edge_cuts)
+
+    board_width = max_x - min_x
+    board_height = max_y - min_y
+
+    inside_paper_padding = 10
+    default_paper_padding = 10
+    space_for_legend = 32
+
+    paper_width = board_width + (inside_paper_padding * 2) + (default_paper_padding * 2)
+    paper_height = (
+        board_height
+        + (inside_paper_padding * 2)
+        + (default_paper_padding * 2)
+        + space_for_legend
+    )
+
+    nets = nets_from_vias_and_tracks(vias, tracks)
+
+    tracks_with_net_ids = [{**track, "net": nets[track["net"]]} for track in tracks]
+
+    vias_with_net_ids = [{**via, "net": nets[via["net"]]} for via in vias]
+
+    diodes_with_nets = add_nets_to_pads(diodes, diodes_pads, nets)
+    switches_with_nets = add_nets_to_pads(switches, switches_pads, nets)
+
+    mcu_geometry_with_nets = add_nets_to_mcu_pads(mcu_geometry, mcu_pads, nets)
+
+    return {
+        **pcb_geometry,
+        "mcu": mcu_geometry_with_nets,
+        "switches": switches_with_nets,
+        "diodes": diodes_with_nets,
+        "vias": vias_with_net_ids,
+        "tracks": tracks_with_net_ids,
+        "nets": nets.values(),
+        "debug_points": debug_points,
+        "paper_size": {"width": paper_width, "height": paper_height},
+    }
+
+
+def generate_pcb(project_path, project_name):
+    pcb_geometry = calculate_pcb_geometry()
+    save_pcb(pcb_geometry, project_path, project_name)
+
+
+if __name__ == "__main__":
+    generate_pcb("data/pcb", "keyboard")
 
 if "show_object" in globals():
-    generated_pcb = make_pcb()
-    generated_parts = make_pcb_parts(generated_pcb)
+    board_data = kicad.load_board("data/pcb", "keyboard")
+    pcb_parts = make_pcb_parts(board_data)
 
-    pcb.save_board(generated_pcb, "data", "keyboard")
-
-    for layer_name_part_and_options in generated_parts:
+    for layer_name_part_and_options in pcb_parts:
         [layer_name, part, options] = layer_name_part_and_options
         show_object(
             part,
@@ -629,25 +267,13 @@ if "show_object" in globals():
             options=options,
         )
 
-    [case_parts, case_geometry] = make_case_parts()
+    show_original_pcb = bool(os.getenv("SHOW_ORIGINAL_PCB"))
 
-    atreus_62_board_data = pcb.load_board(".", "atreus_62")
-    atreus_62_parts = make_pcb_parts(atreus_62_board_data)
-
-    pcb_offset_to_match_case = (
-        calculate_atreus_62_original_pcb_offset_to_match_position_of_case(
-            case_geometry, atreus_62_board_data
-        )
-    )
-
-    z_offset_from_generated_pcb = 50
-
-    for layer_name_part_and_options in atreus_62_parts:
-        [layer_name, part, options] = layer_name_part_and_options
-        show_object(
-            part.translate(
-                [*pcb_offset_to_match_case, z_offset_from_generated_pcb]
-            ),
-            name="Atreus 62 " + layer_name,
-            options=options,
-        )
+    if show_original_pcb:
+        for layer_name_part_and_options in make_atreus_62_pcb():
+            [layer_name, part, options] = layer_name_part_and_options
+            show_object(
+                part,
+                name="Atreus 62 " + layer_name,
+                options=options,
+            )

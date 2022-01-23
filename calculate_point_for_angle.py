@@ -1,9 +1,9 @@
 import math
 
 
-def calculate_point_for_angle(vertice, distance, angel):
-    angle_radian = math.pi / 2 - math.radians(angel)
+def calculate_point_for_angle(point, distance, angle):
+    angle_radian = math.pi / 2 - math.radians(angle)
     return (
-        vertice[0] + distance * math.cos(angle_radian),
-        vertice[1] + distance * math.sin(angle_radian),
+        point[0] + distance * math.cos(angle_radian),
+        point[1] + distance * math.sin(angle_radian),
     )

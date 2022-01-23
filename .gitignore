@@ -1,2 +1,5 @@
 __pycache__
 data
+fp-info-cache
+*backups
+_autosave*.kicad_pcb
